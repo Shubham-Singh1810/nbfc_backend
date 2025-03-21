@@ -105,6 +105,18 @@ const driverSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
+   lat: {
+      type: String,
+    },
+    long: {
+      type: String,
+    },
+    androidDeviceId: {
+      type: String,
+    },
+    iosDeviceId: {
+      type: String,
+    },
 });
 
 driverSchema.plugin(timestamps);

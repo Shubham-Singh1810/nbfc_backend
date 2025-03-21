@@ -28,16 +28,16 @@ const venderSchema = mongoose.Schema({
     type: String,
   },
   emailOtp: {
-    type: String,
+    type: Number,
   },
   phoneOtp: {
-    type: String,
+    type: Number,
   },
   token: {
     type: String,
   },
   phone: {
-    type: String,
+    type: Number,
     required: true,
   },
   profilePic: {
@@ -75,7 +75,6 @@ const venderSchema = mongoose.Schema({
   },
   pincode: {
     type: String,
-    required: true,
   },
   isPincodeApproved: {
     type: Boolean,
@@ -83,7 +82,6 @@ const venderSchema = mongoose.Schema({
   },
   address: {
     type: String,
-    required: true,
   },
   isAddressApproved: {
     type: Boolean,
@@ -146,6 +144,18 @@ const venderSchema = mongoose.Schema({
     default:false,
   },
   panCard: {
+    type: String,
+  },
+  lat: {
+    type: String,
+  },
+  long: {
+    type: String,
+  },
+  androidDeviceId: {
+    type: String,
+  },
+  iosDeviceId: {
     type: String,
   },
 });
