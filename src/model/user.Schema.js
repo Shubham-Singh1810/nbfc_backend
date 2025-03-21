@@ -6,35 +6,60 @@ const userSchema = mongoose.Schema({
   firstName: {
     type: String,
   },
+  isFirstNameApproved: {
+    type: Boolean,
+    default: false,
+  },
   lastName: {
     type: String,
+  },
+  isLastNameApproved: {
+    type: Boolean,
+    default: false,
   },
   email: {
     type: String,
   },
+  isEmailApproved: {
+    type: Boolean,
+    default: false,
+  },
   password: {
     type: String,
   },
-  role: {
+  emailOtp: {
     type: String,
   },
-  description: {
-    type: String,
-  },
-  otp: {
+  phoneOtp: {
     type: String,
   },
   token: {
     type: String,
   },
-  phoneNumber: {
+  phone: {
     type: String,
     required: true,
   },
-  image: {
+  profilePic: {
     type: String,
   },
+  isProfilePicApproved: {
+    type: Boolean,
+    default: false,
+  },
   isEmailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  isEmailApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isPhoneVerified: {
+    type: Boolean,
+    default: false,
+  },
+  isPhoneApproved: {
     type: Boolean,
     default: false,
   },
@@ -46,19 +71,40 @@ const userSchema = mongoose.Schema({
     type: String,
     default: "incompleted",
     required: true,
-      enum: ["incompleted", "completed"],
+      enum: ["incompleted", "completed", "approved", "rejected"],
   },
-  wishList: [
-    {
-      modelId: { type: mongoose.Schema.Types.ObjectId, required: true }, // ObjectId of the referenced model
-      modelType: {
-        type: String,
-        required: true,
-        enum: ["service", "repair", "installation"], // Allowed types
-      },
-    },
-  ],
- 
+  dlFrontImage: {
+    type: String,
+    required: true,
+  },
+  isDlFrontImageApproved: {
+    type: Boolean,
+    default: false,
+  },
+  dlBackImage: {
+    type: String,
+    // required: true,
+  },
+  isDlBackImageApproved: {
+    type: Boolean,
+    default: false,
+  },
+  pincode: {
+    type: String,
+    required: true,
+  },
+  isPincodeApproved: {
+    type: Boolean,
+    default: false,
+  },
+  address: {
+    type: String,
+    required: true,
+  },
+  isAddressApproved: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 userSchema.plugin(timestamps);
