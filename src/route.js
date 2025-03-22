@@ -11,7 +11,7 @@ router.use("/user", userController);
 router.use("/driver", driverController);
 router.use("/banner", bannerController);
 router.use("/vender", venderController);
-router.use("/cateory", categoryController);
+router.use("/category", categoryController);
 router.use("/subCategory", subCategory);
 
 
