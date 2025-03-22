@@ -208,7 +208,7 @@ driverController.get("/details/:id", async (req, res) => {
 });
 
 
-driverController.put("/update", upload.single("image"), async (req, res) => {
+driverController.put("/update", upload.single("profilePic"), async (req, res) => {
   try {
     const id = req.body._id;
     // Find the user by ID
@@ -224,14 +224,14 @@ driverController.put("/update", upload.single("image"), async (req, res) => {
     }
     // Handle image upload if a new image is provided
     if (req.file) {
-      let image = await cloudinary.uploader.upload(req.file.path, function (err, result) {
+      let profilePic = await cloudinary.uploader.upload(req.file.path, function (err, result) {
         if (err) {
           return err;
         } else {
           return result;
         }
       });
-      updatedData = { ...req.body, image: image.url };
+      updatedData = { ...req.body, profilePic: profilePic.url };
     }
     // Update the user in the database
     const updatedUserData = await Driver.findByIdAndUpdate(id, updatedData, {
@@ -250,6 +250,10 @@ driverController.put("/update", upload.single("image"), async (req, res) => {
     });
   }
 });
+
+
+
+
 driverController.post("/list", async (req, res) => {
   try {
     const { searchKey = "", status, pageNo = 1, pageCount = 10, sortByField, sortByOrder } = req.body;
@@ -279,6 +283,7 @@ driverController.post("/list", async (req, res) => {
     });
   }
 });
+
 driverController.post("/create", async (req, res) => {
   try {
     const driver = await Driver.create(req.body);
@@ -294,4 +299,6 @@ driverController.post("/create", async (req, res) => {
     });
   }
 });
+
+
 module.exports = driverController;
