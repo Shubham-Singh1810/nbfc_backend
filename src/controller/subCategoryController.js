@@ -182,92 +182,92 @@ subCategoryController.delete("/delete/:id", async (req, res) => {
 });
 
 
-subCategoryController.get("/details/:id", auth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const subCategoryDetails = await subCategory.findOne({ _id: id });
-    const serviceList = await service.find({ subCategoryId: id });
-    const repairList = await repair.find({ subCategoryId: id });
-    const installationList = await installation.find({ subCategoryId: id });
+// subCategoryController.get("/details/:id", auth, async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const subCategoryDetails = await subCategory.findOne({ _id: id });
+//     const serviceList = await service.find({ subCategoryId: id });
+//     const repairList = await repair.find({ subCategoryId: id });
+//     const installationList = await installation.find({ subCategoryId: id });
 
-    // Wishlist IDs extract karna
-    const wishListIds = req.user.wishList.map((item) => item.modelId.toString());
+//     // Wishlist IDs extract karna
+//     const wishListIds = req.user.wishList.map((item) => item.modelId.toString());
 
-    // isAdded flag set karna
-    const updateListWithWishlist = (list, type) => {
-      return list.map((item) => ({
-        ...item._doc,
-        isFavourite: wishListIds.includes(item._id.toString()) && 
-                 req.user.wishList.some(w => w.modelId.toString() === item._id.toString() && w.modelType === type)
-      }));
-    };
+//     // isAdded flag set karna
+//     const updateListWithWishlist = (list, type) => {
+//       return list.map((item) => ({
+//         ...item._doc,
+//         isFavourite: wishListIds.includes(item._id.toString()) && 
+//                  req.user.wishList.some(w => w.modelId.toString() === item._id.toString() && w.modelType === type)
+//       }));
+//     };
 
-    const updatedServiceList = updateListWithWishlist(serviceList, "service");
-    const updatedRepairList = updateListWithWishlist(repairList, "repair");
-    const updatedInstallationList = updateListWithWishlist(installationList, "installation");
+//     const updatedServiceList = updateListWithWishlist(serviceList, "service");
+//     const updatedRepairList = updateListWithWishlist(repairList, "repair");
+//     const updatedInstallationList = updateListWithWishlist(installationList, "installation");
 
-    sendResponse(res, 200, "Success", {
-      message: "Services of sub category retrieved successfully!",
-      data: {
-        subCategoryDetails,
-        serviceList: updatedServiceList,
-        repairList: updatedRepairList,
-        installationList: updatedInstallationList
-      },
-      statusCode: 200
-    });
-  } catch (error) {
-    console.error(error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-      statusCode: 500
-    });
-  }
-});
+//     sendResponse(res, 200, "Success", {
+//       message: "Services of sub category retrieved successfully!",
+//       data: {
+//         subCategoryDetails,
+//         serviceList: updatedServiceList,
+//         repairList: updatedRepairList,
+//         installationList: updatedInstallationList
+//       },
+//       statusCode: 200
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error",
+//       statusCode: 500
+//     });
+//   }
+// });
 
 
 
-subCategoryController.put("/update-banner", upload.single("banner"), async (req, res) => {
-  try {
-    const id = req.body._id;
+// subCategoryController.put("/update-banner", upload.single("banner"), async (req, res) => {
+//   try {
+//     const id = req.body._id;
 
-    // Find the category by ID
-    const subCategoryData = await subCategory.findById(id);
-    if (!subCategoryData) {
-      return sendResponse(res, 404, "Failed", {
-        message: "Sub Category not found",
-      });
-    }
+//     // Find the category by ID
+//     const subCategoryData = await subCategory.findById(id);
+//     if (!subCategoryData) {
+//       return sendResponse(res, 404, "Failed", {
+//         message: "Sub Category not found",
+//       });
+//     }
 
-    let updatedData = { ...req.body };
+//     let updatedData = { ...req.body };
 
-    // If a new image is uploaded
-    if (req.file) {
+//     // If a new image is uploaded
+//     if (req.file) {
       
       
    
-      // Upload the new image to Cloudinary
-      const banner = await cloudinary.uploader.upload(req.file.path);
-      updatedData.banner = banner.url;
-    }
+//       // Upload the new image to Cloudinary
+//       const banner = await cloudinary.uploader.upload(req.file.path);
+//       updatedData.banner = banner.url;
+//     }
 
-    // Update the category in the database
-    const updatedSubCategory = await subCategory.findByIdAndUpdate(id, updatedData, {
-      new: true, // Return the updated document
-    });
+//     // Update the category in the database
+//     const updatedSubCategory = await subCategory.findByIdAndUpdate(id, updatedData, {
+//       new: true, // Return the updated document
+//     });
 
-    sendResponse(res, 200, "Success", {
-      message: "Sub Category Banner updated successfully!",
-      data: updatedSubCategory,
-      statusCode:200
-    });
-  } catch (error) {
-    console.error(error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-    });
-  }
-});
+//     sendResponse(res, 200, "Success", {
+//       message: "Sub Category Banner updated successfully!",
+//       data: updatedSubCategory,
+//       statusCode:200
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error",
+//     });
+//   }
+// });
 
 
 module.exports = subCategoryController;
