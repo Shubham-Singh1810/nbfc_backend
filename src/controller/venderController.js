@@ -23,7 +23,7 @@ venderController.post("/sign-up", upload.single("profilePic"), async (req, res) 
     // Generate OTP
     const otp = generateOTP();
 
-    let profilePic
+    let profilePic;
 
     if (req.file) {
       let profilePic = await cloudinary.uploader.upload(
@@ -43,7 +43,7 @@ venderController.post("/sign-up", upload.single("profilePic"), async (req, res) 
     let newVender = await Vender.create({
       ...req.body,
       phoneOtp: otp,
-      profilePic
+      profilePic :profilePic
     });
 
     // Generate JWT token
