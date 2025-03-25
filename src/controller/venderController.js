@@ -279,7 +279,7 @@ venderController.put(
       }
 
       const updatedUserData = await Vender.findByIdAndUpdate(
-        id,
+        req.body.id,
         {
           ...req.body,
           passBook,
