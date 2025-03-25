@@ -33,42 +33,22 @@ const driverSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  password: {
-    type: String,
+  isEmailVerified: {
+    type: Boolean,
+    default: false,
   },
   emailOtp: {
-    type: String,
-  },
-  phoneOtp: {
-    type: String,
-  },
-  token: {
     type: String,
   },
   phone: {
     type: String,
     required: true,
   },
+  phoneOtp: {
+    type: String,
+  },
   phoneRejectReason: {
     type: String,
-  },
-  profilePic: {
-    type: String,
-  },
-  isProfilePicApproved: {
-    type: Boolean,
-    default: false,
-  },
-  profilePicRejectReason: {
-    type: String,
-  },
-  isEmailVerified: {
-    type: Boolean,
-    default: false,
-  },
-  isEmailApproved: {
-    type: Boolean,
-    default: false,
   },
   isPhoneVerified: {
     type: Boolean,
@@ -78,6 +58,17 @@ const driverSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  isProfilePicApproved: {
+    type: Boolean,
+    default: false,
+  },
+  profilePic: {
+    type: String,
+  },
+  profilePicRejectReason: {
+    type: String,
+  },
+
   countryCode: {
     type: String,
     default: "91",
@@ -86,7 +77,7 @@ const driverSchema = mongoose.Schema({
     type: String,
     default: "incompleted",
     required: true,
-    enum: ["incompleted", "completed", "approved", "rejected"],
+    enum: ["incompleted", "completed", "approved", "rejected", "reUploaded"],
   },
   dlFrontImage: {
     type: String,
@@ -142,6 +133,12 @@ const driverSchema = mongoose.Schema({
     type: String,
   },
   iosDeviceId: {
+    type: String,
+  },
+  token: {
+    type: String,
+  },
+  password: {
     type: String,
   },
 });
