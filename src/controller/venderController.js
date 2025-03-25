@@ -9,7 +9,7 @@ const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 
-venderController.post("/sign-up", async (req, res) => {
+venderController.post("/sign-up", upload.single("profilePic"), async (req, res) => {
   try {
     // Check if the phone number is unique
     const user = await Vender.findOne({ phone: req.body.phone });
@@ -23,10 +23,27 @@ venderController.post("/sign-up", async (req, res) => {
     // Generate OTP
     const otp = generateOTP();
 
+    let profilePic
+
+    if (req.file) {
+      let image = await cloudinary.uploader.upload(
+        req.file.path,
+        function (err, result) {
+          if (err) {
+            return err;
+          } else {
+            return result;
+          }
+        }
+      );
+      profilePic = { ...req.body, profilePic: profilePic.url };
+    }
+
     // Create a new user with provided details
     let newVender = await Vender.create({
       ...req.body,
       phoneOtp: otp,
+      profilePic
     });
 
     // Generate JWT token
@@ -260,7 +277,7 @@ venderController.put(
         );
         profilePic = image.url;
       }
-      
+
       const updatedUserData = await Vender.findByIdAndUpdate(
         id,
         {
