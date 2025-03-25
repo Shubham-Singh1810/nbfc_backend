@@ -26,7 +26,7 @@ venderController.post("/sign-up", upload.single("profilePic"), async (req, res) 
     let profilePic
 
     if (req.file) {
-      let image = await cloudinary.uploader.upload(
+      let profilePic = await cloudinary.uploader.upload(
         req.file.path,
         function (err, result) {
           if (err) {
