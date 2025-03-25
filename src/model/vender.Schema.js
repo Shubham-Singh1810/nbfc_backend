@@ -71,7 +71,7 @@ const venderSchema = mongoose.Schema({
     type: String,
     default: "incompleted",
     required: true,
-      enum: ["incompleted", "otpVerified", "step2Verified", "completed", "approved", "rejected"],
+      enum: ["incompleted", "otpVerified", "storeDetailsCompleted", "completed", "approved", "rejected"],
   },
   pincode: {
     type: String,
@@ -158,6 +158,39 @@ const venderSchema = mongoose.Schema({
   iosDeviceId: {
     type: String,
   },
+  bussinessLicensee:{
+    type: String,
+  },
+  storeLogo:{
+    type: String,
+  },
+  accountNumner:{
+    type: String,
+  },
+  ifceCode:{
+    type: String,
+  },
+  panNumber:{
+    type: String,
+  },
+  upiId:{
+    type: String,
+  },
+  accountHolderName:{
+    type: String,
+  },
+  bankName:{
+    type: String,
+  },
+  signature:{
+    type: String,
+  },
+  adharCard:{
+    type: String,
+  },
+  passBook:{
+    type : String
+  }
 });
 
 venderSchema.plugin(timestamps);

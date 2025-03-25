@@ -236,60 +236,6 @@ driverController.get("/details/:id", async (req, res) => {
   }
 });
 
-// driverController.put(
-//   "/update",
-//   upload.fields([
-//     { name: "dlFrontImage", maxCount: 1 },
-//     { name: "dlBackImage", maxCount: 1 },
-//     { name: "profilePic", maxCount: 1 },
-//   ]),
-//   async (req, res) => {
-//     try {
-//       const id = req.body._id;
-//       // Find the user by ID
-//       const userData = await Driver.findById(id);
-//       if (!userData) {
-//         return sendResponse(res, 404, "Failed", {
-//           message: "Driver not found",
-//         });
-//       }
-
-//       let updatedData = { ...req.body };
-//       if (req.body.firstName && req.body.lastName && req.body.email) {
-//         updatedData = { ...req.body, profileStatus: "completed" };
-//       }
-//       // Handle image upload if a new image is provided
-//       if (req.file) {
-//         let profilePic = await cloudinary.uploader.upload(
-//           req.file.path,
-//           function (err, result) {
-//             if (err) {
-//               return err;
-//             } else {
-//               return result;
-//             }
-//           }
-//         );
-//         updatedData = { ...req.body, profilePic: profilePic.url };
-//       }
-//       // Update the user in the database
-//       const updatedUserData = await Driver.findByIdAndUpdate(id, updatedData, {
-//         new: true, // Return the updated document
-//       });
-
-//       sendResponse(res, 200, "Success", {
-//         message: "Driver updated successfully!",
-//         data: updatedUserData,
-//         statusCode: 200,
-//       });
-//     } catch (error) {
-//       console.error(error);
-//       sendResponse(res, 500, "Failed", {
-//         message: error.message || "Internal server error",
-//       });
-//     }
-//   }
-// );
 
 driverController.post("/list", async (req, res) => {
   try {
@@ -382,7 +328,6 @@ driverController.put(
   async (req, res) => {
     try {
       const id = req.body._id;
-      // Find the user by ID
       const userData = await Driver.findById(id);
       if (!userData) {
         return sendResponse(res, 404, "Failed", {
@@ -390,7 +335,6 @@ driverController.put(
         });
       }
 
-      let updatedData = { ...req.body };
       let dlFrontImage, dlBackImage, profilePic;
 
       if (req.files["dlFrontImage"]) {
