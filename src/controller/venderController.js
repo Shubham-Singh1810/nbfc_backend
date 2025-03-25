@@ -225,7 +225,7 @@ venderController.put(
     { name: "bussinessLicensee", maxCount: 1 },
     { name: "storeLogo", maxCount: 1 },
     { name: "signature", maxCount: 1 },
-    { name: "aadharCard", maxCount: 1 },
+    { name: "adharCard", maxCount: 1 },
     { name: "passBook", maxCount: 1 },
     { name: "profilePic", maxCount: 1 },
   ]),

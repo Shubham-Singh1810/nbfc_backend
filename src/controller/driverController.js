@@ -327,45 +327,59 @@ driverController.put(
   ]),
   async (req, res) => {
     try {
-      const id = req.body._id;
+      const id = req.body.id;
       const userData = await Driver.findById(id);
       if (!userData) {
         return sendResponse(res, 404, "Failed", {
           message: "Driver not found",
         });
       }
-
-      let dlFrontImage, dlBackImage, profilePic;
-
-      if (req.files["dlFrontImage"]) {
-        let image = await cloudinary.uploader.upload(
-          req.files["dlFrontImage"][0].path
-        );
-        dlFrontImage = image.url;
+      let updateData = {...req.body}
+      if(req.file || req.files){
+      
+        if (req.files["dlFrontImage"]) {
+          let image = await cloudinary.uploader.upload(
+            req.files["dlFrontImage"][0].path
+          );
+          updateData = {...req.body, dlFrontImage: image.url};
+        }
+  
+        if (req.files["dlBackImage"]) {
+          let image = await cloudinary.uploader.upload(
+            req.files["dlBackImage"][0].path
+          );
+          updateData = {...req.body, dlBackImage: image.url};
+        }
+        if (req.files["profilePic"]) {
+          let image = await cloudinary.uploader.upload(
+            req.files["profilePic"][0].path
+          );
+          updateData = {...req.body, profilePic: image.url};
+        }
+        
+        const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
+          new: true, 
+        });
+  
+        sendResponse(res, 200, "Success", {
+          message: "Driver updated successfully!",
+          data: updatedUserData,
+          statusCode: 200,
+        });
       }
+      else{
+        const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
+          new: true, 
+        });
+  
+        sendResponse(res, 200, "Success", {
+          message: "Driver updated successfully!",
+          data: updatedUserData,
+          statusCode: 200,
+        });
 
-      if (req.files["dlBackImage"]) {
-        let image = await cloudinary.uploader.upload(
-          req.files["dlBackImage"][0].path
-        );
-        dlBackImage = image.url;
-      }
-      if (req.files["profilePic"]) {
-        let image = await cloudinary.uploader.upload(
-          req.files["profilePic"][0].path
-        );
-        profilePic = image.url;
       }
       
-      const updatedUserData = await Driver.findByIdAndUpdate(id, {...req.body,dlFrontImage,dlBackImage, profilePic }, {
-        new: true, 
-      });
-
-      sendResponse(res, 200, "Success", {
-        message: "Driver updated successfully!",
-        data: updatedUserData,
-        statusCode: 200,
-      });
     } catch (error) {
       console.error(error);
       sendResponse(res, 500, "Failed", {

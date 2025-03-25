@@ -61,66 +61,63 @@ const venderSchema = mongoose.Schema({
   storeDescription: {
     type: String,
   },
-  bussinessLicensee:{
+  bussinessLicensee: {
     type: String,
   },
-  storeLogo:{
+  storeLogo: {
     type: String,
   },
-
 
   // account details
-  panCard: {
+
+  accountNumner: {
     type: String,
   },
-  accountNumner:{
+  ifceCode: {
     type: String,
   },
-  ifceCode:{
+  panNumber: {
     type: String,
   },
-  panNumber:{
+  upiId: {
     type: String,
   },
-  upiId:{
+  accountHolderName: {
     type: String,
   },
-  accountHolderName:{
+  bankName: {
     type: String,
   },
-  bankName:{
+  bankBranchCode: {
     type: String,
   },
-  bankBranchCode:{
+  signature: {
     type: String,
   },
-  signature:{
+  adharCard: {
     type: String,
   },
-  adharCard:{
+  passBook: {
     type: String,
-  },
-  passBook:{
-    type : String
   },
 
   // details for verification
-  
+
   isFirstNameApproved: {
     type: Boolean,
     default: false,
   },
-  
+
   isLastNameApproved: {
     type: Boolean,
     default: false,
   },
-  
+
   isEmailApproved: {
     type: Boolean,
     default: false,
   },
-  
+
   emailOtp: {
     type: Number,
   },
@@ -130,8 +127,7 @@ const venderSchema = mongoose.Schema({
   token: {
     type: String,
   },
-  
-  
+
   isProfilePicApproved: {
     type: Boolean,
     default: false,
@@ -156,23 +152,30 @@ const venderSchema = mongoose.Schema({
     type: String,
     default: "91",
   },
-  profileStatus:{
+  profileStatus: {
     type: String,
     default: "incompleted",
     required: true,
-      enum: ["incompleted", "otpVerified", "storeDetailsCompleted", "completed", "approved", "rejected"],
+    enum: [
+      "incompleted",
+      "otpVerified",
+      "storeDetailsCompleted",
+      "completed",
+      "approved",
+      "rejected",
+    ],
   },
-  
+
   isPincodeApproved: {
     type: Boolean,
     default: false,
   },
-  
+
   isAddressApproved: {
     type: Boolean,
     default: false,
   },
-  
+
   taxName: {
     type: String,
   },
@@ -187,37 +190,36 @@ const venderSchema = mongoose.Schema({
   },
   isStoreNameVerified: {
     type: Boolean,
-    default:false,
+    default: false,
   },
   isStoreUrlVerified: {
     type: Boolean,
-    default:false,
+    default: false,
   },
   isStoreDescriptionVerified: {
     type: Boolean,
-    default:false,
+    default: false,
   },
   isStoreAddressVerified: {
     type: Boolean,
-    default:false,
+    default: false,
   },
   isTaxNameVerified: {
     type: Boolean,
-    default:false,
+    default: false,
   },
   isTaxNumberVerified: {
     type: Boolean,
-    default:false,
+    default: false,
   },
   isStoreLogoVerified: {
     type: Boolean,
-    default:false,
+    default: false,
   },
   isSignatureVerified: {
     type: Boolean,
-    default:false,
+    default: false,
   },
-  
 });
 
 venderSchema.plugin(timestamps);
