@@ -26,7 +26,7 @@ venderController.post("/sign-up", upload.single("profilePic"), async (req, res) 
     let profilePic;
 
     if (req.file) {
-      let profilePic = await cloudinary.uploader.upload(
+      let profilePicData = await cloudinary.uploader.upload(
         req.file.path,
         function (err, result) {
           if (err) {
@@ -36,7 +36,7 @@ venderController.post("/sign-up", upload.single("profilePic"), async (req, res) 
           }
         }
       );
-      profilePic = { ...req.body, profilePic: profilePic.url };
+      profilePic =  profilePicData.url ;
     }
 
     // Create a new user with provided details
