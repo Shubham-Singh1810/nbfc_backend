@@ -3,30 +3,115 @@ const timestamps = require("mongoose-timestamp");
 const { type } = require("os");
 
 const venderSchema = mongoose.Schema({
-  firstName: {
+  // sign up ---fields
+  profilePic: {
     type: String,
   },
-  isFirstNameApproved: {
-    type: Boolean,
-    default: false,
+  firstName: {
+    type: String,
   },
   lastName: {
     type: String,
   },
-  isLastNameApproved: {
-    type: Boolean,
-    default: false,
-  },
   email: {
     type: String,
   },
-  isEmailApproved: {
-    type: Boolean,
-    default: false,
+  phone: {
+    type: Number,
+    required: true,
   },
   password: {
     type: String,
   },
+  lat: {
+    type: String,
+  },
+  long: {
+    type: String,
+  },
+  androidDeviceId: {
+    type: String,
+  },
+  iosDeviceId: {
+    type: String,
+  },
+
+  // store details
+  storeName: {
+    type: String,
+  },
+  storeUrl: {
+    type: String,
+  },
+  storeDescription: {
+    type: String,
+  },
+  storeAddress: {
+    type: String,
+  },
+  pincode: {
+    type: String,
+  },
+  bussinessLicensee:{
+    type: String,
+  },
+  storeLogo:{
+    type: String,
+  },
+  
+
+  // account details
+  panCard: {
+    type: String,
+  },
+  accountNumner:{
+    type: String,
+  },
+  ifceCode:{
+    type: String,
+  },
+  panNumber:{
+    type: String,
+  },
+  upiId:{
+    type: String,
+  },
+  accountHolderName:{
+    type: String,
+  },
+  bankName:{
+    type: String,
+  },
+  bankBranchCode:{
+    type: String,
+  },
+  signature:{
+    type: String,
+  },
+  adharCard:{
+    type: String,
+  },
+  passBook:{
+    type : String
+  },
+
+  // details for verification
+  
+  isFirstNameApproved: {
+    type: Boolean,
+    default: false,
+  },
+  
+  isLastNameApproved: {
+    type: Boolean,
+    default: false,
+  },
+  
+  isEmailApproved: {
+    type: Boolean,
+    default: false,
+  },
+  
   emailOtp: {
     type: Number,
   },
@@ -36,13 +121,8 @@ const venderSchema = mongoose.Schema({
   token: {
     type: String,
   },
-  phone: {
-    type: Number,
-    required: true,
-  },
-  profilePic: {
-    type: String,
-  },
+  
+  
   isProfilePicApproved: {
     type: Boolean,
     default: false,
@@ -73,32 +153,17 @@ const venderSchema = mongoose.Schema({
     required: true,
       enum: ["incompleted", "otpVerified", "storeDetailsCompleted", "completed", "approved", "rejected"],
   },
-  pincode: {
-    type: String,
-  },
+  
   isPincodeApproved: {
     type: Boolean,
     default: false,
   },
-  address: {
-    type: String,
-  },
+  
   isAddressApproved: {
     type: Boolean,
     default: false,
   },
-  storeName: {
-    type: String,
-  },
-  storeUrl: {
-    type: String,
-  },
-  storeDescription: {
-    type: String,
-  },
-  storeAddress: {
-    type: String,
-  },
+  
   taxName: {
     type: String,
   },
@@ -143,54 +208,7 @@ const venderSchema = mongoose.Schema({
     type: Boolean,
     default:false,
   },
-  panCard: {
-    type: String,
-  },
-  lat: {
-    type: String,
-  },
-  long: {
-    type: String,
-  },
-  androidDeviceId: {
-    type: String,
-  },
-  iosDeviceId: {
-    type: String,
-  },
-  bussinessLicensee:{
-    type: String,
-  },
-  storeLogo:{
-    type: String,
-  },
-  accountNumner:{
-    type: String,
-  },
-  ifceCode:{
-    type: String,
-  },
-  panNumber:{
-    type: String,
-  },
-  upiId:{
-    type: String,
-  },
-  accountHolderName:{
-    type: String,
-  },
-  bankName:{
-    type: String,
-  },
-  signature:{
-    type: String,
-  },
-  adharCard:{
-    type: String,
-  },
-  passBook:{
-    type : String
-  }
+  
 });
 
 venderSchema.plugin(timestamps);
