@@ -239,7 +239,7 @@ venderController.put(
           statusCode: 404,
         });
       }
-      let bussinessLicensee, storeLogo, signature, aadharCard, passBook;
+      let bussinessLicensee, storeLogo, signature, aadharCard, passBook, profilePic;
 
       if (req.files["bussinessLicensee"]) {
         let image = await cloudinary.uploader.upload(
