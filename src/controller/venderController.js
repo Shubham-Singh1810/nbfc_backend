@@ -220,7 +220,7 @@ venderController.get("/details/:id", async (req, res) => {
 });
 
 venderController.put(
-  "/update-store-details",
+  "/update",
   upload.fields([
     { name: "bussinessLicensee", maxCount: 1 },
     { name: "storeLogo", maxCount: 1 },

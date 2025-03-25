@@ -43,13 +43,22 @@ const venderSchema = mongoose.Schema({
   storeUrl: {
     type: String,
   },
-  storeDescription: {
+  address: {
     type: String,
   },
-  storeAddress: {
+  state: {
+    type: String,
+  },
+  district: {
     type: String,
   },
   pincode: {
+    type: String,
+  },
+  gstNumber: {
+    type: String,
+  },
+  storeDescription: {
     type: String,
   },
   bussinessLicensee:{
@@ -58,7 +67,7 @@ const venderSchema = mongoose.Schema({
   storeLogo:{
     type: String,
   },
-  
+
 
   // account details
   panCard: {
