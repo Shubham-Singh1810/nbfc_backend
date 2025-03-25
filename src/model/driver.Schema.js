@@ -10,6 +10,9 @@ const driverSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  firstNameRejectReason: {
+    type: String,
+  },
   lastName: {
     type: String,
   },
@@ -17,7 +20,13 @@ const driverSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  lastNameRejectReason: {
+    type: String,
+  },
   email: {
+    type: String,
+  },
+  emailRejectReason: {
     type: String,
   },
   isEmailApproved: {
@@ -40,12 +49,18 @@ const driverSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  phoneRejectReason: {
+    type: String,
+  },
   profilePic: {
     type: String,
   },
   isProfilePicApproved: {
     type: Boolean,
     default: false,
+  },
+  profilePicRejectReason: {
+    type: String,
   },
   isEmailVerified: {
     type: Boolean,
@@ -67,15 +82,18 @@ const driverSchema = mongoose.Schema({
     type: String,
     default: "91",
   },
-  profileStatus:{
+  profileStatus: {
     type: String,
     default: "incompleted",
     required: true,
-      enum: ["incompleted", "completed", "approved", "rejected"],
+    enum: ["incompleted", "completed", "approved", "rejected"],
   },
   dlFrontImage: {
     type: String,
     required: true,
+  },
+  dlFrontImageRejectReason: {
+    type: String,
   },
   isDlFrontImageApproved: {
     type: Boolean,
@@ -85,6 +103,9 @@ const driverSchema = mongoose.Schema({
     type: String,
     // required: true,
   },
+  dlBacktImageRejectReason: {
+    type: String,
+  },
   isDlBackImageApproved: {
     type: Boolean,
     default: false,
@@ -92,6 +113,9 @@ const driverSchema = mongoose.Schema({
   pincode: {
     type: String,
     required: true,
+  },
+  pincodeRejectReason: {
+    type: String,
   },
   isPincodeApproved: {
     type: Boolean,
@@ -101,22 +125,25 @@ const driverSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  addressRejectReason: {
+    type: String,
+  },
   isAddressApproved: {
     type: Boolean,
     default: false,
   },
-   lat: {
-      type: String,
-    },
-    long: {
-      type: String,
-    },
-    androidDeviceId: {
-      type: String,
-    },
-    iosDeviceId: {
-      type: String,
-    },
+  lat: {
+    type: String,
+  },
+  long: {
+    type: String,
+  },
+  androidDeviceId: {
+    type: String,
+  },
+  iosDeviceId: {
+    type: String,
+  },
 });
 
 driverSchema.plugin(timestamps);

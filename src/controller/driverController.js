@@ -10,7 +10,7 @@ const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 
 
-driverController.post("/sign-up", upload.fields([{ name: "dlFrontImage", maxCount: 1 }, { name: "dlBackImage", maxCount: 1 }]), async (req, res) => {
+driverController.post("/sign-up", upload.fields([{ name: "dlFrontImage", maxCount: 1 }, { name: "dlBackImage", maxCount: 1 }, { name: "profilePic", maxCount: 1 }]), async (req, res) => {
     try {
       // Check if the phone number is unique
       const user = await Driver.findOne({ phone: req.body.phone });
@@ -25,7 +25,7 @@ driverController.post("/sign-up", upload.fields([{ name: "dlFrontImage", maxCoun
       const otp = generateOTP();
   
       // Upload images to Cloudinary
-      let dlFrontImage, dlBackImage;
+      let dlFrontImage, dlBackImage, profilePic;
       
       if (req.files["dlFrontImage"]) {
         let image = await cloudinary.uploader.upload(req.files["dlFrontImage"][0].path);
@@ -36,13 +36,18 @@ driverController.post("/sign-up", upload.fields([{ name: "dlFrontImage", maxCoun
         let image = await cloudinary.uploader.upload(req.files["dlBackImage"][0].path);
         dlBackImage = image.url;
       }
+      if (req.files["profilePic"]) {
+        let image = await cloudinary.uploader.upload(req.files["profilePic"][0].path);
+        profilePic = image.url;
+      }
   
       // Create a new user with provided details
       let newDriver = await Driver.create({ 
         ...req.body, 
         phoneOtp: otp, 
         dlFrontImage, 
-        dlBackImage 
+        dlBackImage,
+        profilePic 
       });
   
       // Generate JWT token
@@ -208,7 +213,11 @@ driverController.get("/details/:id", async (req, res) => {
 });
 
 
-driverController.put("/update", upload.single("profilePic"), async (req, res) => {
+driverController.put("/update",  upload.fields([
+  { name: "dlFrontImage", maxCount: 1 },
+  { name: "dlBackImage", maxCount: 1 },
+  { name: "profilePic", maxCount: 1 },
+]), async (req, res) => {
   try {
     const id = req.body._id;
     // Find the user by ID
@@ -218,6 +227,7 @@ driverController.put("/update", upload.single("profilePic"), async (req, res) =>
         message: "Driver not found",
       });
     }
+
     let updatedData = { ...req.body };
     if (req.body.firstName && req.body.lastName && req.body.email) {
       updatedData = { ...req.body, profileStatus: "completed" };
@@ -250,8 +260,6 @@ driverController.put("/update", upload.single("profilePic"), async (req, res) =>
     });
   }
 });
-
-
 
 
 driverController.post("/list", async (req, res) => {
