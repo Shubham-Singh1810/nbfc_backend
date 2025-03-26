@@ -7,7 +7,7 @@ require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 
-adminController.post("/create", upload.single("image"), async (req, res) => {
+adminController.post("/create", upload.single("profilePic"), async (req, res) => {
   try {
     let obj;
     if (req.file) {
@@ -37,8 +37,8 @@ adminController.post("/create", upload.single("image"), async (req, res) => {
 
 adminController.post("/login", async (req, res) => {
     try {
-      const { phone, password } = req.body;
-      const user = await Admin.findOne({ phone, password });
+      const { email, password } = req.body;
+      const user = await Admin.findOne({ email, password });
       if (user) {
         return sendResponse(res, 200, "Success", {
           message: "User logged in successfully",
