@@ -9,9 +9,11 @@ const subCategory = require("./controller/subCategoryController");
 const brandController = require("./controller/brandController");
 const attributeSetController = require("./controller/attributeSetController");
 const attributeController = require("./controller/attributeController");
+const adminController = require("./controller/adminController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
+router.use("/admin", adminController);
 router.use("/banner", bannerController);
 router.use("/vender", venderController);
 router.use("/category", categoryController);
