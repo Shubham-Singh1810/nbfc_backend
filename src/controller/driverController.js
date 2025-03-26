@@ -253,7 +253,7 @@ driverController.post("/list", async (req, res) => {
     const sortField = sortByField || "createdAt";
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };
-    const userList = await Vender.find(query)
+    const userList = await Driver.find(query)
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
