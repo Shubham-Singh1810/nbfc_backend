@@ -11,10 +11,6 @@ const attributeSchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  image: {
-    type: String,
-    required: true,
-  },
   value: {
     type: [String],
     required: true,

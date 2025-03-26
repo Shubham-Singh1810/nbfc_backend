@@ -10,11 +10,7 @@ const attributeSetSchema = mongoose.Schema({
   status: {
     type: Boolean,
     default: true,
-  },
-  image: {
-    type: String,
-    required: true,
-  },
+  }
 });
 
 attributeSetSchema.plugin(timestamps);

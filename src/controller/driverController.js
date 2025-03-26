@@ -236,7 +236,6 @@ driverController.get("/details/:id", async (req, res) => {
   }
 });
 
-
 driverController.post("/list", async (req, res) => {
   try {
     const {
@@ -296,7 +295,7 @@ driverController.post("/create", async (req, res) => {
   }
 });
 
-driverController.post("/delete/:id", async (req, res) => {
+driverController.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const driver = await Driver.findById(id);
@@ -307,7 +306,7 @@ driverController.post("/delete/:id", async (req, res) => {
     }
     await Driver.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
-      message: "Driver and associated image deleted successfully!",
+      message: "Driver deleted successfully!",
       statusCode: 200,
     });
   } catch (error) {
@@ -318,9 +317,7 @@ driverController.post("/delete/:id", async (req, res) => {
   }
 });
 
-driverController.put(
-  "/update",
-  upload.fields([
+driverController.put("/update", upload.fields([
     { name: "dlFrontImage", maxCount: 1 },
     { name: "dlBackImage", maxCount: 1 },
     { name: "profilePic", maxCount: 1 },
@@ -388,4 +385,5 @@ driverController.put(
     }
   }
 );
+
 module.exports = driverController;

@@ -219,9 +219,7 @@ venderController.get("/details/:id", async (req, res) => {
   }
 });
 
-venderController.put(
-  "/update",
-  upload.fields([
+venderController.put("/update", upload.fields([
     { name: "bussinessLicensee", maxCount: 1 },
     { name: "storeLogo", maxCount: 1 },
     { name: "signature", maxCount: 1 },
@@ -306,5 +304,26 @@ venderController.put(
     }
   }
 );
+
+venderController.delete("/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vender = await Vender.findById(id);
+    if (!vender) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Vender not found",
+      });
+    }
+    await Vender.findByIdAndDelete(id);
+    sendResponse(res, 200, "Success", {
+      message: "Vender deleted successfully!",
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
 
 module.exports = venderController;
