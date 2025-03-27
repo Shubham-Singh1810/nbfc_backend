@@ -10,6 +10,7 @@ const brandController = require("./controller/brandController");
 const attributeSetController = require("./controller/attributeSetController");
 const attributeController = require("./controller/attributeController");
 const adminController = require("./controller/adminController");
+const productController = require("./controller/productController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -21,6 +22,7 @@ router.use("/sub-category", subCategory);
 router.use("/brand", brandController);
 router.use("/attribute-set", attributeSetController);
 router.use("/attribute", attributeController);
+router.use("/product", productController);
 
 
 module.exports = router;
