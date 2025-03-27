@@ -8,21 +8,49 @@ const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const auth = require("../utils/auth");
 
-productController.post("/create", async (req, res) => {
-  try {
-    const productCreated = await Product.create(req.body);
-    sendResponse(res, 200, "Success", {
-      message: "product created successfully!",
-      data: productCreated,
-      statusCode: 200,
-    });
-  } catch (error) {
-    console.error(error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-    });
-  }
-});
+productController.post("/create", upload.fields([
+    { name: "productHeroImage", maxCount: 5 },
+    { name: "productGallery", maxCount: 5 }
+  ]), async (req, res) => {
+    try {
+      let productHeroImage = [];
+      let productGallery = [];
+  
+      if (req.files["productHeroImage"]) {
+        for (let file of req.files["productHeroImage"]) {
+          let result = await cloudinary.uploader.upload(file.path);
+          productHeroImage.push(result.url);
+        }
+      }
+  
+      if (req.files["productGallery"]) {
+        for (let file of req.files["productGallery"]) {
+          let result = await cloudinary.uploader.upload(file.path);
+          productGallery.push(result.url);
+        }
+      }
+  
+      const productData = {
+        ...req.body,
+        productHeroImage,
+        productGallery,
+      };
+  
+      const productCreated = await Product.create(productData);
+      sendResponse(res, 200, "Success", {
+        message: "Product created successfully!",
+        data: productCreated,
+        statusCode: 200,
+      });
+    } catch (error) {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+        statusCode: 500,
+      });
+    }
+  });
+  
 
 productController.post("/list", async (req, res) => {
   try {
@@ -73,39 +101,67 @@ productController.post("/list", async (req, res) => {
   }
 });
 
-productController.put("/update", async (req, res) => {
-  try {
-    const id = req.body._id;
+productController.put("/update", upload.fields([
+    { name: "productHeroImage", maxCount: 1 },
+    { name: "productGallery", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const id = req.body.id;
+      const productData = await Product.findById(id);
+      if (!productData) {
+        return sendResponse(res, 404, "Failed", {
+          message: "Product not found",
+        });
+      }
+      let updateData = {...req.body}
+      if(req.file || req.files){
+      
+        if (req.files["productHeroImage"]) {
+          let image = await cloudinary.uploader.upload(
+            req.files["productHeroImage"][0].path
+          );
+          updateData = {...req.body, productHeroImage: image.url};
+        }
+  
+        if (req.files["productGallery"]) {
+          let image = await cloudinary.uploader.upload(
+            req.files["productGallery"][0].path
+          );
+          updateData = {...req.body, productGallery: image.url};
+        }
+        
+        const updatedUserData = await Product.findByIdAndUpdate(id, updateData, {
+          new: true, 
+        });
+  
+        sendResponse(res, 200, "Success", {
+          message: "Product updated successfully!",
+          data: updatedUserData,
+          statusCode: 200,
+        });
+      }
+      else{
+        const updatedUserData = await Product.findByIdAndUpdate(id, updateData, {
+          new: true, 
+        });
+  
+        sendResponse(res, 200, "Success", {
+          message: "Driver updated successfully!",
+          data: updatedUserData,
+          statusCode: 200,
+        });
 
-    // Find the category by ID
-    const productData = await Product.findById(id);
-    if (!productData) {
-      return sendResponse(res, 404, "Failed", {
-        message: "Product not found",
+      }
+      
+    } catch (error) {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
       });
     }
-
-    let updatedData = { ...req.body };
-    // Update the category in the database
-    const updatedProduct = await Product.findByIdAndUpdate(
-      id,
-      updatedData,
-      {
-        new: true, // Return the updated document
-      }
-    );
-    sendResponse(res, 200, "Success", {
-      message: "Product updated successfully!",
-      data: updatedProduct,
-      statusCode: 200,
-    });
-  } catch (error) {
-    console.error(error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-    });
   }
-});
+);
 
 productController.delete("/delete/:id", async (req, res) => {
   try {

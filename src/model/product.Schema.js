@@ -8,7 +8,7 @@ const productSchema = mongoose.Schema({
     required: true,
   },
   productHeroImage: {
-    type: String,
+    type: [String],
   },
   productGallery: {
     type: [String],
@@ -38,7 +38,7 @@ const productSchema = mongoose.Schema({
   createdBY: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "venderId",
-    required: true,
+    // required: true,
   },
 });
 

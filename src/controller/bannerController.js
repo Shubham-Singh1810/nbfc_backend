@@ -7,6 +7,7 @@ require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 
+
 bannerController.post("/create", upload.single("image"), async (req, res) => {
   try {
     let obj;
@@ -34,6 +35,7 @@ bannerController.post("/create", upload.single("image"), async (req, res) => {
     });
   }
 });
+
 bannerController.post("/list", async (req, res) => {
   try {
     const {
@@ -70,6 +72,7 @@ bannerController.post("/list", async (req, res) => {
     });
   }
 });
+
 bannerController.delete("/delete/:id", async (req, res) => {
     try {
       const { id } = req.params;
@@ -103,6 +106,7 @@ bannerController.delete("/delete/:id", async (req, res) => {
       });
     }
 });
+
 bannerController.put("/update", upload.single("image"), async (req, res) => {
   try {
     const  id  = req.body._id;
@@ -144,4 +148,5 @@ bannerController.put("/update", upload.single("image"), async (req, res) => {
     });
   }
 });
+
 module.exports = bannerController;
