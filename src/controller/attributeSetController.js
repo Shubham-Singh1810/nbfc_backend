@@ -103,16 +103,19 @@ attributeSetController.delete("/delete/:id", async (req, res) => {
     if (!attributeSet) {
       return sendResponse(res, 404, "Failed", {
         message: "Attribute set not found",
+        statusCode: 404,
       });
     }
     await AttributeSet.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
       message: "Attribute set deleted successfully!",
+      statusCode:200
     });
   } catch (error) {
     console.error(error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
+      statusCode: 500,   
     });
   }
 });

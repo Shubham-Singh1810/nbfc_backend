@@ -99,7 +99,7 @@ venderController.post("/otp-verification", async (req, res) => {
     if (user) {
       const updatedVender = await Vender.findByIdAndUpdate(
         user._id,
-        { isPhoneVerified: true, profileStatus: "otpVerified" },
+        { isPhoneVerified: true,  profileStatus: req?.body?.isforgetPassword ? req?.body?.profileStatus:  "otpVerified" },
         { new: true }
       );
       return sendResponse(res, 200, "Success", {
