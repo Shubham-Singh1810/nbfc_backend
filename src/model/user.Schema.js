@@ -46,16 +46,13 @@ const userSchema = mongoose.Schema({
   profileStatus:{
     type: String,
     default: "incompleted",
-    required: true,
       enum: ["incompleted", "completed"],
   },
   pincode: {
     type: String,
-    required: true,
   },
   address: {
     type: String,
-    required: true,
   }
 });
 

@@ -20,7 +20,7 @@ userController.post("/send-otp", async (req, res) => {
       });
     }
     // Generate OTP
-    const otp = generateOTP();
+    const phoneOtp = generateOTP();
 
     // Check if the user exists
     let user = await User.findOne({ phone });
@@ -40,19 +40,19 @@ userController.post("/send-otp", async (req, res) => {
       user = await User.findByIdAndUpdate(user.id, { token }, { new: true });
     } else {
       // Update the existing user's OTP
-      user = await User.findByIdAndUpdate(user.id, { otp }, { new: true });
+      user = await User.findByIdAndUpdate(user.id, { phoneOtp }, { new: true });
     }
     const appHash = "ems/3nG2V1H"; // Apne app ka actual hash yahan dalein
 
     // Properly formatted OTP message for autofill
-    const otpMessage = `<#> ${otp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
+    const otpMessage = `<#> ${phoneOtp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
 
     let optResponse = await axios.post(
       `https://api.authkey.io/request?authkey=${
         process.env.AUTHKEY_API_KEY
       }&mobile=${phone}&country_code=91&sid=${
         process.env.AUTHKEY_SENDER_ID
-      }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
+      }&company=Acediva&otp=${phoneOtp}&message=${encodeURIComponent(otpMessage)}`
     );
 
     if (optResponse?.status == "200") {
