@@ -23,7 +23,7 @@ userController.post("/send-otp", async (req, res) => {
     const otp = generateOTP();
 
     // Check if the user exists
-    let user = await User.findOne({ phoneNumber });
+    let user = await User.findOne({ phone });
 
     if (!user) {
       // Create a new user with the provided details and OTP
@@ -50,7 +50,7 @@ userController.post("/send-otp", async (req, res) => {
     let optResponse = await axios.post(
       `https://api.authkey.io/request?authkey=${
         process.env.AUTHKEY_API_KEY
-      }&mobile=${phoneNumber}&country_code=91&sid=${
+      }&mobile=${phone}&country_code=91&sid=${
         process.env.AUTHKEY_SENDER_ID
       }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
     );
