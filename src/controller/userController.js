@@ -9,6 +9,72 @@ const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 
+userController.post("/send-otp", async (req, res) => {
+  try {
+    const {phone, ...otherDetails} = req.body;
+    // Check if the phone number is provided
+    if (!phone) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Phone number is required.",
+        statusCode: 400,
+      });
+    }
+    // Generate OTP
+    const otp = generateOTP();
+
+    // Check if the user exists
+    let user = await User.findOne({ phoneNumber });
+
+    if (!user) {
+      // Create a new user with the provided details and OTP
+      user = await User.create({
+        phone,
+        phoneOtp,
+        ...otherDetails,
+      });
+
+      // Generate JWT token for the new user
+      const token = jwt.sign({ userId: user._id, phone: user.phone }, process.env.JWT_KEY);
+      // Store the token in the user object or return it in the response
+      user.token = token;
+      user = await User.findByIdAndUpdate(user.id, { token }, { new: true });
+    } else {
+      // Update the existing user's OTP
+      user = await User.findByIdAndUpdate(user.id, { otp }, { new: true });
+    }
+    const appHash = "ems/3nG2V1H"; // Apne app ka actual hash yahan dalein
+
+    // Properly formatted OTP message for autofill
+    const otpMessage = `<#> ${otp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
+
+    let optResponse = await axios.post(
+      `https://api.authkey.io/request?authkey=${
+        process.env.AUTHKEY_API_KEY
+      }&mobile=${phoneNumber}&country_code=91&sid=${
+        process.env.AUTHKEY_SENDER_ID
+      }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
+    );
+
+    if (optResponse?.status == "200") {
+      return sendResponse(res, 200, "Success", {
+        message: "OTP send successfully",
+        data: user,
+        statusCode: 200,
+      });
+    } else {
+      return sendResponse(res, 422, "Failed", {
+        message: "Unable to send OTP",
+        statusCode: 200,
+      });
+    }
+  } catch (error) {
+    console.error("Error in /send-otp:", error.message);
+    // Respond with failure
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+    });
+  }
+});
 
 userController.post("/sign-up", upload.fields([{ name: "profilePic", maxCount: 1 }]), async (req, res) => {
     try {
