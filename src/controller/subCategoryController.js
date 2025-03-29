@@ -6,9 +6,6 @@ const subCategoryController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
-// const service = require("../model/service.Schema");
-// const repair = require("../model/repair.Schema");
-// const installation = require("../model/installation.Schema");
 const auth = require("../utils/auth");
 
 
@@ -182,6 +179,7 @@ subCategoryController.delete("/delete/:id", async (req, res) => {
 });
 
 
+
 // subCategoryController.get("/details/:id", auth, async (req, res) => {
 //   try {
 //     const { id } = req.params;
@@ -225,49 +223,6 @@ subCategoryController.delete("/delete/:id", async (req, res) => {
 //   }
 // });
 
-
-
-// subCategoryController.put("/update-banner", upload.single("banner"), async (req, res) => {
-//   try {
-//     const id = req.body._id;
-
-//     // Find the category by ID
-//     const subCategoryData = await subCategory.findById(id);
-//     if (!subCategoryData) {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "Sub Category not found",
-//       });
-//     }
-
-//     let updatedData = { ...req.body };
-
-//     // If a new image is uploaded
-//     if (req.file) {
-      
-      
-   
-//       // Upload the new image to Cloudinary
-//       const banner = await cloudinary.uploader.upload(req.file.path);
-//       updatedData.banner = banner.url;
-//     }
-
-//     // Update the category in the database
-//     const updatedSubCategory = await subCategory.findByIdAndUpdate(id, updatedData, {
-//       new: true, // Return the updated document
-//     });
-
-//     sendResponse(res, 200, "Success", {
-//       message: "Sub Category Banner updated successfully!",
-//       data: updatedSubCategory,
-//       statusCode:200
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error",
-//     });
-//   }
-// });
 
 
 module.exports = subCategoryController;
