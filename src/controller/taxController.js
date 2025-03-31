@@ -1,7 +1,7 @@
 const express = require("express");
 const { sendResponse } = require("../utils/common");
 require("dotenv").config();
-const tax = require("../model/tax.Schema");
+const   Tax = require("../model/tax.Schema");
 const taxController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
@@ -9,7 +9,7 @@ const upload = require("../utils/multer");
 
 taxController.post("/create", async (req, res) => {
   try {
-    const taxCreated = await tax.create(req.body);
+    const taxCreated = await Tax.create(req.body);
     sendResponse(res, 200, "Success", {
       message: "tax created successfully!",
       data: taxCreated,
@@ -40,12 +40,12 @@ taxController.post("/list", async (req, res) => {
     const sortField = sortByField || "createdAt";
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };
-    const taxList = await tax.find(query)
+    const taxList = await Tax.find(query)
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
-    const totalCount = await tax.countDocuments({});
-    const activeCount = await tax.countDocuments({ status: true });
+    const totalCount = await Tax.countDocuments({});
+    const activeCount = await Tax.countDocuments({ status: true });
     sendResponse(res, 200, "Success", {
       message: "tax list retrieved successfully!",
       data: taxList,
@@ -68,14 +68,14 @@ taxController.post("/list", async (req, res) => {
 taxController.put("/update", async (req, res) => {
   try {
     const id = req.body._id;
-    const tax = await tax.findById(id);
+    const tax = await Tax.findById(id);
     if (!tax) {
       return sendResponse(res, 404, "Failed", {
-        message: "tax set not found",
+        message: "Tax not found",
         statusCode: 403,
       });
     }
-    const updatedtax = await tax.findByIdAndUpdate(
+    const updatedtax = await Tax.findByIdAndUpdate(
       id,
       req.body,
       {
@@ -83,7 +83,7 @@ taxController.put("/update", async (req, res) => {
       }
     );
     sendResponse(res, 200, "Success", {
-      message: "tax updated successfully!",
+      message: "Tax updated successfully!",
       data: updatedtax,
       statusCode: 200,
     });
@@ -98,16 +98,16 @@ taxController.put("/update", async (req, res) => {
 taxController.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const tax = await tax.findById(id);
+    const tax = await Tax.findById(id);
     if (!tax) {
       return sendResponse(res, 404, "Failed", {
-        message: "tax not found",
+        message: "Tax not found",
         statusCode: 404,
       });
     }
-    await tax.findByIdAndDelete(id);
+    await Tax.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
-      message: "tax deleted successfully!",
+      message: "Tax deleted successfully!",
       statusCode:200
     });
   } catch (error) {
@@ -122,9 +122,9 @@ taxController.delete("/delete/:id", async (req, res) => {
 taxController.get("/details/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const taxDetails = await tax.findOne({ _id: id });
+    const taxDetails = await Tax.findOne({ _id: id });
     sendResponse(res, 200, "Success", {
-      message: "tax retrived successfully!",
+      message: "Tax retrived successfully!",
       data: { taxDetails },
       statusCode: 200,
     });
