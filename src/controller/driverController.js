@@ -117,6 +117,7 @@ driverController.post("/otp-verification", async (req, res) => {
       const updatedDriver = await Driver.findByIdAndUpdate(
         user._id,
         { isPhoneVerified: true, profileStatus: "completed" },
+        { isPhoneVerified: true,  profileStatus: req?.body?.isforgetPassword ? user?.profileStatus:  "completed" },
         { new: true }
       );
       return sendResponse(res, 200, "Success", {
