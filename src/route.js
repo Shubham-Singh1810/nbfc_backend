@@ -12,6 +12,7 @@ const attributeController = require("./controller/attributeController");
 const adminController = require("./controller/adminController");
 const productController = require("./controller/productController");
 const addressController = require("./controller/addressController");
+const tagController = require("./controller/tagController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -25,6 +26,7 @@ router.use("/attribute-set", attributeSetController);
 router.use("/attribute", attributeController);
 router.use("/product", productController);
 router.use("/address", addressController);
+router.use("/tag", tagController);
 
 
 module.exports = router;
