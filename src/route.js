@@ -13,6 +13,7 @@ const adminController = require("./controller/adminController");
 const productController = require("./controller/productController");
 const addressController = require("./controller/addressController");
 const tagController = require("./controller/tagController");
+const taxController = require("./controller/taxController");
 const locationController = require("./controller/locationController");
 const productTypeController = require("./controller/productTypeController");
 
@@ -29,6 +30,7 @@ router.use("/attribute", attributeController);
 router.use("/product", productController);
 router.use("/address", addressController);
 router.use("/tag", tagController);
+router.use("/tax", taxController);
 router.use("/location", locationController);
 router.use("/product-type", productTypeController);
 
