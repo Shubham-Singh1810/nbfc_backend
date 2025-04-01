@@ -1,18 +1,18 @@
 const express = require("express");
 const { sendResponse } = require("../utils/common");
 require("dotenv").config();
-const   Tax = require("../model/tax.Schema");
-const taxController = express.Router();
+const ProductManufactureLocation = require("../model/productManufactureLocation.Schema");
+const productManufactureLocationController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 
-taxController.post("/create", async (req, res) => {
+productManufactureLocationController.post("/create", async (req, res) => {
   try {
-    const taxCreated = await Tax.create(req.body);
+    const productLocationCreated = await ProductManufactureLocation.create(req.body);
     sendResponse(res, 200, "Success", {
-      message: "Tax created successfully!",
-      data: taxCreated,
+      message: "Product Manufacture Location created successfully!",
+      data: productLocationCreated,
       statusCode: 200,
     });
   } catch (error) {
@@ -24,7 +24,7 @@ taxController.post("/create", async (req, res) => {
   }
 });
 
-taxController.post("/list", async (req, res) => {
+productManufactureLocationController.post("/list", async (req, res) => {
   try {
     const {
       searchKey = "",
@@ -40,15 +40,15 @@ taxController.post("/list", async (req, res) => {
     const sortField = sortByField || "createdAt";
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };
-    const taxList = await Tax.find(query)
+    const productLocation = await ProductManufactureLocation.find(query)
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
-    const totalCount = await Tax.countDocuments({});
-    const activeCount = await Tax.countDocuments({ status: true });
+    const totalCount = await ProductManufactureLocation.countDocuments({});
+    const activeCount = await ProductManufactureLocation.countDocuments({ status: true });
     sendResponse(res, 200, "Success", {
-      message: "tax list retrieved successfully!",
-      data: taxList,
+      message: "Product Manufacture Location retrieved successfully!",
+      data: productLocation,
       documentCount: {
         totalCount,
         activeCount,
@@ -65,17 +65,17 @@ taxController.post("/list", async (req, res) => {
   }
 });
 
-taxController.put("/update", async (req, res) => {
+productManufactureLocationController.put("/update", async (req, res) => {
   try {
     const id = req.body._id;
-    const tax = await Tax.findById(id);
-    if (!tax) {
+    const productLocation = await ProductManufactureLocation.findById(id);
+    if (!productLocation) {
       return sendResponse(res, 404, "Failed", {
-        message: "Tax not found",
+        message: "Product location not found",
         statusCode: 403,
       });
     }
-    const updatedtax = await Tax.findByIdAndUpdate(
+    const updatedProductLocation = await ProductManufactureLocation.findByIdAndUpdate(
       id,
       req.body,
       {
@@ -83,8 +83,8 @@ taxController.put("/update", async (req, res) => {
       }
     );
     sendResponse(res, 200, "Success", {
-      message: "Tax updated successfully!",
-      data: updatedtax,
+      message: "Product location updated successfully!",
+      data: updatedProductLocation,
       statusCode: 200,
     });
   } catch (error) {
@@ -95,19 +95,19 @@ taxController.put("/update", async (req, res) => {
   }
 });
 
-taxController.delete("/delete/:id", async (req, res) => {
+productManufactureLocationController.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const tax = await Tax.findById(id);
-    if (!tax) {
+    const productLocation = await ProductManufactureLocation.findById(id);
+    if (!productLocation) {
       return sendResponse(res, 404, "Failed", {
-        message: "Tax not found",
+        message: "Product location not found",
         statusCode: 404,
       });
     }
-    await Tax.findByIdAndDelete(id);
+    await ProductManufactureLocation.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
-      message: "Tax deleted successfully!",
+      message: "Product location deleted successfully!",
       statusCode:200
     });
   } catch (error) {
@@ -119,13 +119,13 @@ taxController.delete("/delete/:id", async (req, res) => {
   }
 });
 
-taxController.get("/details/:id", async (req, res) => {
+productManufactureLocationController.get("/details/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const taxDetails = await Tax.findOne({ _id: id });
+    const productLocationDetails = await ProductManufactureLocation.findOne({ _id: id });
     sendResponse(res, 200, "Success", {
-      message: "Tax retrived successfully!",
-      data: { taxDetails },
+      message: "Product location retrived successfully!",
+      data:  productLocationDetails ,
       statusCode: 200,
     });
   } catch (error) {
@@ -137,4 +137,4 @@ taxController.get("/details/:id", async (req, res) => {
   }
 });
 
-module.exports = taxController;
+module.exports = productManufactureLocationController;

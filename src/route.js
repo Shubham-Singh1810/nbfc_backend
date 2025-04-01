@@ -16,6 +16,7 @@ const tagController = require("./controller/tagController");
 const taxController = require("./controller/taxController");
 const locationController = require("./controller/locationController");
 const productTypeController = require("./controller/productTypeController");
+const productManufactureLocationController = require("./controller/productManufactureLocationController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -33,6 +34,7 @@ router.use("/tag", tagController);
 router.use("/tax", taxController);
 router.use("/location", locationController);
 router.use("/product-type", productTypeController);
+router.use("/product-manufacture-location", productManufactureLocationController);
 
 
 module.exports = router;
