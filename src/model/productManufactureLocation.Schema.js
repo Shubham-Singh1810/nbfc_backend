@@ -14,4 +14,4 @@ const productManufactureLocationSchema = mongoose.Schema({
 });
 
 productManufactureLocationSchema.plugin(timestamps);
-module.exports = mongoose.model("ProductType", productManufactureLocationSchema);
+module.exports = mongoose.model("ProductManufactureLocation", productManufactureLocationSchema);
