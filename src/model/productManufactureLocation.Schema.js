@@ -3,7 +3,7 @@ const timestamps = require("mongoose-timestamp");
 const { type } = require("os");
 
 const productManufactureLocationSchema = mongoose.Schema({
-  location: {
+  name: {
     type: String,
     required: true,
   },
