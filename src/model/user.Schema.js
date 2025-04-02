@@ -53,7 +53,9 @@ const userSchema = mongoose.Schema({
   },
   address: {
     type: String,
-  }
+  },
+  cartItems:  [{ type: String, ref: "Product" }],
+  wishListItems: [{ type: String, ref: "Product" }],
 });
 
 userSchema.plugin(timestamps);

@@ -2,6 +2,7 @@ const express = require("express");
 const { sendResponse, generateOTP } = require("../utils/common");
 require("dotenv").config();
 const User = require("../model/user.Schema");
+const Product = require("../model/product.Schema");
 const userController = express.Router();
 const axios = require("axios");
 require("dotenv").config();
@@ -75,6 +76,7 @@ userController.post("/send-otp", async (req, res) => {
     });
   }
 });
+
 
 userController.post("/sign-up", upload.fields([{ name: "profilePic", maxCount: 1 }]), async (req, res) => {
     try {
@@ -268,96 +270,100 @@ userController.get("/details/:id", async (req, res) => {
 });
 
 
-// userController.put("/update", upload.single("image"), async (req, res) => {
-//   try {
-//     const id = req.body._id;
-//     // Find the user by ID
-//     const userData = await Driver.findById(id);
-//     if (!userData) {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "Driver not found",
-//       });
-//     }
-//     let updatedData = { ...req.body };
-//     if (req.body.firstName && req.body.lastName && req.body.email) {
-//       updatedData = { ...req.body, profileStatus: "completed" };
-//     }
-//     // Handle image upload if a new image is provided
-//     if (req.file) {
-//       let image = await cloudinary.uploader.upload(req.file.path, function (err, result) {
-//         if (err) {
-//           return err;
-//         } else {
-//           return result;
-//         }
-//       });
-//       updatedData = { ...req.body, image: image.url };
-//     }
-//     // Update the user in the database
-//     const updatedUserData = await Driver.findByIdAndUpdate(id, updatedData, {
-//       new: true, // Return the updated document
-//     });
+userController.post("/add-to-cart/:id", async (req, res) => {
+  try {
+    if (!req.params.id) {
+      return sendResponse(res, 422, "Failed", {
+        message: "Params not found!",
+      });
+    }
 
-//     sendResponse(res, 200, "Success", {
-//       message: "Vender updated successfully!",
-//       data: updatedUserData,
-//       statusCode: 200,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error",
-//     });
-//   }
-// });
+    const productId = req.params.id;
+    const currentUserId = req.body.userId; 
+
+    const product = await Product.findOne({ _id: productId });
+    if (!product) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Product not found!",
+      });
+    } const user = await User.findOne({ _id: currentUserId });
+    if (!user) {
+      return sendResponse(res, 400, "Failed", {
+        message: "User not found!",
+      });
+    }
 
 
-// userController.post("/list", async (req, res) => {
-//   try {
-//     const { searchKey = "", status, pageNo = 1, pageCount = 10, sortByField, sortByOrder } = req.body;
-//     const query = {};
-//     if (status) query.profileStatus = status;
-//     if (searchKey) query.firstName = { $regex: searchKey, $options: "i" };
-//     const sortField = sortByField || "createdAt";
-//     const sortOrder = sortByOrder === "asc" ? 1 : -1;
-//     const sortOption = { [sortField]: sortOrder };
-//     const userList = await Vender.find(query)
-//       .sort(sortOption)
-//       .limit(parseInt(pageCount))
-//       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
-//     const totalCount = await Driver.countDocuments({});
-//     const activeCount = await Driver.countDocuments({ profileStatus: "completed" });
-//     sendResponse(res, 200, "Success", {
-//       message: "Driver list retrieved successfully!",
-//       data: userList,
-//       documentCount: { totalCount, activeCount, inactiveCount: totalCount - activeCount },
-//       statusCode: 200,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error",
-//       statusCode: 500,
-//     });
-//   }
-// });
+    let message, updateQuery;
+    if (user.cartItems.includes(productId)) {
+      updateQuery = { $pull: { cartItems: productId } }; 
+      message = "Item removed successfully";
+    } else {
+      updateQuery = { $push: { cartItems: productId } }; 
+      message = "Item added successfully";
+    }
+
+    // Update the post document with the new array
+    await User.findOneAndUpdate({ _id: currentUserId }, updateQuery);
+
+    sendResponse(res, 200, "Success", {
+      message: message,
+    });
+  } catch (error) {
+    console.log(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
 
 
-// userController.post("/create", async (req, res) => {
-//   try {
-//     const driver = await Driver.create(req.body);
-//     return sendResponse(res, 200, "Success", {
-//       message: "Driver created  successfully",
-//       data: driver,
-//       statusCode: 200,
-//     });
-//   } catch (error) {
-//     return sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error.",
-//       statusCode: 500,
-//     });
-//   }
-// });
+userController.post("/add-to-wishlist/:id", async (req, res) => {
+  try {
+    if (!req.params.id) {
+      return sendResponse(res, 422, "Failed", {
+        message: "Params not found!",
+      });
+    }
+
+    const productId = req.params.id;
+    const currentUserId = req.body.userId; 
+
+    const product = await Product.findOne({ _id: productId });
+    if (!product) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Product not found!",
+      });
+    } const user = await User.findOne({ _id: currentUserId });
+    if (!user) {
+      return sendResponse(res, 400, "Failed", {
+        message: "User not found!",
+      });
+    }
+
+
+    let message, updateQuery;
+    if (user.wishListItems.includes(productId)) {
+      updateQuery = { $pull: { wishListItems: productId } }; 
+      message = "Item removed successfully";
+    } else {
+      updateQuery = { $push: { wishListItems: productId } }; 
+      message = "Item added successfully";
+    }
+
+    // Update the post document with the new array
+    await User.findOneAndUpdate({ _id: currentUserId }, updateQuery);
+
+    sendResponse(res, 200, "Success", {
+      message: message,
+    });
+  } catch (error) {
+    console.log(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
 
 
 module.exports = userController;
