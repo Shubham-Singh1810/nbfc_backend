@@ -318,6 +318,37 @@ userController.post("/add-to-cart/:id", async (req, res) => {
 });
 
 
+userController.get("/cart/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return sendResponse(res, 422, "Failed", {
+        message: "User ID is required!",
+      });
+    }
+
+    const user = await User.findById(userId).populate("cartItems");
+
+    if (!user) {
+      return sendResponse(res, 400, "Failed", {
+        message: "User not found!",
+      });
+    }
+
+    sendResponse(res, 200, "Success", {
+      message: "Cart items retrieved successfully",
+      data: user.cartItems, // Returns the list of products in the cart
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
+
 userController.post("/add-to-wishlist/:id", async (req, res) => {
   try {
     if (!req.params.id) {
@@ -364,6 +395,38 @@ userController.post("/add-to-wishlist/:id", async (req, res) => {
     });
   }
 });
+
+
+userController.get("/wishlist/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return sendResponse(res, 422, "Failed", {
+        message: "User ID is required!",
+      });
+    }
+
+    const user = await User.findById(userId).populate("wishListItems");
+
+    if (!user) {
+      return sendResponse(res, 400, "Failed", {
+        message: "User not found!",
+      });
+    }
+
+    sendResponse(res, 200, "Success", {
+      message: "Wishlist items retrieved successfully",
+      data: user.wishListItems, // Returns the list of products in the wishlist
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
 
 
 module.exports = userController;
