@@ -54,7 +54,7 @@ const userSchema = mongoose.Schema({
   address: {
     type: String,
   },
-  cartItems:  [{ type: String, ref: "Product" }],
+  cartItems:  [{productId:{ type: String, ref: "Product" },quantity:{ type: Number }}],
   wishListItems: [{ type: String, ref: "Product" }],
 });
 
