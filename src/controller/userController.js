@@ -12,7 +12,7 @@ const upload = require("../utils/multer");
 
 userController.post("/send-otp", async (req, res) => {
   try {
-    const {phone, ...otherDetails} = req.body;
+    const { phone, ...otherDetails } = req.body;
     // Check if the phone number is provided
     if (!phone) {
       return sendResponse(res, 400, "Failed", {
@@ -35,7 +35,10 @@ userController.post("/send-otp", async (req, res) => {
       });
 
       // Generate JWT token for the new user
-      const token = jwt.sign({ userId: user._id, phone: user.phone }, process.env.JWT_KEY);
+      const token = jwt.sign(
+        { userId: user._id, phone: user.phone },
+        process.env.JWT_KEY
+      );
       // Store the token in the user object or return it in the response
       user.token = token;
       user = await User.findByIdAndUpdate(user.id, { token }, { new: true });
@@ -53,7 +56,9 @@ userController.post("/send-otp", async (req, res) => {
         process.env.AUTHKEY_API_KEY
       }&mobile=${phone}&country_code=91&sid=${
         process.env.AUTHKEY_SENDER_ID
-      }&company=Acediva&otp=${phoneOtp}&message=${encodeURIComponent(otpMessage)}`
+      }&company=Acediva&otp=${phoneOtp}&message=${encodeURIComponent(
+        otpMessage
+      )}`
     );
 
     if (optResponse?.status == "200") {
@@ -77,8 +82,10 @@ userController.post("/send-otp", async (req, res) => {
   }
 });
 
-
-userController.post("/sign-up", upload.fields([{ name: "profilePic", maxCount: 1 }]), async (req, res) => {
+userController.post(
+  "/sign-up",
+  upload.fields([{ name: "profilePic", maxCount: 1 }]),
+  async (req, res) => {
     try {
       // Check if the phone number is unique
       const user = await User.findOne({ phone: req.body.phone });
@@ -88,36 +95,45 @@ userController.post("/sign-up", upload.fields([{ name: "profilePic", maxCount: 1
           statusCode: 400,
         });
       }
-  
+
       // Generate OTP
       const otp = generateOTP();
-  
+
       // Upload images to Cloudinary
       let profilePic;
-      
+
       if (req.files["profilePic"]) {
-        let image = await cloudinary.uploader.upload(req.files["profilePic"][0].path);
+        let image = await cloudinary.uploader.upload(
+          req.files["profilePic"][0].path
+        );
         profilePic = image.url;
       }
-  
+
       // Create a new user with provided details
-      let newUser = await User.create({ 
-        ...req.body, 
-        phoneOtp: otp, 
-        profilePic
+      let newUser = await User.create({
+        ...req.body,
+        phoneOtp: otp,
+        profilePic,
       });
-  
+
       // Generate JWT token
-      const token = jwt.sign({ userId: newUser._id, phone: newUser.phone }, process.env.JWT_KEY);
-  
+      const token = jwt.sign(
+        { userId: newUser._id, phone: newUser.phone },
+        process.env.JWT_KEY
+      );
+
       // Store the token in the user object or return it in the response
       newUser.token = token;
-      const updatedUser = await User.findByIdAndUpdate(newUser._id, { token }, { new: true });
-  
+      const updatedUser = await User.findByIdAndUpdate(
+        newUser._id,
+        { token },
+        { new: true }
+      );
+
       // OTP message for autofill
       const appHash = "ems/3nG2V1H"; // Replace with your actual hash
       const otpMessage = `<#> ${otp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
-  
+
       let otpResponse = await axios.post(
         `https://api.authkey.io/request?authkey=${
           process.env.AUTHKEY_API_KEY
@@ -125,7 +141,7 @@ userController.post("/sign-up", upload.fields([{ name: "profilePic", maxCount: 1
           process.env.AUTHKEY_SENDER_ID
         }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
       );
-  
+
       if (otpResponse?.status == "200") {
         return sendResponse(res, 200, "Success", {
           message: "OTP sent successfully",
@@ -144,15 +160,19 @@ userController.post("/sign-up", upload.fields([{ name: "profilePic", maxCount: 1
         message: error.message || "Internal server error.",
       });
     }
-});
-  
+  }
+);
 
 userController.post("/otp-verification", async (req, res) => {
   try {
     const { phone, phoneOtp } = req.body;
     const user = await User.findOne({ phone, phoneOtp });
     if (user) {
-        const updatedUser = await User.findByIdAndUpdate(user._id, { isPhoneVerified:true, profileStatus:"completed" }, { new: true });
+      const updatedUser = await User.findByIdAndUpdate(
+        user._id,
+        { isPhoneVerified: true, profileStatus: "completed" },
+        { new: true }
+      );
       return sendResponse(res, 200, "Success", {
         message: "Otp verified successfully",
         data: updatedUser,
@@ -172,143 +192,162 @@ userController.post("/otp-verification", async (req, res) => {
   }
 });
 
-
 userController.post("/login", async (req, res) => {
-    try {
-      const { phone, password } = req.body;
-      const user = await User.findOne({ phone, password });
-      if (user) {
+  try {
+    const { phone, password } = req.body;
+    const user = await User.findOne({ phone, password });
+    if (user) {
+      return sendResponse(res, 200, "Success", {
+        message: "User logged in successfully",
+        data: user,
+        statusCode: 200,
+      });
+    } else {
+      return sendResponse(res, 422, "Failed", {
+        message: "Invalid Credentials",
+        statusCode: 422,
+      });
+    }
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
+    });
+  }
+});
+
+userController.post("/resend-otp", async (req, res) => {
+  try {
+    const { phone } = req.body;
+    const user = await User.findOne({ phone });
+    if (user) {
+      const otp = generateOTP();
+      const updatedUser = await User.findByIdAndUpdate(
+        user._id,
+        { phoneOtp: otp },
+        { new: true }
+      );
+
+      // OTP message for autofill
+      const appHash = "ems/3nG2V1H"; // Replace with your actual hash
+      const otpMessage = `<#> ${otp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
+
+      let otpResponse = await axios.post(
+        `https://api.authkey.io/request?authkey=${
+          process.env.AUTHKEY_API_KEY
+        }&mobile=${req.body.phone}&country_code=91&sid=${
+          process.env.AUTHKEY_SENDER_ID
+        }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
+      );
+
+      if (otpResponse?.status == "200") {
         return sendResponse(res, 200, "Success", {
-          message: "User logged in successfully",
-          data: user,
+          message: "OTP sent successfully",
+          data: updatedUser,
           statusCode: 200,
         });
       } else {
         return sendResponse(res, 422, "Failed", {
-          message: "Invalid Credentials",
-          statusCode: 422,
+          message: "Unable to send OTP",
+          statusCode: 200,
         });
       }
-    } catch (error) {
-      return sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error.",
-        statusCode: 500,
+    } else {
+      return sendResponse(res, 422, "Failed", {
+        message: "Phone number is not registered",
+        statusCode: 422,
       });
     }
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
+    });
+  }
 });
-
-
-userController.post("/resend-otp", async (req, res) => {
-    try {
-      const { phone } = req.body;
-      const user = await User.findOne({ phone });
-      if (user) {
-        const otp = generateOTP();
-        const updatedUser = await User.findByIdAndUpdate(user._id, { phoneOtp:otp }, { new: true });
-  
-        // OTP message for autofill
-        const appHash = "ems/3nG2V1H"; // Replace with your actual hash
-        const otpMessage = `<#> ${otp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
-    
-        let otpResponse = await axios.post(
-          `https://api.authkey.io/request?authkey=${
-            process.env.AUTHKEY_API_KEY
-          }&mobile=${req.body.phone}&country_code=91&sid=${
-            process.env.AUTHKEY_SENDER_ID
-          }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
-        );
-    
-        if (otpResponse?.status == "200") {
-          return sendResponse(res, 200, "Success", {
-            message: "OTP sent successfully",
-            data: updatedUser,
-            statusCode: 200,
-          });
-        } else {
-          return sendResponse(res, 422, "Failed", {
-            message: "Unable to send OTP",
-            statusCode: 200,
-          });
-        }
-      } else {
-        return sendResponse(res, 422, "Failed", {
-          message: "Phone number is not registered",
-          statusCode: 422,
-        });
-      }
-    } catch (error) {
-      return sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error.",
-        statusCode: 500,
-      });
-    }
-});
-
 
 userController.get("/details/:id", async (req, res) => {
-    try {
-        const id = req.params.id
-      const user = await User.findOne({_id:id});
-      if(user){
-        return sendResponse(res, 200, "Success", {
-            message: "User details fetched  successfully",
-            data: user,
-            statusCode: 200,
-          });
-      }else{
-        return sendResponse(res, 404, "Failed", {
-            message: "User not found",
-            statusCode: 404,
-          });
-      }
-    } catch (error) {
-      return sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error.",
-        statusCode: 500,
+  try {
+    const id = req.params.id;
+    const user = await User.findOne({ _id: id });
+    if (user) {
+      return sendResponse(res, 200, "Success", {
+        message: "User details fetched  successfully",
+        data: user,
+        statusCode: 200,
+      });
+    } else {
+      return sendResponse(res, 404, "Failed", {
+        message: "User not found",
+        statusCode: 404,
       });
     }
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
+    });
+  }
 });
-
 
 userController.post("/add-to-cart/:id", async (req, res) => {
   try {
-    if (!req.params.id) {
+    const { id: productId } = req.params;
+    const { userId: currentUserId } = req.body;
+
+    if (!productId || !currentUserId) {
       return sendResponse(res, 422, "Failed", {
-        message: "Params not found!",
+        message: "Missing productId or userId!",
       });
     }
 
-    const productId = req.params.id;
-    const currentUserId = req.body.userId; 
-
-    const product = await Product.findOne({ _id: productId });
+    const product = await Product.findById(productId);
     if (!product) {
       return sendResponse(res, 400, "Failed", {
         message: "Product not found!",
       });
-    } const user = await User.findOne({ _id: currentUserId });
+    }
+
+    const user = await User.findById(currentUserId);
     if (!user) {
       return sendResponse(res, 400, "Failed", {
         message: "User not found!",
       });
     }
 
+    // Ensure cartItems is an array
+    if (!Array.isArray(user.cartItems)) {
+      user.cartItems = [];
+    }
 
-    let message, updateQuery;
-    if (user.cartItems.includes(productId)) {
-      updateQuery = { $pull: { cartItems: productId } }; 
-      message = "Item removed successfully";
+    // Check if product already exists in cart
+    const cartItemIndex = user.cartItems.findIndex(
+      (item) => item.productId.toString() === productId
+    );
+
+    let updateQuery;
+    let message;
+
+    if (cartItemIndex !== -1) {
+      // If product exists, increment quantity
+      updateQuery = {
+        $set: {
+          [`cartItems.${cartItemIndex}.quantity`]: user.cartItems[cartItemIndex].quantity + 1,
+        },
+      };
+      message = "Item incremented successfully";
     } else {
-      updateQuery = { $push: { cartItems: productId } }; 
+      // If product does not exist, add new item
+      updateQuery = {
+        $push: { cartItems: { productId, quantity: 1 } },
+      };
       message = "Item added successfully";
     }
 
-    // Update the post document with the new array
-    await User.findOneAndUpdate({ _id: currentUserId }, updateQuery);
+    // Update user document
+    await User.findOneAndUpdate({ _id: currentUserId }, updateQuery, { new: true });
 
-    sendResponse(res, 200, "Success", {
-      message: message,
-    });
+    sendResponse(res, 200, "Success", { message });
   } catch (error) {
     console.log(error);
     sendResponse(res, 500, "Failed", {
@@ -316,6 +355,69 @@ userController.post("/add-to-cart/:id", async (req, res) => {
     });
   }
 });
+userController.post("/remove-from-cart/:id", async (req, res) => {
+  try {
+    const { id: productId } = req.params;
+    const { userId: currentUserId } = req.body;
+
+    if (!productId || !currentUserId) {
+      return sendResponse(res, 422, "Failed", {
+        message: "Missing productId or userId!",
+      });
+    }
+
+    const user = await User.findById(currentUserId);
+    if (!user) {
+      return sendResponse(res, 400, "Failed", { message: "User not found!" });
+    }
+
+    // Check if product exists in cart
+    const cartItem = user.cartItems.find(
+      (item) => item.productId.toString() === productId
+    );
+
+    if (!cartItem) {
+      return sendResponse(res, 400, "Failed", { message: "Item not in cart!" });
+    }
+
+    let updateQuery, message;
+
+    if (cartItem.quantity > 1) {
+      // Reduce quantity if more than 1
+      updateQuery = {
+        $set: {
+          "cartItems.$[elem].quantity": cartItem.quantity - 1,
+        },
+      };
+      message = "Item quantity decreased";
+
+      // Update user document with array filter
+      await User.findByIdAndUpdate(
+        currentUserId,
+        updateQuery,
+        { new: true, arrayFilters: [{ "elem.productId": productId }] }
+      );
+    } else {
+      // Remove item from cart if quantity is 1
+      updateQuery = {
+        $pull: { cartItems: { productId } },
+      };
+      message = "Item removed from cart";
+
+      // Update user document without array filter
+      await User.findByIdAndUpdate(currentUserId, updateQuery, { new: true });
+    }
+
+    sendResponse(res, 200, "Success", { message });
+  } catch (error) {
+    console.log(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
+
 
 
 userController.get("/cart/:userId", async (req, res) => {
@@ -348,7 +450,6 @@ userController.get("/cart/:userId", async (req, res) => {
   }
 });
 
-
 userController.post("/add-to-wishlist/:id", async (req, res) => {
   try {
     if (!req.params.id) {
@@ -358,27 +459,27 @@ userController.post("/add-to-wishlist/:id", async (req, res) => {
     }
 
     const productId = req.params.id;
-    const currentUserId = req.body.userId; 
+    const currentUserId = req.body.userId;
 
     const product = await Product.findOne({ _id: productId });
     if (!product) {
       return sendResponse(res, 400, "Failed", {
         message: "Product not found!",
       });
-    } const user = await User.findOne({ _id: currentUserId });
+    }
+    const user = await User.findOne({ _id: currentUserId });
     if (!user) {
       return sendResponse(res, 400, "Failed", {
         message: "User not found!",
       });
     }
 
-
     let message, updateQuery;
     if (user.wishListItems.includes(productId)) {
-      updateQuery = { $pull: { wishListItems: productId } }; 
+      updateQuery = { $pull: { wishListItems: productId } };
       message = "Item removed successfully";
     } else {
-      updateQuery = { $push: { wishListItems: productId } }; 
+      updateQuery = { $push: { wishListItems: productId } };
       message = "Item added successfully";
     }
 
@@ -395,7 +496,6 @@ userController.post("/add-to-wishlist/:id", async (req, res) => {
     });
   }
 });
-
 
 userController.get("/wishlist/:userId", async (req, res) => {
   try {
@@ -426,7 +526,5 @@ userController.get("/wishlist/:userId", async (req, res) => {
     });
   }
 });
-
-
 
 module.exports = userController;
