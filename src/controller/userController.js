@@ -290,6 +290,73 @@ userController.get("/details/:id", async (req, res) => {
   }
 });
 
+// userController.post("/add-to-cart/:id", async (req, res) => {
+//   try {
+//     const { id: productId } = req.params;
+//     const { userId: currentUserId } = req.body;
+
+//     if (!productId || !currentUserId) {
+//       return sendResponse(res, 422, "Failed", {
+//         message: "Missing productId or userId!",
+//       });
+//     }
+
+//     const product = await Product.findById(productId);
+//     if (!product) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "Product not found!",
+//       });
+//     }
+
+//     const user = await User.findById(currentUserId);
+//     if (!user) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "User not found!",
+//       });
+//     }
+
+//     // Ensure cartItems is an array
+//     if (!Array.isArray(user.cartItems)) {
+//       user.cartItems = [];
+//     }
+
+//     // Check if product already exists in cart
+//     const cartItemIndex = user.cartItems.findIndex(
+//       (item) => item.productId.toString() === productId
+//     );
+
+//     let updateQuery;
+//     let message;
+
+//     if (cartItemIndex !== -1) {
+//       // If product exists, increment quantity
+//       updateQuery = {
+//         $set: {
+//           [`cartItems.${cartItemIndex}.quantity`]: user.cartItems[cartItemIndex].quantity + 1,
+//         },
+//       };
+//       message = "Item incremented successfully";
+//     } else {
+//       // If product does not exist, add new item
+//       updateQuery = {
+//         $push: { cartItems: { productId, quantity: 1 } },
+//       };
+//       message = "Item added successfully";
+//     }
+
+//     // Update user document
+//     await User.findOneAndUpdate({ _id: currentUserId }, updateQuery, { new: true });
+
+//     sendResponse(res, 200, "Success", { message });
+//   } catch (error) {
+//     console.log(error);
+//     sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error",
+//     });
+//   }
+// });
+
+
 userController.post("/add-to-cart/:id", async (req, res) => {
   try {
     const { id: productId } = req.params;
@@ -329,23 +396,37 @@ userController.post("/add-to-cart/:id", async (req, res) => {
     let message;
 
     if (cartItemIndex !== -1) {
-      // If product exists, increment quantity
+      const currentQuantity = user.cartItems[cartItemIndex].quantity;
+
+      // Check if adding one more exceeds stock
+      if (currentQuantity + 1 > product.stockQuantity) {
+        return sendResponse(res, 400, "Failed", {
+          message: `Only ${product.stockQuantity - currentQuantity} item(s) left in stock for this product.`,
+        });
+      }
+
+      // If stock is available, increment quantity
       updateQuery = {
         $set: {
-          [`cartItems.${cartItemIndex}.quantity`]: user.cartItems[cartItemIndex].quantity + 1,
+          [`cartItems.${cartItemIndex}.quantity`]: currentQuantity + 1,
         },
       };
-      message = "Item incremented successfully";
+      message = "Item quantity incremented successfully";
     } else {
-      // If product does not exist, add new item
+      // If new product being added, make sure there's at least 1 in stock
+      if (product.stockQuantity < 1) {
+        return sendResponse(res, 400, "Failed", {
+          message: "This product is currently out of stock.",
+        });
+      }
+
       updateQuery = {
         $push: { cartItems: { productId, quantity: 1 } },
       };
-      message = "Item added successfully";
+      message = "Item added successfully to cart";
     }
 
-    // Update user document
-    await User.findOneAndUpdate({ _id: currentUserId }, updateQuery, { new: true });
+    await User.findByIdAndUpdate(currentUserId, updateQuery, { new: true });
 
     sendResponse(res, 200, "Success", { message });
   } catch (error) {
@@ -355,6 +436,7 @@ userController.post("/add-to-cart/:id", async (req, res) => {
     });
   }
 });
+
 userController.post("/remove-from-cart/:id", async (req, res) => {
   try {
     const { id: productId } = req.params;
@@ -417,9 +499,6 @@ userController.post("/remove-from-cart/:id", async (req, res) => {
   }
 });
 
-
-
-
 userController.get("/cart/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -430,7 +509,11 @@ userController.get("/cart/:userId", async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId).populate("cartItems");
+    const user = await User.findById(userId)
+      .populate({
+        path: "cartItems.productId",
+        populate: { path: "categoryId" }, // ✅ Populating categoryId inside product
+      });
 
     if (!user) {
       return sendResponse(res, 400, "Failed", {
@@ -438,9 +521,27 @@ userController.get("/cart/:userId", async (req, res) => {
       });
     }
 
+    let totalAmount = 0;
+
+    const cartDetails = user.cartItems.map((item) => {
+      const product = item.productId;
+      const quantity = item.quantity;
+      const priceToUse = product.discountedPrice ?? product.price;
+      const itemTotal = priceToUse * quantity;
+
+      totalAmount += itemTotal;
+
+      return {
+        product,
+        quantity,
+        itemTotal,
+      };
+    });
+
     sendResponse(res, 200, "Success", {
       message: "Cart items retrieved successfully",
-      data: user.cartItems, // Returns the list of products in the cart
+      cartItems: cartDetails,
+      totalAmount,
     });
   } catch (error) {
     console.error(error);

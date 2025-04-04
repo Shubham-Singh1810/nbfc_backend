@@ -24,6 +24,10 @@ const productSchema = mongoose.Schema({
     ref: "SubCategory",
     required: true,
   },
+  stockQuantity: {
+    type: Number,
+    required: true,
+  },
   price: { type: Number },
   discountedPrice: { type: Number },
   description: { type: String },
