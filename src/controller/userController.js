@@ -499,6 +499,60 @@ userController.post("/remove-from-cart/:id", async (req, res) => {
   }
 });
 
+// userController.get("/cart/:userId", async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+
+//     if (!userId) {
+//       return sendResponse(res, 422, "Failed", {
+//         message: "User ID is required!",
+//       });
+//     }
+
+//     const user = await User.findById(userId)
+//       .populate({
+//         path: "cartItems.productId",
+//         populate: { path: "categoryId" }, // ✅ Populating categoryId inside product
+//       });
+
+//     if (!user) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "User not found!",
+//       });
+//     }
+
+//     let totalAmount = 0;
+
+//     const cartDetails = user.cartItems.map((item) => {
+//       const product = item.productId;
+//       const quantity = item.quantity;
+//       const priceToUse = product.discountedPrice ?? product.price;
+//       const itemTotal = priceToUse * quantity;
+
+//       totalAmount += itemTotal;
+
+//       return {
+//         product,
+//         quantity,
+//         itemTotal,
+//       };
+//     });
+
+//     sendResponse(res, 200, "Success", {
+//       message: "Cart items retrieved successfully",
+//       cartItems: cartDetails,
+//       totalAmount,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error",
+//     });
+//   }
+// });
+
+
+
 userController.get("/cart/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -512,7 +566,7 @@ userController.get("/cart/:userId", async (req, res) => {
     const user = await User.findById(userId)
       .populate({
         path: "cartItems.productId",
-        populate: { path: "categoryId" }, // ✅ Populating categoryId inside product
+        populate: { path: "categoryId" },
       });
 
     if (!user) {
@@ -532,9 +586,21 @@ userController.get("/cart/:userId", async (req, res) => {
       totalAmount += itemTotal;
 
       return {
-        product,
+        _id: product._id,
+        name: product.name,
+        productHeroImage: product.productHeroImage,
+        productGallery: product.productGallery,
+        categoryId: product.categoryId,
+        subCategoryId: product.subCategoryId,
+        price: product.price,
+        discountedPrice: product.discountedPrice,
+        description: product.description,
+        codAvailable: product.codAvailable,
+        isActive: product.isActive,
+        updatedAt: product.updatedAt,
+        createdAt: product.createdAt,
         quantity,
-        itemTotal,
+        itemTotal
       };
     });
 
