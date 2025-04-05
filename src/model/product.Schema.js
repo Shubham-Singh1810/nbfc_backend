@@ -5,52 +5,52 @@ const { type } = require("os");
 const productSchema = mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    // required: true,
   },
   tags: {
     type: [String],
-    required: true,
+    // required: true,
   },
   productType: {
     type: String,
-    required: true,
+    // required: true,
   },
   tax: {
     type: String,
-    required: true,
+    // required: true,
   },
   madeIn: {
     type: String,
-    required: true,
+    // required: true,
   },
   hsnCode: {
     type: String,
-    required: true,
+    // required: true,
   },
   shortDescription: {
     type: String,
-    required: true,
+    // required: true,
   },
   productHeroImage: {
     type: [String],
   },
   productGallery: {
     type: [String],
-    required: true,
+    // required: true,
   },
   categoryId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Category",
-    required: true,
+    // required: true,
   },
   subCategoryId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "SubCategory",
-    required: true,
+    // required: true,
   },
   stockQuantity: {
     type: Number,
-    required: true,
+    // required: true,
   },
   price: { type: Number },
   discountedPrice: { type: Number },
