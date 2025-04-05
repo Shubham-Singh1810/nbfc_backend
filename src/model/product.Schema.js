@@ -7,6 +7,30 @@ const productSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  tags: {
+    type: [String],
+    required: true,
+  },
+  productType: {
+    type: String,
+    required: true,
+  },
+  tax: {
+    type: String,
+    required: true,
+  },
+  madeIn: {
+    type: String,
+    required: true,
+  },
+  hsnCode: {
+    type: String,
+    required: true,
+  },
+  shortDescription: {
+    type: String,
+    required: true,
+  },
   productHeroImage: {
     type: [String],
   },
@@ -38,6 +62,9 @@ const productSchema = mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true,
+  },
+  rating: {
+    type: String,
   },
   createdBY: {
     type: mongoose.Schema.Types.ObjectId,

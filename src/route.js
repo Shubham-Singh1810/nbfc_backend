@@ -18,6 +18,7 @@ const locationController = require("./controller/locationController");
 const productTypeController = require("./controller/productTypeController");
 const productManufactureLocationController = require("./controller/productManufactureLocationController");
 const zipcodeController = require("./controller/zipcodeController");
+const productRatingController = require("./controller/productRatingController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -37,6 +38,7 @@ router.use("/location", locationController);
 router.use("/product-type", productTypeController);
 router.use("/product-manufacture-location", productManufactureLocationController);
 router.use("/zipcode", zipcodeController);
+router.use("/rating", productRatingController);
 
 
 module.exports = router;

@@ -8,52 +8,74 @@ const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const auth = require("../utils/auth");
 
-productController.post(
-  "/create",
-  upload.fields([
-    { name: "productHeroImage", maxCount: 5 },
-    { name: "productGallery", maxCount: 5 },
-  ]),
-  async (req, res) => {
-    try {
-      let productHeroImage = [];
-      let productGallery = [];
+// productController.post(
+//   "/create",
+//   upload.fields([
+//     { name: "productHeroImage", maxCount: 5 },
+//     { name: "productGallery", maxCount: 5 },
+//   ]),
+//   async (req, res) => {
+//     try {
+//       let productHeroImage = [];
+//       let productGallery = [];
 
-      if (req.files["productHeroImage"]) {
-        for (let file of req.files["productHeroImage"]) {
-          let result = await cloudinary.uploader.upload(file.path);
-          productHeroImage.push(result.url);
-        }
-      }
+//       if (req.files["productHeroImage"]) {
+//         for (let file of req.files["productHeroImage"]) {
+//           let result = await cloudinary.uploader.upload(file.path);
+//           productHeroImage.push(result.url);
+//         }
+//       }
 
-      if (req.files["productGallery"]) {
-        for (let file of req.files["productGallery"]) {
-          let result = await cloudinary.uploader.upload(file.path);
-          productGallery.push(result.url);
-        }
-      }
+//       if (req.files["productGallery"]) {
+//         for (let file of req.files["productGallery"]) {
+//           let result = await cloudinary.uploader.upload(file.path);
+//           productGallery.push(result.url);
+//         }
+//       }
 
-      const productData = {
-        ...req.body,
-        productHeroImage,
-        productGallery,
-      };
+//       const productData = {
+//         ...req.body,
+//         productHeroImage,
+//         productGallery,
+//       };
 
-      const productCreated = await Product.create(productData);
-      sendResponse(res, 200, "Success", {
-        message: "Product created successfully!",
-        data: productCreated,
-        statusCode: 200,
-      });
-    } catch (error) {
-      console.error(error);
-      sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error",
-        statusCode: 500,
-      });
-    }
+//       const productCreated = await Product.create(productData);
+//       sendResponse(res, 200, "Success", {
+//         message: "Product created successfully!",
+//         data: productCreated,
+//         statusCode: 200,
+//       });
+//     } catch (error) {
+//       console.error(error);
+//       sendResponse(res, 500, "Failed", {
+//         message: error.message || "Internal server error",
+//         statusCode: 500,
+//       });
+//     }
+//   }
+// );
+
+productController.post("/create", async (req, res) => {
+  try {
+    const productData = {
+      ...req.body,
+    };
+
+    const productCreated = await Product.create(productData);
+    sendResponse(res, 200, "Success", {
+      message: "Product created successfully!",
+      data: productCreated,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
   }
-);
+});
+
 
 productController.post("/list", async (req, res) => {
   try {
