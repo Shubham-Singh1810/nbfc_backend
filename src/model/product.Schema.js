@@ -3,6 +3,8 @@ const timestamps = require("mongoose-timestamp");
 const { type } = require("os");
 
 const productSchema = mongoose.Schema({
+  // step 1
+
   name: {
     type: String,
     // required: true,
@@ -31,11 +33,27 @@ const productSchema = mongoose.Schema({
     type: String,
     // required: true,
   },
-  productHeroImage: {
-    type: [String],
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "venderId",
+    // required: true,
   },
-  productGallery: {
-    type: [String],
+
+  // Step 2
+  minOrderQuantity: {
+    type: String,
+    // required: true,
+  },
+  maxOrderQuantity: {
+    type: String,
+    // required: true,
+  },
+  warrantyPeriod: {
+    type: String,
+    // required: true,
+  },
+  guaranteePeriod: {
+    type: String,
     // required: true,
   },
   categoryId: {
@@ -52,24 +70,60 @@ const productSchema = mongoose.Schema({
     type: Number,
     // required: true,
   },
-  price: { type: Number },
-  discountedPrice: { type: Number },
-  description: { type: String },
-  codAvailable: {
-    type: Boolean,
-    default: true,
+  brandId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Brand",
+    // required: true,
   },
-  isActive: {
-    type: Boolean,
-    default: true,
+  zipcodeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Zipcode",
+    // required: true,
   },
-  rating: {
+  isProductReturnable: {
+    type: Boolean,
+    default: false,
+  },
+  isCodAllowed: {
+    type: Boolean,
+    default: false,
+  },
+  isProductTaxIncluded: {
+    type: Boolean,
+    default: false,
+  },
+  isProductCancelable: {
+    type: Boolean,
+    default: false,
+  },
+
+  // step 3
+
+  productHeroImage: {
     type: String,
   },
-  createdBY: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "venderId",
+  productGallery: {
+    type: [String],
     // required: true,
+  },
+  productVideo: {
+    type: String,
+  },
+  productVideoUrl: {
+    type: String,
+  },
+  description: { type: String },
+  price: { type: Number },
+  discountedPrice: { type: Number },
+
+  // admin action
+  isActive: {
+    type: Boolean,
+    default: false,
+  },
+  // user action
+  rating: {
+    type: String,
   },
 });
 
