@@ -211,7 +211,7 @@ productController.get("/details/:id", async (req, res) => {
 
 productController.put("/update/hero-image", upload.single("heroImage"), async (req, res) => {
   try {
-    const id = req.body._id;
+    const id = req.body.id;
     const product = await Product.findById(id);
     if (!product) {
       return sendResponse(res, 404, "Failed", {
@@ -250,4 +250,105 @@ productController.put("/update/hero-image", upload.single("heroImage"), async (r
     });
   }
 });
+productController.put("/update/add-product-gallery", upload.single("image"), async (req, res) => {
+  try {
+    const id = req.body.id;
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Product not found",
+        statusCode: 403,
+      });
+    }
+
+    if (!req.file) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Image file is required",
+        statusCode: 400,
+      });
+    }
+
+    // Upload new image to Cloudinary
+    const uploadedImage = await cloudinary.uploader.upload(req.file.path);
+
+    // Push new image URL into productGallery
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      { $push: { productGallery: uploadedImage.secure_url } },
+      { new: true }
+    );
+
+    sendResponse(res, 200, "Success", {
+      message: "Product gallery image added successfully!",
+      data: updatedProduct,
+      statusCode: 200,
+    });
+  } catch (error) {
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
+productController.delete("/product/delete/product-gallery", async (req, res) => {
+  try {
+    const { id, index } = req.body;
+
+    if (!id || index === undefined) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Product ID and index are required",
+        statusCode: 400,
+      });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Product not found",
+        statusCode: 404,
+      });
+    }
+
+    const gallery = product.productGallery;
+
+    if (!gallery || index < 0 || index >= gallery.length) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Invalid image index",
+        statusCode: 400,
+      });
+    }
+
+    const imageUrl = gallery[index];
+
+    // Delete from Cloudinary if image is stored there
+    const publicId = imageUrl.split("/").pop().split(".")[0];
+    await cloudinary.uploader.destroy(publicId, (error, result) => {
+      if (error) {
+        console.error("Cloudinary delete error:", error);
+      } else {
+        console.log("Image deleted from Cloudinary:", result);
+      }
+    });
+
+    // Remove the image from productGallery
+    gallery.splice(index, 1);
+    product.productGallery = gallery;
+    const updatedProduct = await product.save();
+
+    sendResponse(res, 200, "Success", {
+      message: "Gallery image deleted successfully",
+      data: updatedProduct,
+      statusCode: 200,
+    });
+
+  } catch (error) {
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal Server Error",
+      statusCode: 500,
+    });
+  }
+});
+
+
 module.exports = productController;
