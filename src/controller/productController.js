@@ -209,7 +209,7 @@ productController.get("/details/:id", async (req, res) => {
   }
 });
 
-productController.put("/update/hero-image", upload.single("heroImage"), async (req, res) => {
+productController.put("/update/hero-image", upload.single("productHeroImage"), async (req, res) => {
   try {
     const id = req.body.id;
     const product = await Product.findById(id);
@@ -232,8 +232,8 @@ productController.put("/update/hero-image", upload.single("heroImage"), async (r
           }
         });
       }
-      const heroImage = await cloudinary.uploader.upload(req.file.path);
-      updatedData.productHeroImage = heroImage.url;
+      const productHeroImage = await cloudinary.uploader.upload(req.file.path);
+      updatedData.productHeroImage = productHeroImage.url;
     }
     const updatedProduct = await Product.findByIdAndUpdate(id, updatedData, {
       new: true, 
