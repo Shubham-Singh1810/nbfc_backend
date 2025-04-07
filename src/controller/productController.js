@@ -225,17 +225,7 @@ productController.put("/update/hero-image", upload.single("productHeroImage"), a
     }
     let updatedData = { ...req.body };
     if (req.file) {
-      // Delete the old image from Cloudinary
-      if (product?.productHeroImage) {
-        const publicId = product.image.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy(publicId, (error, result) => {
-          if (error) {
-            console.error("Error deleting old image from Cloudinary:", error);
-          } else {
-            console.log("Old image deleted from Cloudinary:", result);
-          }
-        });
-      }
+      
       const productHeroImage = await cloudinary.uploader.upload(req.file.path);
       updatedData.productHeroImage = productHeroImage.url;
     }
