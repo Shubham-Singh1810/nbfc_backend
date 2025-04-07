@@ -291,7 +291,7 @@ productController.put("/update/add-product-gallery", upload.single("image"), asy
     });
   }
 });
-productController.delete("/product/delete/product-gallery", async (req, res) => {
+productController.delete("/delete/product-gallery", async (req, res) => {
   try {
     const { id, index } = req.body;
 
