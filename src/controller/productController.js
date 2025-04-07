@@ -209,4 +209,45 @@ productController.get("/details/:id", async (req, res) => {
   }
 });
 
+productController.put("/update/hero-image", upload.single("heroImage"), async (req, res) => {
+  try {
+    const id = req.body._id;
+    const product = await Product.findById(id);
+    if (!product) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Product not found",
+        statusCode: 403
+      });
+    }
+    let updatedData = { ...req.body };
+    if (req.file) {
+      // Delete the old image from Cloudinary
+      if (product?.heroImage) {
+        const publicId = product.image.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(publicId, (error, result) => {
+          if (error) {
+            console.error("Error deleting old image from Cloudinary:", error);
+          } else {
+            console.log("Old image deleted from Cloudinary:", result);
+          }
+        });
+      }
+      const heroImage = await cloudinary.uploader.upload(req.file.path);
+      updatedData.heroImage = heroImage.url;
+    }
+    const updatedProduct = await Product.findByIdAndUpdate(id, updatedData, {
+      new: true, 
+    });
+    sendResponse(res, 200, "Success", {
+      message: "Product hero image updated successfully!",
+      data: updatedProduct,
+      statusCode: 200
+    });
+  } catch (error) {
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500
+    });
+  }
+});
 module.exports = productController;

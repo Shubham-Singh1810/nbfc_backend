@@ -40,7 +40,7 @@ const productSchema = mongoose.Schema({
   createdByAdmin: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "adminId",
-  },  
+  },
 
   // Step 2
   minOrderQuantity: {
@@ -82,7 +82,7 @@ const productSchema = mongoose.Schema({
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Zipcode",
-    }
+    },
   ],
   isProductReturnable: {
     type: Boolean,
@@ -100,7 +100,12 @@ const productSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
-
+  productVideoUrl: {
+    type: String,
+  },
+  description: { type: String },
+  price: { type: Number },
+  discountedPrice: { type: Number },
   // step 3
 
   productHeroImage: {
@@ -113,13 +118,15 @@ const productSchema = mongoose.Schema({
   productVideo: {
     type: String,
   },
-  productVideoUrl: {
-    type: String,
-  },
-  description: { type: String },
-  price: { type: Number },
-  discountedPrice: { type: Number },
 
+  // step 4 attributes
+
+  productOtherDetails: [
+    {
+      key: { type: String },
+      value: { type: String },
+    },
+  ],
   // admin action
   isActive: {
     type: Boolean,
