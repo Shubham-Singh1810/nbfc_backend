@@ -36,8 +36,11 @@ const productSchema = mongoose.Schema({
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "venderId",
-    // required: true,
   },
+  createdByAdmin: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "adminId",
+  },  
 
   // Step 2
   minOrderQuantity: {
@@ -75,11 +78,12 @@ const productSchema = mongoose.Schema({
     ref: "Brand",
     // required: true,
   },
-  zipcodeId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Zipcode",
-    // required: true,
-  },
+  zipcodeId: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Zipcode",
+    }
+  ],
   isProductReturnable: {
     type: Boolean,
     default: false,
