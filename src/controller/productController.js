@@ -222,7 +222,7 @@ productController.put("/update/hero-image", upload.single("heroImage"), async (r
     let updatedData = { ...req.body };
     if (req.file) {
       // Delete the old image from Cloudinary
-      if (product?.heroImage) {
+      if (product?.productHeroImage) {
         const publicId = product.image.split("/").pop().split(".")[0];
         await cloudinary.uploader.destroy(publicId, (error, result) => {
           if (error) {
@@ -233,7 +233,7 @@ productController.put("/update/hero-image", upload.single("heroImage"), async (r
         });
       }
       const heroImage = await cloudinary.uploader.upload(req.file.path);
-      updatedData.heroImage = heroImage.url;
+      updatedData.productHeroImage = heroImage.url;
     }
     const updatedProduct = await Product.findByIdAndUpdate(id, updatedData, {
       new: true, 
@@ -349,6 +349,5 @@ productController.delete("/product/delete/product-gallery", async (req, res) => 
     });
   }
 });
-
 
 module.exports = productController;

@@ -326,4 +326,54 @@ venderController.delete("/delete/:id", async (req, res) => {
   }
 });
 
+venderController.post("product-list", async (req, res) => {
+  try {
+    const {
+      searchKey = "",
+      status,
+      pageNo = 1,
+      pageCount = 10,
+      sortByField,
+      sortByOrder,
+      venderId
+    } = req.body;
+
+    const query = {createdBy: venderId};
+    if (status) query.status = status;
+    if (searchKey) query.name = { $regex: searchKey, $options: "i" };
+
+    // Construct sorting object
+    const sortField = sortByField || "createdAt";
+    const sortOrder = sortByOrder === "asc" ? 1 : -1;
+    const sortOption = { [sortField]: sortOrder };
+
+    // Fetch the category list
+    const productList = await Product.find(query)
+      .sort(sortOption)
+      .limit(parseInt(pageCount))
+      .skip(parseInt(pageNo - 1) * parseInt(pageCount))
+      .populate({
+        path: "categoryId", // Field to populate
+        select: "name description", // Specify the fields to retrieve from the category collection
+      });
+    const totalCount = await Product.countDocuments({});
+    const activeCount = await Product.countDocuments({ status: true });
+    sendResponse(res, 200, "Success", {
+      message: "Product list retrieved successfully!",
+      data: productList,
+      documentCount: {
+        totalCount,
+        activeCount,
+        inactiveCount: totalCount - activeCount,
+      },
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
 module.exports = venderController;
