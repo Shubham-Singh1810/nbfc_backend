@@ -126,10 +126,7 @@ productController.post("/list", async (req, res) => {
   }
 });
 
-productController.put("/update", upload.fields([
-    { name: "productHeroImage", maxCount: 1 },
-    { name: "productGallery", maxCount: 1 },
-  ]),
+productController.put("/update", 
   async (req, res) => {
     try {
       const id = req.body.id;
@@ -140,49 +137,19 @@ productController.put("/update", upload.fields([
         });
       }
       let updateData = { ...req.body };
-      if (req.file || req.files) {
-        if (req.files["productHeroImage"]) {
-          let image = await cloudinary.uploader.upload(
-            req.files["productHeroImage"][0].path
-          );
-          updateData = { ...req.body, productHeroImage: image.url };
+      const updatedProductData = await Product.findByIdAndUpdate(
+        id,
+        updateData,
+        {
+          new: true,
         }
-
-        if (req.files["productGallery"]) {
-          let image = await cloudinary.uploader.upload(
-            req.files["productGallery"][0].path
-          );
-          updateData = { ...req.body, productGallery: image.url };
-        }
-
-        const updatedUserData = await Product.findByIdAndUpdate(
-          id,
-          updateData,
-          {
-            new: true,
-          }
-        );
-
-        sendResponse(res, 200, "Success", {
-          message: "Product updated successfully!",
-          data: updatedUserData,
-          statusCode: 200,
-        });
-      } else {
-        const updatedUserData = await Product.findByIdAndUpdate(
-          id,
-          updateData,
-          {
-            new: true,
-          }
-        );
-
-        sendResponse(res, 200, "Success", {
-          message: "Driver updated successfully!",
-          data: updatedUserData,
-          statusCode: 200,
-        });
-      }
+      );
+      sendResponse(res, 200, "Success", {
+        message: "Product updated successfully!",
+        data: updatedProductData,
+        statusCode: 200,
+      });
+      
     } catch (error) {
       console.error(error);
       sendResponse(res, 500, "Failed", {
