@@ -103,8 +103,12 @@ productController.post("/list", async (req, res) => {
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount))
       .populate({
-        path: "categoryId", // Field to populate
-        select: "name description", // Specify the fields to retrieve from the category collection
+        path: "categoryId",
+        select: "name description", 
+      })
+      .populate({
+        path: "createdBy",
+        select: "name", 
       });
     const totalCount = await Product.countDocuments({});
     const activeCount = await Product.countDocuments({ status: true });
@@ -250,7 +254,7 @@ productController.put("/update/hero-image", upload.single("productHeroImage"), a
     });
   }
 });
-productController.put("/update/add-product-gallery", upload.single("image"), async (req, res) => {
+productController.put("/update/add-product-gallery", upload.array("images"), async (req, res) => {
   try {
     const id = req.body.id;
 
@@ -262,28 +266,33 @@ productController.put("/update/add-product-gallery", upload.single("image"), asy
       });
     }
 
-    if (!req.file) {
+    if (!req.files || req.files.length === 0) {
       return sendResponse(res, 400, "Failed", {
-        message: "Image file is required",
+        message: "At least one image file is required",
         statusCode: 400,
       });
     }
 
-    // Upload new image to Cloudinary
-    const uploadedImage = await cloudinary.uploader.upload(req.file.path);
+    // Upload all images to Cloudinary
+    const uploadedUrls = [];
+    for (const file of req.files) {
+      const uploadedImage = await cloudinary.uploader.upload(file.path);
+      uploadedUrls.push(uploadedImage.secure_url);
+    }
 
-    // Push new image URL into productGallery
+    // Push all URLs into productGallery
     const updatedProduct = await Product.findByIdAndUpdate(
       id,
-      { $push: { productGallery: uploadedImage.secure_url } },
+      { $push: { productGallery: { $each: uploadedUrls } } },
       { new: true }
     );
 
     sendResponse(res, 200, "Success", {
-      message: "Product gallery image added successfully!",
+      message: "Product gallery images added successfully!",
       data: updatedProduct,
       statusCode: 200,
     });
+
   } catch (error) {
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
@@ -291,7 +300,7 @@ productController.put("/update/add-product-gallery", upload.single("image"), asy
     });
   }
 });
-productController.delete("/delete/product-gallery", async (req, res) => {
+productController.post("/delete/product-gallery", async (req, res) => {
   try {
     const { id, index } = req.body;
 
@@ -311,7 +320,7 @@ productController.delete("/delete/product-gallery", async (req, res) => {
     }
 
     const gallery = product.productGallery;
-
+    
     if (!gallery || index < 0 || index >= gallery.length) {
       return sendResponse(res, 400, "Failed", {
         message: "Invalid image index",

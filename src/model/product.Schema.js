@@ -35,11 +35,11 @@ const productSchema = mongoose.Schema({
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "venderId",
+    ref: "Vender",
   },
   createdByAdmin: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "adminId",
+    ref: "Admin",
   },
 
   // Step 2
