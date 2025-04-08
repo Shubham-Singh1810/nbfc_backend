@@ -7,7 +7,8 @@ require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const auth = require("../utils/auth");
-
+const fs = require("fs");
+const path = require("path");
 // productController.post(
 //   "/create",
 //   upload.fields([
@@ -348,31 +349,62 @@ productController.post("/delete/product-gallery", async (req, res) => {
     });
   }
 });
+
+
 productController.put("/update-video", upload.single("productVideo"), async (req, res) => {
   try {
-    const id = req.body.id;
+    const { id } = req.body;
+
+    // Check if product exists
     const product = await Product.findById(id);
     if (!product) {
       return sendResponse(res, 404, "Failed", {
         message: "Product not found",
-        statusCode: 403
+        statusCode: 404
       });
     }
-    let updatedData = { ...req.body };
+
+    // Initialize updatedData
+    let updatedData = {};
+
+    // Check if video file is uploaded
     if (req.file) {
-      
-      const productVideo = await cloudinary.uploader.upload(req.file.path);
+      // Validate file type
+      if (!req.file.mimetype.startsWith("video/")) {
+        // Clean up the uploaded file
+        fs.unlinkSync(req.file.path);
+        return sendResponse(res, 400, "Failed", {
+          message: "Only video files are allowed",
+          statusCode: 400
+        });
+      }
+
+      // Upload to Cloudinary with resource_type set to "video"
+      const productVideo = await cloudinary.uploader.upload(req.file.path, {
+        resource_type: "video"
+      });
+
+      // Set video URL in update
       updatedData.productVideo = productVideo.url;
+
+      // Delete local file after upload
+      fs.unlinkSync(req.file.path);
     }
+
+    // Update the product
     const updatedProduct = await Product.findByIdAndUpdate(id, updatedData, {
-      new: true, 
+      new: true
     });
+
+    // Send success response
     sendResponse(res, 200, "Success", {
       message: "Product video updated successfully!",
       data: updatedProduct,
       statusCode: 200
     });
+
   } catch (error) {
+    console.error("Update video error:", error.message);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
       statusCode: 500
