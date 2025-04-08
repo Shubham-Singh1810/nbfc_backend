@@ -348,5 +348,36 @@ productController.post("/delete/product-gallery", async (req, res) => {
     });
   }
 });
+productController.put("/update-video", upload.single("productVideo"), async (req, res) => {
+  try {
+    const id = req.body.id;
+    const product = await Product.findById(id);
+    if (!product) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Product not found",
+        statusCode: 403
+      });
+    }
+    let updatedData = { ...req.body };
+    if (req.file) {
+      
+      const productVideo = await cloudinary.uploader.upload(req.file.path);
+      updatedData.productVideo = productVideo.url;
+    }
+    const updatedProduct = await Product.findByIdAndUpdate(id, updatedData, {
+      new: true, 
+    });
+    sendResponse(res, 200, "Success", {
+      message: "Product video updated successfully!",
+      data: updatedProduct,
+      statusCode: 200
+    });
+  } catch (error) {
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500
+    });
+  }
+});
 
 module.exports = productController;
