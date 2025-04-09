@@ -290,73 +290,6 @@ userController.get("/details/:id", async (req, res) => {
   }
 });
 
-// userController.post("/add-to-cart/:id", async (req, res) => {
-//   try {
-//     const { id: productId } = req.params;
-//     const { userId: currentUserId } = req.body;
-
-//     if (!productId || !currentUserId) {
-//       return sendResponse(res, 422, "Failed", {
-//         message: "Missing productId or userId!",
-//       });
-//     }
-
-//     const product = await Product.findById(productId);
-//     if (!product) {
-//       return sendResponse(res, 400, "Failed", {
-//         message: "Product not found!",
-//       });
-//     }
-
-//     const user = await User.findById(currentUserId);
-//     if (!user) {
-//       return sendResponse(res, 400, "Failed", {
-//         message: "User not found!",
-//       });
-//     }
-
-//     // Ensure cartItems is an array
-//     if (!Array.isArray(user.cartItems)) {
-//       user.cartItems = [];
-//     }
-
-//     // Check if product already exists in cart
-//     const cartItemIndex = user.cartItems.findIndex(
-//       (item) => item.productId.toString() === productId
-//     );
-
-//     let updateQuery;
-//     let message;
-
-//     if (cartItemIndex !== -1) {
-//       // If product exists, increment quantity
-//       updateQuery = {
-//         $set: {
-//           [`cartItems.${cartItemIndex}.quantity`]: user.cartItems[cartItemIndex].quantity + 1,
-//         },
-//       };
-//       message = "Item incremented successfully";
-//     } else {
-//       // If product does not exist, add new item
-//       updateQuery = {
-//         $push: { cartItems: { productId, quantity: 1 } },
-//       };
-//       message = "Item added successfully";
-//     }
-
-//     // Update user document
-//     await User.findOneAndUpdate({ _id: currentUserId }, updateQuery, { new: true });
-
-//     sendResponse(res, 200, "Success", { message });
-//   } catch (error) {
-//     console.log(error);
-//     sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error",
-//     });
-//   }
-// });
-
-
 userController.post("/add-to-cart/:id", async (req, res) => {
   try {
     const { id: productId } = req.params;
@@ -401,7 +334,9 @@ userController.post("/add-to-cart/:id", async (req, res) => {
       // Check if adding one more exceeds stock
       if (currentQuantity + 1 > product.stockQuantity) {
         return sendResponse(res, 400, "Failed", {
-          message: `Only ${product.stockQuantity - currentQuantity} item(s) left in stock for this product.`,
+          message: `Only ${
+            product.stockQuantity - currentQuantity
+          } item(s) left in stock for this product.`,
         });
       }
 
@@ -474,11 +409,10 @@ userController.post("/remove-from-cart/:id", async (req, res) => {
       message = "Item quantity decreased";
 
       // Update user document with array filter
-      await User.findByIdAndUpdate(
-        currentUserId,
-        updateQuery,
-        { new: true, arrayFilters: [{ "elem.productId": productId }] }
-      );
+      await User.findByIdAndUpdate(currentUserId, updateQuery, {
+        new: true,
+        arrayFilters: [{ "elem.productId": productId }],
+      });
     } else {
       // Remove item from cart if quantity is 1
       updateQuery = {
@@ -499,60 +433,6 @@ userController.post("/remove-from-cart/:id", async (req, res) => {
   }
 });
 
-// userController.get("/cart/:userId", async (req, res) => {
-//   try {
-//     const { userId } = req.params;
-
-//     if (!userId) {
-//       return sendResponse(res, 422, "Failed", {
-//         message: "User ID is required!",
-//       });
-//     }
-
-//     const user = await User.findById(userId)
-//       .populate({
-//         path: "cartItems.productId",
-//         populate: { path: "categoryId" }, // ✅ Populating categoryId inside product
-//       });
-
-//     if (!user) {
-//       return sendResponse(res, 400, "Failed", {
-//         message: "User not found!",
-//       });
-//     }
-
-//     let totalAmount = 0;
-
-//     const cartDetails = user.cartItems.map((item) => {
-//       const product = item.productId;
-//       const quantity = item.quantity;
-//       const priceToUse = product.discountedPrice ?? product.price;
-//       const itemTotal = priceToUse * quantity;
-
-//       totalAmount += itemTotal;
-
-//       return {
-//         product,
-//         quantity,
-//         itemTotal,
-//       };
-//     });
-
-//     sendResponse(res, 200, "Success", {
-//       message: "Cart items retrieved successfully",
-//       cartItems: cartDetails,
-//       totalAmount,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error",
-//     });
-//   }
-// });
-
-
-
 userController.get("/cart/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -563,11 +443,10 @@ userController.get("/cart/:userId", async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId)
-      .populate({
-        path: "cartItems.productId",
-        populate: { path: "categoryId" },
-      });
+    const user = await User.findById(userId).populate({
+      path: "cartItems.productId",
+      populate: { path: "categoryId" },
+    });
 
     if (!user) {
       return sendResponse(res, 400, "Failed", {
@@ -600,7 +479,7 @@ userController.get("/cart/:userId", async (req, res) => {
         updatedAt: product.updatedAt,
         createdAt: product.createdAt,
         quantity,
-        itemTotal
+        itemTotal,
       };
     });
 
@@ -685,6 +564,36 @@ userController.get("/wishlist/:userId", async (req, res) => {
     sendResponse(res, 200, "Success", {
       message: "Wishlist items retrieved successfully",
       data: user.wishListItems, // Returns the list of products in the wishlist
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
+userController.put("/update", upload.single("profilePic"), async (req, res) => {
+  try {
+    const id = req.body.id;
+    const userData = await User.findById(id);
+    if (!userData) {
+      return sendResponse(res, 404, "Failed", {
+        message: "User not found",
+      });
+    }
+    let updatedData = { ...req.body };
+    if (req.file) {
+      const profilePic = await cloudinary.uploader.upload(req.file.path);
+      updatedData.profilePic = profilePic.url;
+    }
+    const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
+      new: true, // Return the updated document
+    });
+    sendResponse(res, 200, "Success", {
+      message: "User updated successfully!",
+      data: updatedUser,
+      statusCode: 200,
     });
   } catch (error) {
     console.error(error);

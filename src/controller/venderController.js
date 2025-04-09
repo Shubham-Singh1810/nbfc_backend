@@ -377,4 +377,56 @@ venderController.post("/product-list", async (req, res) => {
   }
 });
 
+venderController.post("/list", async (req, res) => {
+  try {
+    const {
+      searchKey = "",
+      status,
+      pageNo = 1,
+      pageCount = 10,
+      sortByField,
+      sortByOrder,
+    } = req.body;
+
+    const query = {};
+    if (status) query.status = status;
+    if (searchKey) {
+      query.$or = [
+        { firstName: { $regex: searchKey, $options: "i" } },
+        { lastName: { $regex: searchKey, $options: "i" } },
+        { email: { $regex: searchKey, $options: "i" } },
+      ];
+    }
+
+    // Construct sorting object
+    const sortField = sortByField || "createdAt";
+    const sortOrder = sortByOrder === "asc" ? 1 : -1;
+    const sortOption = { [sortField]: sortOrder };
+
+    // Fetch the category list
+    const venderList = await Vender.find(query)
+      .sort(sortOption)
+      .limit(parseInt(pageCount))
+      .skip(parseInt(pageNo - 1) * parseInt(pageCount))
+      
+    const totalCount = await Vender.countDocuments({});
+    const activeCount = await Vender.countDocuments({ status: true });
+    sendResponse(res, 200, "Success", {
+      message: "Vender list retrieved successfully!",
+      data: venderList,
+      documentCount: {
+        totalCount,
+        activeCount,
+        inactiveCount: totalCount - activeCount,
+      },
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
 module.exports = venderController;

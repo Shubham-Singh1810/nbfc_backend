@@ -3,7 +3,10 @@ const timestamps = require("mongoose-timestamp");
 const { type } = require("os");
 
 const venderSchema = mongoose.Schema({
+
   // sign up ---fields
+
+  
   profilePic: {
     type: String,
   },
@@ -15,6 +18,10 @@ const venderSchema = mongoose.Schema({
   },
   email: {
     type: String,
+  },
+  countryCode: {
+    type: String,
+    default: "91",
   },
   phone: {
     type: Number,
@@ -35,6 +42,29 @@ const venderSchema = mongoose.Schema({
   iosDeviceId: {
     type: String,
   },
+  emailOtp: {
+    type: Number,
+  },
+  phoneOtp: {
+    type: Number,
+  },
+  token: {
+    type: String,
+  },
+  profileStatus: {
+    type: String,
+    default: "incompleted",
+    required: true,
+    enum: [
+      "incompleted",
+      "otpVerified",
+      "storeDetailsCompleted",
+      "completed",
+      "approved",
+      "rejected",
+    ],
+  },
+
 
   // store details
   storeName: {
@@ -61,12 +91,13 @@ const venderSchema = mongoose.Schema({
   storeDescription: {
     type: String,
   },
-  bussinessLicensee: {
+  bussinessLicense: {
     type: String,
   },
   storeLogo: {
     type: String,
   },
+
 
   // account details
 
@@ -101,34 +132,18 @@ const venderSchema = mongoose.Schema({
     type: String,
   },
 
+
   // details for verification
 
   isFirstNameApproved: {
     type: Boolean,
     default: false,
   },
-
   isLastNameApproved: {
     type: Boolean,
     default: false,
   },
-
   isEmailApproved: {
-    type: Boolean,
-    default: false,
-  },
-
-  emailOtp: {
-    type: Number,
-  },
-  phoneOtp: {
-    type: Number,
-  },
-  token: {
-    type: String,
-  },
-
-  isProfilePicApproved: {
     type: Boolean,
     default: false,
   },
@@ -136,7 +151,7 @@ const venderSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  isEmailApproved: {
+  isProfilePicApproved: {
     type: Boolean,
     default: false,
   },
@@ -148,77 +163,63 @@ const venderSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  countryCode: {
-    type: String,
-    default: "91",
-  },
-  profileStatus: {
-    type: String,
-    default: "incompleted",
-    required: true,
-    enum: [
-      "incompleted",
-      "otpVerified",
-      "storeDetailsCompleted",
-      "completed",
-      "approved",
-      "rejected",
-    ],
-  },
-
-  isPincodeApproved: {
+  isStoreNameApproved: {
     type: Boolean,
     default: false,
   },
-
-  isAddressApproved: {
+  isStoreUrlApproved: {
     type: Boolean,
     default: false,
   },
-
-  taxName: {
-    type: String,
+  isStoreAddressApproved: {
+    type: Boolean,
+    default: false,
   },
-  taxNumber: {
+  isGstNumberApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isStoreDescriptionApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isBusinessLicenseApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isStoreLogoApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isAccountNumnerApproved: {
     type: String,
   },
-  storeLogo: {
+  isIfceCodeApproved: {
     type: String,
   },
-  signature: {
+  isPanNumberApproved: {
     type: String,
   },
-  isStoreNameVerified: {
-    type: Boolean,
-    default: false,
+  isUpiIdApproved: {
+    type: String,
   },
-  isStoreUrlVerified: {
-    type: Boolean,
-    default: false,
+  isAccountHolderNameApproved: {
+    type: String,
   },
-  isStoreDescriptionVerified: {
-    type: Boolean,
-    default: false,
+  isBankNameApproved: {
+    type: String,
   },
-  isStoreAddressVerified: {
-    type: Boolean,
-    default: false,
+  isBankBranchCodeApproved: {
+    type: String,
   },
-  isTaxNameVerified: {
-    type: Boolean,
-    default: false,
+  isSignatureApproved: {
+    type: String,
   },
-  isTaxNumberVerified: {
-    type: Boolean,
-    default: false,
+  isAdharCardApproved: {
+    type: String,
   },
-  isStoreLogoVerified: {
-    type: Boolean,
-    default: false,
-  },
-  isSignatureVerified: {
-    type: Boolean,
-    default: false,
+  isPassBookApproved: {
+    type: String,
   },
 });
 
