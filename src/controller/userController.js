@@ -3,6 +3,8 @@ const { sendResponse, generateOTP } = require("../utils/common");
 require("dotenv").config();
 const User = require("../model/user.Schema");
 const Product = require("../model/product.Schema");
+const Category = require("../model/category.Schema");
+const SubCategory = require("../model/subCategory.Schema");
 const userController = express.Router();
 const axios = require("axios");
 require("dotenv").config();
@@ -593,6 +595,26 @@ userController.put("/update", upload.single("profilePic"), async (req, res) => {
     sendResponse(res, 200, "Success", {
       message: "User updated successfully!",
       data: updatedUser,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
+userController.post("/home-details",  async (req, res) => {
+  try {
+    const homeCategory = await Category.find({})
+    const bestSellerSubCategory = await SubCategory.find({})
+    const homeSubCategory = await SubCategory.find({})
+    const trendingProducts = await Product.find({})
+    const bestSellerProducts = await Product.find({})
+    sendResponse(res, 200, "Success", {
+      message: "Home page data fetched successfully!",
+      data: homeCategory, bestSellerSubCategory, homeSubCategory, trendingProducts,bestSellerProducts,
       statusCode: 200,
     });
   } catch (error) {

@@ -15,6 +15,9 @@ const categorySchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  specialApperence: {
+    type: String,
+  },
 });
 
 categorySchema.plugin(timestamps);

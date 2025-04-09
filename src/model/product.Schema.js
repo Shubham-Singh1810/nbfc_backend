@@ -136,6 +136,9 @@ const productSchema = mongoose.Schema({
   rating: {
     type: String,
   },
+  specialApperence: {
+    type: String,
+  },
 });
 
 productSchema.plugin(timestamps);

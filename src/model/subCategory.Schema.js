@@ -18,6 +18,9 @@ const subCategorySchema = mongoose.Schema({
         ref: "Category",
         required: true, 
     },
+    specialApperence: {
+        type: String,
+      },
 });
 
 subCategorySchema.plugin(timestamps);
