@@ -614,7 +614,7 @@ userController.post("/home-details",  async (req, res) => {
     const bestSellerProducts = await Product.find({})
     sendResponse(res, 200, "Success", {
       message: "Home page data fetched successfully!",
-      data: homeCategory, bestSellerSubCategory, homeSubCategory, trendingProducts,bestSellerProducts,
+      data: {homeCategory, bestSellerSubCategory, homeSubCategory, trendingProducts,bestSellerProducts},
       statusCode: 200,
     });
   } catch (error) {
