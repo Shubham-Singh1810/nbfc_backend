@@ -2,6 +2,7 @@ const express = require("express");
 const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const subCategory = require("../model/subCategory.Schema");
+const Product = require("../model/product.Schema");
 const subCategoryController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
@@ -223,6 +224,24 @@ subCategoryController.delete("/delete/:id", async (req, res) => {
 //   }
 // });
 
+subCategoryController.get("/details/:id", async (req, res) => {
+  try {
+    const { id } = req.params
+    const subCategoryDetails = await subCategory.findOne({ _id: id });
+    const productList = await Product.find({ subCategoryId: id });
+    sendResponse(res, 200, "Success", {
+      message: "Sub category with product list retrived successfully!",
+      data: { subCategoryDetails, productList },
+      statusCode: 200
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500
+    });
+  }
+});
 
 
 module.exports = subCategoryController;

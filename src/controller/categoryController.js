@@ -7,7 +7,7 @@ require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const SubCategory = require("../model/subCategory.Schema");
-
+const Product = require("../model/product.Schema")
 
 
 categoryController.post("/create", upload.single("image"), async (req, res) => {
@@ -77,7 +77,23 @@ categoryController.post("/list", async (req, res) => {
   }
 });
 
-
+categoryController.get("/product-list/:id", async (req, res) => {
+  try {
+    const {id} = req.params
+    let productList = await Product.find({categoryId:id}) 
+    sendResponse(res, 200, "Success", {
+      message: "Product list retrieved successfully!",
+      data: productList,
+      statusCode: 200
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500
+    });
+  }
+});
 
 categoryController.put("/update", upload.single("image"), async (req, res) => {
   try {
