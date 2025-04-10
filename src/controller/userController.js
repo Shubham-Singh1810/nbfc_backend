@@ -460,10 +460,18 @@ userController.get("/cart/:userId", async (req, res) => {
 
     const cartDetails = user.cartItems.map((item) => {
       const product = item.productId;
-      const quantity = item.quantity;
-      const priceToUse = product.discountedPrice ?? product.price;
-      const itemTotal = priceToUse * quantity;
 
+      if (!product) {
+        return null; // skip this cart item if product is not found
+      }
+
+      const quantity = item.quantity || 1;
+      const priceToUse =
+        typeof product.discountedPrice === "number"
+          ? product.discountedPrice
+          : product.price || 0;
+
+      const itemTotal = priceToUse * quantity;
       totalAmount += itemTotal;
 
       return {
@@ -473,8 +481,8 @@ userController.get("/cart/:userId", async (req, res) => {
         productGallery: product.productGallery,
         categoryId: product.categoryId,
         subCategoryId: product.subCategoryId,
-        price: product.price,
-        discountedPrice: product.discountedPrice,
+        price: product.price || 0,
+        discountedPrice: product.discountedPrice || 0,
         description: product.description,
         codAvailable: product.codAvailable,
         isActive: product.isActive,
@@ -483,13 +491,14 @@ userController.get("/cart/:userId", async (req, res) => {
         quantity,
         itemTotal,
       };
-    });
+    }).filter(Boolean); // remove null values if any product was missing
 
     sendResponse(res, 200, "Success", {
       message: "Cart items retrieved successfully",
       cartItems: cartDetails,
       totalAmount,
     });
+
   } catch (error) {
     console.error(error);
     sendResponse(res, 500, "Failed", {
@@ -497,6 +506,7 @@ userController.get("/cart/:userId", async (req, res) => {
     });
   }
 });
+
 
 userController.post("/add-to-wishlist/:id", async (req, res) => {
   try {
