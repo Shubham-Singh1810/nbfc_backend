@@ -62,6 +62,7 @@ const venderSchema = mongoose.Schema({
       "completed",
       "approved",
       "rejected",
+      "reUploaded"
     ],
   },
 
@@ -101,7 +102,7 @@ const venderSchema = mongoose.Schema({
 
   // account details
 
-  accountNumner: {
+  accountNumber: {
     type: String,
   },
   ifceCode: {
@@ -190,7 +191,7 @@ const venderSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  isAccountNumnerApproved: {
+  isAccountNumberApproved: {
     type: String,
   },
   isIfceCodeApproved: {
