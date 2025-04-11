@@ -99,13 +99,12 @@ const venderSchema = mongoose.Schema({
     type: String,
   },
 
-
   // account details
 
   accountNumber: {
     type: String,
   },
-  ifceCode: {
+  ifscCode: {
     type: String,
   },
   panNumber: {
@@ -194,7 +193,7 @@ const venderSchema = mongoose.Schema({
   isAccountNumberApproved: {
     type: String,
   },
-  isIfceCodeApproved: {
+  isIfscCodeApproved: {
     type: String,
   },
   isPanNumberApproved: {
@@ -288,7 +287,7 @@ const venderSchema = mongoose.Schema({
     default: "waiting for approval",
   },
   
-  ifceCodeRejectReason: {
+  ifscCodeRejectReason: {
     type: String,
     default: "waiting for approval",
   },

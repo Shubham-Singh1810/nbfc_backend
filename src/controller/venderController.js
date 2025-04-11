@@ -220,91 +220,92 @@ venderController.get("/details/:id", async (req, res) => {
   }
 });
 
-venderController.put("/update", upload.fields([
-    { name: "bussinessLicensee", maxCount: 1 },
+venderController.put(
+  "/update",
+  upload.fields([
+    { name: "bussinessLicense", maxCount: 1 },
     { name: "storeLogo", maxCount: 1 },
     { name: "signature", maxCount: 1 },
-    { name: "adharCard", maxCount: 1 },
+    { name: "aadharCard", maxCount: 1 },
     { name: "passBook", maxCount: 1 },
     { name: "profilePic", maxCount: 1 },
   ]),
   async (req, res) => {
     try {
-      const vender = await Vender.findOne({ _id: req.body.id });
-      if (!vender) {
+      const id = req.body.id;
+      const venderData = await Vender.findById(id);
+      if (!venderData) {
         return sendResponse(res, 404, "Failed", {
           message: "Vender not found",
-          data: vender,
-          statusCode: 404,
         });
       }
-      let bussinessLicensee, storeLogo, signature, aadharCard, passBook, profilePic;
 
-      if (req.files["bussinessLicensee"]) {
-        let image = await cloudinary.uploader.upload(
-          req.files["bussinessLicensee"][0].path
-        );
-        bussinessLicensee = image.url;
-      }
-      if (req.files["storeLogo"]) {
-        let image = await cloudinary.uploader.upload(
-          req.files["storeLogo"][0].path
-        );
-        storeLogo = image.url;
-      }
-      if (req.files["signature"]) {
-        let image = await cloudinary.uploader.upload(
-          req.files["signature"][0].path
-        );
-        signature = image.url;
-      }
-      if (req.files["aadharCard"]) {
-        let image = await cloudinary.uploader.upload(
-          req.files["aadharCard"][0].path
-        );
-        aadharCard = image.url;
-      }
-      if (req.files["passBook"]) {
-        let image = await cloudinary.uploader.upload(
-          req.files["passBook"][0].path
-        );
-        passBook = image.url;
-      }
-      if (req.files["profilePic"]) {
-        let image = await cloudinary.uploader.upload(
-          req.files["profilePic"][0].path
-        );
-        profilePic = image.url;
-      }
+      let updateData = { ...req.body };
 
-      const updatedUserData = await Vender.findByIdAndUpdate(
-        req.body.id,
-        {
-          ...req.body,
-          passBook,
-          aadharCard,
-          signature,
-          storeLogo,
-          profilePic,
-          bussinessLicensee,
-        },
-        {
-          new: true,
+      if (req.file || req.files) {
+        if (req.files["bussinessLicense"]) {
+          const image = await cloudinary.uploader.upload(
+            req.files["bussinessLicense"][0].path
+          );
+          updateData = { ...updateData, bussinessLicensee: image.url };
         }
-      );
+
+        if (req.files["storeLogo"]) {
+          const image = await cloudinary.uploader.upload(
+            req.files["storeLogo"][0].path
+          );
+          updateData = { ...updateData, storeLogo: image.url };
+        }
+
+        if (req.files["signature"]) {
+          const image = await cloudinary.uploader.upload(
+            req.files["signature"][0].path
+          );
+          updateData = { ...updateData, signature: image.url };
+        }
+
+        if (req.files["aadharCard"]) {
+          const image = await cloudinary.uploader.upload(
+            req.files["aadharCard"][0].path
+          );
+          updateData = { ...updateData, aadharCard: image.url };
+        }
+
+        if (req.files["passBook"]) {
+          const image = await cloudinary.uploader.upload(
+            req.files["passBook"][0].path
+          );
+          updateData = { ...updateData, passBook: image.url };
+        }
+
+        if (req.files["profilePic"]) {
+          const image = await cloudinary.uploader.upload(
+            req.files["profilePic"][0].path
+          );
+          updateData = { ...updateData, profilePic: image.url };
+        }
+      }
+
+      const updatedUserData = await Vender.findByIdAndUpdate(id, updateData, {
+        new: true,
+      });
+
       sendResponse(res, 200, "Success", {
         message: "Vendor updated successfully!",
         data: updatedUserData,
         statusCode: 200,
       });
     } catch (error) {
-      return sendResponse(res, 500, "Failed", {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
         message: error.message || "Internal server error.",
-        statusCode: 500,
       });
     }
   }
 );
+
+
+
 
 venderController.delete("/delete/:id", async (req, res) => {
   try {
