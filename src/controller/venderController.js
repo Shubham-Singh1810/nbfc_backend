@@ -226,7 +226,7 @@ venderController.put(
     { name: "bussinessLicense", maxCount: 1 },
     { name: "storeLogo", maxCount: 1 },
     { name: "signature", maxCount: 1 },
-    { name: "aadharCard", maxCount: 1 },
+    { name: "adharCard", maxCount: 1 },
     { name: "passBook", maxCount: 1 },
     { name: "profilePic", maxCount: 1 },
   ]),
@@ -264,11 +264,11 @@ venderController.put(
           updateData = { ...updateData, signature: image.url };
         }
 
-        if (req.files["aadharCard"]) {
+        if (req.files["adharCard"]) {
           const image = await cloudinary.uploader.upload(
-            req.files["aadharCard"][0].path
+            req.files["adharCard"][0].path
           );
-          updateData = { ...updateData, aadharCard: image.url };
+          updateData = { ...updateData, adharCard: image.url };
         }
 
         if (req.files["passBook"]) {
