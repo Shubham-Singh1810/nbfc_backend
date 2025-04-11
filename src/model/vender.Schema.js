@@ -191,36 +191,48 @@ const venderSchema = mongoose.Schema({
     default: false,
   },
   isAccountNumberApproved: {
-    type: String,
+    type: Boolean,
+    default: false,
   },
   isIfscCodeApproved: {
-    type: String,
+    type: Boolean,
+    default: false,
   },
   isPanNumberApproved: {
-    type: String,
+    type: Boolean,
+    default: false,
   },
   isUpiIdApproved: {
-    type: String,
+    type: Boolean,
+    default: false,
   },
   isAccountHolderNameApproved: {
-    type: String,
+    type: Boolean,
+    default: false,
   },
   isBankNameApproved: {
-    type: String,
+    type: Boolean,
+    default: false,
   },
   isBankBranchCodeApproved: {
-    type: String,
+    type: Boolean,
+    default: false,
   },
   isSignatureApproved: {
-    type: String,
+    type: Boolean,
+    default: false,
   },
   isAdharCardApproved: {
-    type: String,
+    type: Boolean,
+    default: false,
   },
   isPassBookApproved: {
     type: String,
   },
-
+  isPincodeApproved: {
+    type: Boolean,
+    default: false,
+  },
   // reject reason 
   firstNameRejectReason: {
     type: String,
@@ -331,6 +343,11 @@ const venderSchema = mongoose.Schema({
     type: String,
     default: "waiting for approval",
   },  
+
+  pincodeRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
   
 });
 
