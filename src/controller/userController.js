@@ -292,6 +292,59 @@ userController.get("/details/:id", async (req, res) => {
   }
 });
 
+userController.post("/list", async (req, res) => {
+  try {
+    const {
+      searchKey = "",
+      status,
+      pageNo = 1,
+      pageCount = 10,
+      sortByField,
+      sortByOrder,
+    } = req.body;
+
+    const query = {};
+    if (status) query.status = status;
+    if (searchKey) query.name = { $regex: searchKey, $options: "i" };
+
+    // Construct sorting object
+    const sortField = sortByField || "createdAt";
+    const sortOrder = sortByOrder === "asc" ? 1 : -1;
+    const sortOption = { [sortField]: sortOrder };
+
+    // Fetch the user list
+    const userList = await User.find(query)
+      .sort(sortOption)
+      .limit(parseInt(pageCount))
+      .skip(parseInt(pageNo - 1) * parseInt(pageCount))
+      // .populate({
+      //   path: "product",
+      //   select: "name description", 
+      // })
+      // .populate({
+      //   path: "createdBy",
+      //   select: "name", 
+      // });
+    const totalCount = await User.countDocuments({});
+    const activeCount = await User.countDocuments({ status: true });
+    sendResponse(res, 200, "Success", {
+      message: "User list retrieved successfully!",
+      data: userList,
+      documentCount: {
+        totalCount,
+        activeCount,
+        inactiveCount: totalCount - activeCount,
+      },
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
 userController.post("/add-to-cart/:id", async (req, res) => {
   try {
     const { id: productId } = req.params;
@@ -506,7 +559,6 @@ userController.get("/cart/:userId", async (req, res) => {
     });
   }
 });
-
 
 userController.post("/add-to-wishlist/:id", async (req, res) => {
   try {
