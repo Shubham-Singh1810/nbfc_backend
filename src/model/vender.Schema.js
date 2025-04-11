@@ -134,7 +134,14 @@ const venderSchema = mongoose.Schema({
 
 
   // details for verification
-
+  isEmailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  isPhoneVerified: {
+    type: Boolean,
+    default: false,
+  },
   isFirstNameApproved: {
     type: Boolean,
     default: false,
@@ -147,15 +154,7 @@ const venderSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  isEmailVerified: {
-    type: Boolean,
-    default: false,
-  },
   isProfilePicApproved: {
-    type: Boolean,
-    default: false,
-  },
-  isPhoneVerified: {
     type: Boolean,
     default: false,
   },
@@ -221,6 +220,118 @@ const venderSchema = mongoose.Schema({
   isPassBookApproved: {
     type: String,
   },
+
+  // reject reason 
+  firstNameRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  lastNameRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  emailRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  profilePicRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  phoneRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  storeNameRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  storeUrlRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  storeAddressRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  gstNumberRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  storeDescriptionRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  businessLicenseRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  storeLogoRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  accountNumberRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  ifceCodeRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  panNumberRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  upiIdRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  accountHolderNameRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  bankNameRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  bankBranchCodeRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  signatureRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  adharCardRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  
+  passBookRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },  
+  
 });
 
 venderSchema.plugin(timestamps);

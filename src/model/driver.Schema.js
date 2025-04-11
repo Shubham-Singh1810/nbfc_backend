@@ -12,6 +12,7 @@ const driverSchema = mongoose.Schema({
   },
   firstNameRejectReason: {
     type: String,
+    default: "waiting for approval",
   },
   lastName: {
     type: String,
@@ -22,12 +23,14 @@ const driverSchema = mongoose.Schema({
   },
   lastNameRejectReason: {
     type: String,
+    default: "waiting for approval",
   },
   email: {
     type: String,
   },
   emailRejectReason: {
     type: String,
+    default: "waiting for approval",
   },
   isEmailApproved: {
     type: Boolean,
@@ -49,6 +52,7 @@ const driverSchema = mongoose.Schema({
   },
   phoneRejectReason: {
     type: String,
+    default: "waiting for approval",
   },
   isPhoneVerified: {
     type: Boolean,
@@ -67,6 +71,7 @@ const driverSchema = mongoose.Schema({
   },
   profilePicRejectReason: {
     type: String,
+    default: "waiting for approval",
   },
 
   countryCode: {
@@ -85,6 +90,7 @@ const driverSchema = mongoose.Schema({
   },
   dlFrontImageRejectReason: {
     type: String,
+    default: "waiting for approval",
   },
   isDlFrontImageApproved: {
     type: Boolean,
@@ -96,6 +102,7 @@ const driverSchema = mongoose.Schema({
   },
   dlBacktImageRejectReason: {
     type: String,
+    default: "waiting for approval", 
   },
   isDlBackImageApproved: {
     type: Boolean,
@@ -107,6 +114,7 @@ const driverSchema = mongoose.Schema({
   },
   pincodeRejectReason: {
     type: String,
+    default: "waiting for approval",
   },
   isPincodeApproved: {
     type: Boolean,
@@ -118,6 +126,7 @@ const driverSchema = mongoose.Schema({
   },
   addressRejectReason: {
     type: String,
+    default: "waiting for approval",
   },
   isAddressApproved: {
     type: Boolean,
