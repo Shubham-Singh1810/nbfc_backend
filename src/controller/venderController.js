@@ -247,7 +247,7 @@ venderController.put(
           const image = await cloudinary.uploader.upload(
             req.files["bussinessLicense"][0].path
           );
-          updateData = { ...updateData, bussinessLicensee: image.url };
+          updateData = { ...updateData, bussinessLicense: image.url };
         }
 
         if (req.files["storeLogo"]) {
@@ -303,9 +303,6 @@ venderController.put(
     }
   }
 );
-
-
-
 
 venderController.delete("/delete/:id", async (req, res) => {
   try {
