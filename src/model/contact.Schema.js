@@ -17,7 +17,10 @@ const contactSchema = mongoose.Schema({
   },
   message:{
     type: String,
-  }
+  },
+  category:{
+    type: String,
+  },
 });
 
 contactSchema.plugin(timestamps);

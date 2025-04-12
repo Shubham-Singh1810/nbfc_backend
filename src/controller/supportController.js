@@ -55,9 +55,13 @@ supportController.post("/create-faq", async (req, res) => {
     });
   }
 });
-supportController.get("/list-faq", async (req, res) => {
+supportController.post("/list-faq", async (req, res) => {
+  let query = {};
+  if (req.body.category){
+    query.category = req?.body?.category
+  }
   try {
-    const faqList = await Faq.find({});
+    const faqList = await Faq.find(query);
     sendResponse(res, 200, "Success", {
       message: "Faq list retrived successfully.",
       data: faqList,
