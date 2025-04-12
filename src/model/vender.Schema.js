@@ -227,7 +227,8 @@ const venderSchema = mongoose.Schema({
     default: false,
   },
   isPassBookApproved: {
-    type: String,
+    type: Boolean,
+    default: false,
   },
   isPincodeApproved: {
     type: Boolean,
