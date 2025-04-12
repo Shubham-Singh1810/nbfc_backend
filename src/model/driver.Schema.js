@@ -100,7 +100,7 @@ const driverSchema = mongoose.Schema({
     type: String,
     // required: true,
   },
-  dlBacktImageRejectReason: {
+  dlBackImageRejectReason: {
     type: String,
     default: "waiting for approval", 
   },
