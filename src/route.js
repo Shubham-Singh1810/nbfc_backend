@@ -20,6 +20,7 @@ const productManufactureLocationController = require("./controller/productManufa
 const zipcodeController = require("./controller/zipcodeController");
 const productRatingController = require("./controller/productRatingController");
 const bookingController = require("./controller/bookingController");
+const supportController = require("./controller/supportController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -41,6 +42,7 @@ router.use("/product-manufacture-location", productManufactureLocationController
 router.use("/zipcode", zipcodeController);
 router.use("/rating", productRatingController);
 router.use("/booking", bookingController);
+router.use("/support", supportController);
 
 
 module.exports = router;
