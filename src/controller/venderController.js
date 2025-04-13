@@ -387,7 +387,7 @@ venderController.post("/list", async (req, res) => {
     } = req.body;
 
     const query = {};
-    if (status) query.status = status;
+    if (status) query.profileStatus = status;
     if (searchKey) {
       query.$or = [
         { firstName: { $regex: searchKey, $options: "i" } },
@@ -408,7 +408,7 @@ venderController.post("/list", async (req, res) => {
       .skip(parseInt(pageNo - 1) * parseInt(pageCount))
       
     const totalCount = await Vender.countDocuments({});
-    const activeCount = await Vender.countDocuments({ status: true });
+    const activeCount = await Vender.countDocuments({ profileStatus: "approved" });
     sendResponse(res, 200, "Success", {
       message: "Vender list retrieved successfully!",
       data: venderList,

@@ -249,7 +249,13 @@ driverController.post("/list", async (req, res) => {
     } = req.body;
     const query = {};
     if (status) query.profileStatus = status;
-    if (searchKey) query.firstName = { $regex: searchKey, $options: "i" };
+    if (searchKey) {
+      query.$or = [
+        { firstName: { $regex: searchKey, $options: "i" } },
+        { lastName: { $regex: searchKey, $options: "i" } },
+        { email: { $regex: searchKey, $options: "i" } },
+      ];
+    }
     const sortField = sortByField || "createdAt";
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };
@@ -259,7 +265,7 @@ driverController.post("/list", async (req, res) => {
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
     const totalCount = await Driver.countDocuments({});
     const activeCount = await Driver.countDocuments({
-      profileStatus: "completed",
+      profileStatus: "approved",
     });
     sendResponse(res, 200, "Success", {
       message: "Driver list retrieved successfully!",
