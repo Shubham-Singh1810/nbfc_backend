@@ -3,6 +3,7 @@ const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const subCategory = require("../model/subCategory.Schema");
 const Product = require("../model/product.Schema");
+const Attribute = require("../model/attribute.Schema");
 const subCategoryController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
@@ -85,6 +86,22 @@ subCategoryController.post("/list", async (req, res) => {
   }
 });
 
+subCategoryController.post("/attribute-list", async (req, res) => {
+  try {
+    let attributeList = Attribute.find({})
+    sendResponse(res, 200, "Success", {
+      message: "Attributer list retrieved successfully!",
+      data: attributeList,
+      statusCode:200
+
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
 
 subCategoryController.put("/update", upload.single("image"), async (req, res) => {
   try {

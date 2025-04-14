@@ -42,6 +42,10 @@ attributeSetController.post("/list", async (req, res) => {
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };
     const attributeSetList = await AttributeSet.find(query)
+      .populate({
+        path: "subCategoryId",
+        
+      })
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
@@ -109,13 +113,13 @@ attributeSetController.delete("/delete/:id", async (req, res) => {
     await AttributeSet.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
       message: "Attribute set deleted successfully!",
-      statusCode:200
+      statusCode: 200,
     });
   } catch (error) {
     console.error(error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
-      statusCode: 500,   
+      statusCode: 500,
     });
   }
 });

@@ -13,7 +13,7 @@ const attributeSetSchema = mongoose.Schema({
   },
   subCategoryId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "SubCategory",
+    ref: "subCategory",
   },
 });
 
