@@ -10,7 +10,11 @@ const attributeSetSchema = mongoose.Schema({
   status: {
     type: Boolean,
     default: true,
-  }
+  },
+  subCategoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "SubCategory",
+  },
 });
 
 attributeSetSchema.plugin(timestamps);

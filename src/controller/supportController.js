@@ -216,4 +216,22 @@ supportController.delete("/delete-faq/:id", async (req, res) => {
     });
   }
 });
+
+supportController.post("/create", async (req, res) => {
+  try {
+    const supportDetails = await Support.create(req.body);
+    sendResponse(res, 200, "Success", {
+      message:
+        "Support Details added successfully",
+      data: supportDetails,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
 module.exports = supportController;
