@@ -8,6 +8,8 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
+const { sendNotification } = require("../utils/sendNotification");
+
 
 driverController.post(
   "/sign-up",
@@ -61,6 +63,15 @@ driverController.post(
         dlBackImage,
         profilePic,
       });
+      sendNotification({
+        icon:newDriver.profilePic,
+        title:"A new driver registered",
+        subTitle:`${newDriver.firstName} has registered to the portal`,
+        notifyUserId:"Admin",
+        category:"Driver",
+        subCategory:"Registration",
+        notifyUser:"Admin",
+      })
 
       // Generate JWT token
       const token = jwt.sign(
