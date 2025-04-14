@@ -131,6 +131,15 @@ driverController.post("/otp-verification", async (req, res) => {
         { isPhoneVerified: true,  profileStatus: req?.body?.isforgetPassword ? user?.profileStatus:  "completed" },
         { new: true }
       );
+      sendNotification({
+        icon:updatedDriver.profilePic,
+        title:`${updatedDriver.firstName} has verified thier phone number`,
+        subTitle:`${updatedDriver.firstName} has verified thier phone number`,
+        notifyUserId:"Admin",
+        category:"Driver",
+        subCategory:"Verification",
+        notifyUser:"Admin",
+      })
       return sendResponse(res, 200, "Success", {
         message: "Otp verified successfully",
         data: updatedDriver,
@@ -375,7 +384,39 @@ driverController.put("/update", upload.fields([
         const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
           new: true, 
         });
-  
+        if(req.body.profileStatus=="reUploaded"){
+          sendNotification({
+            icon:updatedUserData.profilePic,
+            title:`${updatedUserData.firstName} has re-uploaded the details`,
+            subTitle:`${updatedUserData.firstName} has re-uploaded the details`,
+            notifyUserId:"Admin",
+            category:"Driver",
+            subCategory:"Profile update",
+            notifyUser:"Admin",
+          })
+        }
+        if(req.body.profileStatus=="rejected"){
+          sendNotification({
+            icon:updatedUserData.profilePic,
+            title:`${updatedUserData.firstName} your details has been rejected`,
+            subTitle:`${updatedUserData.firstName} please go through the details once more`,
+            notifyUserId:updatedUserData._id,
+            category:"Driver",
+            subCategory:"Profile update",
+            notifyUser:"Driver",
+          })
+        }
+        if(req.body.profileStatus=="rejected"){
+          sendNotification({
+            icon:updatedUserData.profilePic,
+            title:`${updatedUserData.firstName} your details has been rejected`,
+            subTitle:`${updatedUserData.firstName} please go through the details once more`,
+            notifyUserId:updatedUserData._id,
+            category:"Driver",
+            subCategory:"Profile update",
+            notifyUser:"Driver",
+          })
+        }
         sendResponse(res, 200, "Success", {
           message: "Driver updated successfully!",
           data: updatedUserData,

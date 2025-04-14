@@ -21,6 +21,7 @@ const zipcodeController = require("./controller/zipcodeController");
 const productRatingController = require("./controller/productRatingController");
 const bookingController = require("./controller/bookingController");
 const supportController = require("./controller/supportController");
+const notificationController = require("./controller/notificationController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -43,6 +44,7 @@ router.use("/zipcode", zipcodeController);
 router.use("/rating", productRatingController);
 router.use("/booking", bookingController);
 router.use("/support", supportController);
+router.use("/notification", notificationController);
 
 
 module.exports = router;
