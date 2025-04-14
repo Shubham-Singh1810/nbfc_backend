@@ -124,7 +124,7 @@ const productSchema = mongoose.Schema({
   productOtherDetails: [
     {
       key: { type: String },
-      value: { type: String },
+      value: [{ type: String }],
     },
   ],
   // admin action

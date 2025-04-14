@@ -9,52 +9,6 @@ const upload = require("../utils/multer");
 const auth = require("../utils/auth");
 const fs = require("fs");
 const path = require("path");
-// productController.post(
-//   "/create",
-//   upload.fields([
-//     { name: "productHeroImage", maxCount: 5 },
-//     { name: "productGallery", maxCount: 5 },
-//   ]),
-//   async (req, res) => {
-//     try {
-//       let productHeroImage = [];
-//       let productGallery = [];
-
-//       if (req.files["productHeroImage"]) {
-//         for (let file of req.files["productHeroImage"]) {
-//           let result = await cloudinary.uploader.upload(file.path);
-//           productHeroImage.push(result.url);
-//         }
-//       }
-
-//       if (req.files["productGallery"]) {
-//         for (let file of req.files["productGallery"]) {
-//           let result = await cloudinary.uploader.upload(file.path);
-//           productGallery.push(result.url);
-//         }
-//       }
-
-//       const productData = {
-//         ...req.body,
-//         productHeroImage,
-//         productGallery,
-//       };
-
-//       const productCreated = await Product.create(productData);
-//       sendResponse(res, 200, "Success", {
-//         message: "Product created successfully!",
-//         data: productCreated,
-//         statusCode: 200,
-//       });
-//     } catch (error) {
-//       console.error(error);
-//       sendResponse(res, 500, "Failed", {
-//         message: error.message || "Internal server error",
-//         statusCode: 500,
-//       });
-//     }
-//   }
-// );
 
 productController.post("/create", async (req, res) => {
   try {
@@ -135,7 +89,7 @@ productController.put("/update",
   async (req, res) => {
     try {
       const id = req.body.id;
-      const productData = await Product.findById(id);
+      const productData = await Product.findOne({_id:id});
       if (!productData) {
         return sendResponse(res, 404, "Failed", {
           message: "Product not found",

@@ -11,73 +11,81 @@ const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const auth = require("../utils/auth");
 
-
-subCategoryController.post("/create", upload.single("image"), async (req, res) => {
-  try {
-    let obj;
-    if (req.file) {
-      let image = await cloudinary.uploader.upload(req.file.path, function (err, result) {
-        if (err) {
-          return err;
-        } else {
-          return result;
-        }
+subCategoryController.post(
+  "/create",
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      let obj;
+      if (req.file) {
+        let image = await cloudinary.uploader.upload(
+          req.file.path,
+          function (err, result) {
+            if (err) {
+              return err;
+            } else {
+              return result;
+            }
+          }
+        );
+        obj = { ...req.body, image: image.url };
+      }
+      const subCategoryCreated = await subCategory.create(obj);
+      sendResponse(res, 200, "Success", {
+        message: "Sub Category created successfully!",
+        data: subCategoryCreated,
+        statusCode: 200,
       });
-      obj = { ...req.body, image: image.url };
+    } catch (error) {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+      });
     }
-    const subCategoryCreated = await subCategory.create(obj);
-    sendResponse(res, 200, "Success", {
-      message: "Sub Category created successfully!",
-      data: subCategoryCreated,
-      statusCode:200
-    });
-  } catch (error) {
-    console.error(error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-    });
   }
-});
-
+);
 
 subCategoryController.post("/list", async (req, res) => {
   try {
     const {
-      searchKey = "", 
-      status, 
-      pageNo=1, 
+      searchKey = "",
+      status,
+      pageNo = 1,
       pageCount = 10,
-      sortByField, 
-      sortByOrder
+      sortByField,
+      sortByOrder,
     } = req.body;
 
-    
     const query = {};
-    if (status) query.status = status; 
-    if (searchKey) query.name = { $regex: searchKey, $options: "i" }; 
+    if (status) query.status = status;
+    if (searchKey) query.name = { $regex: searchKey, $options: "i" };
 
     // Construct sorting object
-    const sortField = sortByField || "createdAt"; 
-    const sortOrder = sortByOrder === "asc" ? 1 : -1; 
+    const sortField = sortByField || "createdAt";
+    const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };
 
     // Fetch the category list
-    const subCategoryList = await subCategory.find(query)
+    const subCategoryList = await subCategory
+      .find(query)
       .sort(sortOption)
       .limit(parseInt(pageCount))
-      .skip(parseInt(pageNo-1) * parseInt(pageCount))
+      .skip(parseInt(pageNo - 1) * parseInt(pageCount))
       .populate({
         path: "categoryId", // Field to populate
         select: "name description", // Specify the fields to retrieve from the category collection
-      })
+      });
     const totalCount = await subCategory.countDocuments({});
-    const activeCount = await subCategory.countDocuments({status:true});
+    const activeCount = await subCategory.countDocuments({ status: true });
     sendResponse(res, 200, "Success", {
       message: "Sub Category list retrieved successfully!",
       data: subCategoryList,
-      documentCount: {totalCount, activeCount, inactiveCount: totalCount-activeCount},
-      statusCode:200
-
+      documentCount: {
+        totalCount,
+        activeCount,
+        inactiveCount: totalCount - activeCount,
+      },
+      statusCode: 200,
     });
   } catch (error) {
     console.error(error);
@@ -95,27 +103,27 @@ subCategoryController.post("/attribute-list", async (req, res) => {
     const attributeSetList = await AttributeSet.find({ subCategoryId });
 
     // 2. Collect all attributeSet IDs
-    const attributeSetIds = attributeSetList.map(set => set._id);
+    const attributeSetIds = attributeSetList.map((set) => set._id);
 
     // 3. Fetch all attributes for all attributeSets
     const attributeList = await Attribute.find({
-      attributeSetId: { $in: attributeSetIds }
+      attributeSetId: { $in: attributeSetIds },
     });
 
     // 4. Format attributeList
-    const formattedAttributes = attributeList.map(attr => ({
+    const formattedAttributes = attributeList.map((attr) => ({
       attributeId: attr._id,
       name: attr.name,
       value: attr.value,
       attributeSetId: attr.attributeSetId,
-      status: attr.status
+      status: attr.status,
     }));
 
     // 5. Send flat list
     sendResponse(res, 200, "Success", {
       message: "Attribute list retrieved successfully!",
       data: formattedAttributes,
-      statusCode: 200
+      statusCode: 200,
     });
   } catch (error) {
     console.error(error);
@@ -125,59 +133,64 @@ subCategoryController.post("/attribute-list", async (req, res) => {
   }
 });
 
+subCategoryController.put(
+  "/update",
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      const id = req.body._id;
 
-
-subCategoryController.put("/update", upload.single("image"), async (req, res) => {
-  try {
-    const id = req.body._id;
-
-    // Find the category by ID
-    const subCategoryData = await subCategory.findById(id);
-    if (!subCategoryData) {
-      return sendResponse(res, 404, "Failed", {
-        message: "Sub Category not found",
-      });
-    }
-
-    let updatedData = { ...req.body };
-
-    // If a new image is uploaded
-    if (req.file) {
-      // Delete the old image from Cloudinary
-      if (subCategoryData.image) {
-        const publicId = subCategory.image.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy(publicId, (error, result) => {
-          if (error) {
-            console.error("Error deleting old image from Cloudinary:", error);
-          } else {
-            console.log("Old image deleted from Cloudinary:", result);
-          }
+      // Find the category by ID
+      const subCategoryData = await subCategory.findById(id);
+      if (!subCategoryData) {
+        return sendResponse(res, 404, "Failed", {
+          message: "Sub Category not found",
         });
       }
 
-      // Upload the new image to Cloudinary
-      const image = await cloudinary.uploader.upload(req.file.path);
-      updatedData.image = image.url;
+      let updatedData = { ...req.body };
+
+      // If a new image is uploaded
+      if (req.file) {
+        // Delete the old image from Cloudinary
+        if (subCategoryData.image) {
+          const publicId = subCategory.image.split("/").pop().split(".")[0];
+          await cloudinary.uploader.destroy(publicId, (error, result) => {
+            if (error) {
+              console.error("Error deleting old image from Cloudinary:", error);
+            } else {
+              console.log("Old image deleted from Cloudinary:", result);
+            }
+          });
+        }
+
+        // Upload the new image to Cloudinary
+        const image = await cloudinary.uploader.upload(req.file.path);
+        updatedData.image = image.url;
+      }
+
+      // Update the category in the database
+      const updatedSubCategory = await subCategory.findByIdAndUpdate(
+        id,
+        updatedData,
+        {
+          new: true, // Return the updated document
+        }
+      );
+
+      sendResponse(res, 200, "Success", {
+        message: "Sub Category updated successfully!",
+        data: updatedSubCategory,
+        statusCode: 200,
+      });
+    } catch (error) {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+      });
     }
-
-    // Update the category in the database
-    const updatedSubCategory = await subCategory.findByIdAndUpdate(id, updatedData, {
-      new: true, // Return the updated document
-    });
-
-    sendResponse(res, 200, "Success", {
-      message: "Sub Category updated successfully!",
-      data: updatedSubCategory,
-      statusCode:200
-    });
-  } catch (error) {
-    console.error(error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-    });
   }
-});
-
+);
 
 subCategoryController.delete("/delete/:id", async (req, res) => {
   try {
@@ -210,7 +223,7 @@ subCategoryController.delete("/delete/:id", async (req, res) => {
 
     sendResponse(res, 200, "Success", {
       message: "Sub Category and associated image deleted successfully!",
-      statusCode:200
+      statusCode: 200,
     });
   } catch (error) {
     console.error(error);
@@ -219,8 +232,6 @@ subCategoryController.delete("/delete/:id", async (req, res) => {
     });
   }
 });
-
-
 
 // subCategoryController.get("/details/:id", auth, async (req, res) => {
 //   try {
@@ -237,7 +248,7 @@ subCategoryController.delete("/delete/:id", async (req, res) => {
 //     const updateListWithWishlist = (list, type) => {
 //       return list.map((item) => ({
 //         ...item._doc,
-//         isFavourite: wishListIds.includes(item._id.toString()) && 
+//         isFavourite: wishListIds.includes(item._id.toString()) &&
 //                  req.user.wishList.some(w => w.modelId.toString() === item._id.toString() && w.modelType === type)
 //       }));
 //     };
@@ -267,22 +278,21 @@ subCategoryController.delete("/delete/:id", async (req, res) => {
 
 subCategoryController.get("/details/:id", async (req, res) => {
   try {
-    const { id } = req.params
+    const { id } = req.params;
     const subCategoryDetails = await subCategory.findOne({ _id: id });
     const productList = await Product.find({ subCategoryId: id });
     sendResponse(res, 200, "Success", {
       message: "Sub category with product list retrived successfully!",
       data: { subCategoryDetails, productList },
-      statusCode: 200
+      statusCode: 200,
     });
   } catch (error) {
     console.error(error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
-      statusCode: 500
+      statusCode: 500,
     });
   }
 });
-
 
 module.exports = subCategoryController;
