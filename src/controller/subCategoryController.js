@@ -3,6 +3,7 @@ const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const subCategory = require("../model/subCategory.Schema");
 const Product = require("../model/product.Schema");
+const AttributeSet = require("../model/attributeSet.Schema");
 const Attribute = require("../model/attribute.Schema");
 const subCategoryController = express.Router();
 require("dotenv").config();
@@ -88,11 +89,33 @@ subCategoryController.post("/list", async (req, res) => {
 
 subCategoryController.post("/attribute-list", async (req, res) => {
   try {
-    let attributeList = await Attribute.find({})
+    const { subCategoryId } = req.body;
+
+    // 1. Get all attributeSets for the subCategory
+    const attributeSetList = await AttributeSet.find({ subCategoryId });
+
+    // 2. Collect all attributeSet IDs
+    const attributeSetIds = attributeSetList.map(set => set._id);
+
+    // 3. Fetch all attributes for all attributeSets
+    const attributeList = await Attribute.find({
+      attributeSetId: { $in: attributeSetIds }
+    });
+
+    // 4. Format attributeList
+    const formattedAttributes = attributeList.map(attr => ({
+      attributeId: attr._id,
+      name: attr.name,
+      value: attr.value,
+      attributeSetId: attr.attributeSetId,
+      status: attr.status
+    }));
+
+    // 5. Send flat list
     sendResponse(res, 200, "Success", {
-      message: "Attributer list retrieved successfully!",
-      data: attributeList,
-      statusCode:200
+      message: "Attribute list retrieved successfully!",
+      data: formattedAttributes,
+      statusCode: 200
     });
   } catch (error) {
     console.error(error);
@@ -101,6 +124,8 @@ subCategoryController.post("/attribute-list", async (req, res) => {
     });
   }
 });
+
+
 
 subCategoryController.put("/update", upload.single("image"), async (req, res) => {
   try {
