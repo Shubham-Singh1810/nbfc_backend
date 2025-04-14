@@ -88,12 +88,11 @@ subCategoryController.post("/list", async (req, res) => {
 
 subCategoryController.post("/attribute-list", async (req, res) => {
   try {
-    let attributeList = Attribute.find({})
+    let attributeList = await Attribute.find({})
     sendResponse(res, 200, "Success", {
       message: "Attributer list retrieved successfully!",
       data: attributeList,
       statusCode:200
-
     });
   } catch (error) {
     console.error(error);
