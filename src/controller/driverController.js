@@ -406,11 +406,11 @@ driverController.put("/update", upload.fields([
             notifyUser:"Driver",
           })
         }
-        if(req.body.profileStatus=="rejected"){
+        if(req.body.profileStatus=="approved"){
           sendNotification({
             icon:updatedUserData.profilePic,
-            title:`${updatedUserData.firstName} your details has been rejected`,
-            subTitle:`${updatedUserData.firstName} please go through the details once more`,
+            title:`${updatedUserData.firstName} your profile has been approved`,
+            subTitle:`${updatedUserData.firstName} congratulations!! your profile has been approved`,
             notifyUserId:updatedUserData._id,
             category:"Driver",
             subCategory:"Profile update",

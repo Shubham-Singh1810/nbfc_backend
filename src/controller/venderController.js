@@ -9,6 +9,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
+const { sendNotification } = require("../utils/sendNotification");
 
 venderController.post("/sign-up", upload.single("profilePic"), async (req, res) => {
   try {
@@ -46,7 +47,15 @@ venderController.post("/sign-up", upload.single("profilePic"), async (req, res) 
       phoneOtp: otp,
       profilePic :profilePic
     });
-
+    sendNotification({
+      icon:newVender.profilePic,
+      title:"A new vender registered",
+      subTitle:`${newVender.firstName} has registered to the portal`,
+      notifyUserId:"Admin",
+      category:"Vender",
+      subCategory:"Registration",
+      notifyUser:"Admin",
+    })
     // Generate JWT token
     const token = jwt.sign(
       { userId: newVender._id, phone: newVender.phone },
@@ -103,6 +112,15 @@ venderController.post("/otp-verification", async (req, res) => {
         { isPhoneVerified: true,  profileStatus: req?.body?.isforgetPassword ? user?.profileStatus:  "otpVerified" },
         { new: true }
       );
+          sendNotification({
+              icon:updatedVender.profilePic,
+              title:`${updatedVender.firstName} has verified thier phone number`,
+              subTitle:`${updatedVender.firstName} has verified thier phone number`,
+              notifyUserId:"Admin",
+              category:"Vender",
+              subCategory:"Verification",
+              notifyUser:"Admin",
+            })
       return sendResponse(res, 200, "Success", {
         message: "Otp verified successfully",
         data: updatedVender,
@@ -289,7 +307,50 @@ venderController.put(
       const updatedUserData = await Vender.findByIdAndUpdate(id, updateData, {
         new: true,
       });
-
+      if(req.body.profileStatus=="reUploaded"){
+        sendNotification({
+          icon:updatedUserData.profilePic,
+          title:`${updatedUserData.firstName} has re-uploaded the details`,
+          subTitle:`${updatedUserData.firstName} has re-uploaded the details`,
+          notifyUserId:"Admin",
+          category:"Vender",
+          subCategory:"Profile update",
+          notifyUser:"Admin",
+        })
+      }
+         if(req.body.profileStatus=="rejected"){
+                sendNotification({
+                  icon:updatedUserData.profilePic,
+                  title:`${updatedUserData.firstName} your details has been rejected`,
+                  subTitle:`${updatedUserData.firstName} please go through the details once more`,
+                  notifyUserId:updatedUserData._id,
+                  category:"Vender",
+                  subCategory:"Profile update",
+                  notifyUser:"Vender",
+                })
+              }
+      if(req.body.profileStatus=="approved"){
+        sendNotification({
+          icon:updatedUserData.profilePic,
+          title:`${updatedUserData.firstName} your profile has been approved`,
+          subTitle:`${updatedUserData.firstName} congratulations!! your profile has been approved`,
+          notifyUserId:updatedUserData._id,
+          category:"Vender",
+          subCategory:"Profile update",
+          notifyUser:"Vender",
+        })
+      }
+      if(req.body.profileStatus=="storeDetailsCompleted"){
+        sendNotification({
+          icon:updatedUserData.profilePic,
+          title:`${updatedUserData.firstName} your storeDetails has been Completed`,
+          subTitle:`${updatedUserData.firstName} congratulations!! your storeDetails has been Completed`,
+          notifyUserId:updatedUserData._id,
+          category:"Vender",
+          subCategory:"Profile update",
+          notifyUser:"Vender",
+        })
+      }
       sendResponse(res, 200, "Success", {
         message: "Vendor updated successfully!",
         data: updatedUserData,
