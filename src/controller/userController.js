@@ -509,7 +509,8 @@ userController.get("/cart/:userId", async (req, res) => {
       });
     }
 
-    let totalAmount = 0;
+    let actualTotalAmount = 0;
+    let discountedTotalAmount = 0;
 
     const cartDetails = user.cartItems.map((item) => {
       const product = item.productId;
@@ -519,13 +520,14 @@ userController.get("/cart/:userId", async (req, res) => {
       }
 
       const quantity = item.quantity || 1;
-      const priceToUse =
-        typeof product.discountedPrice === "number"
-          ? product.discountedPrice
-          : product.price || 0;
+      const price = product.price
+      const discounted_price = product.discountedPrice
+    
 
-      const itemTotal = priceToUse * quantity;
-      totalAmount += itemTotal;
+      const actualPrice = price * quantity;
+      const discountedPrice = discounted_price * quantity;
+      actualTotalAmount += actualPrice;
+      discountedTotalAmount += discountedPrice;
 
       return {
         _id: product._id,
@@ -542,14 +544,17 @@ userController.get("/cart/:userId", async (req, res) => {
         updatedAt: product.updatedAt,
         createdAt: product.createdAt,
         quantity,
-        itemTotal,
+        totalItemPrice:actualPrice,
+        totalItemDiscountedPrice:discountedPrice,
+      
       };
     }).filter(Boolean); // remove null values if any product was missing
 
     sendResponse(res, 200, "Success", {
       message: "Cart items retrieved successfully",
       cartItems: cartDetails,
-      totalAmount,
+      actualTotalAmount,
+      discountedTotalAmount,
     });
 
   } catch (error) {
