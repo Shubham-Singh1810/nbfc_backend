@@ -393,7 +393,7 @@ driverController.put("/update", upload.fields([
             category:"Driver",
             subCategory:"Profile update",
             notifyUser:"Admin",
-          })
+          }, req.io)
         }
         if(req.body.profileStatus=="rejected"){
           sendNotification({
@@ -404,7 +404,7 @@ driverController.put("/update", upload.fields([
             category:"Driver",
             subCategory:"Profile update",
             notifyUser:"Driver",
-          })
+          }, req.io)
         }
         if(req.body.profileStatus=="approved"){
           sendNotification({
@@ -415,7 +415,7 @@ driverController.put("/update", upload.fields([
             category:"Driver",
             subCategory:"Profile update",
             notifyUser:"Driver",
-          })
+          }, req.io)
         }
         sendResponse(res, 200, "Success", {
           message: "Driver updated successfully!",

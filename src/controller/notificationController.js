@@ -37,7 +37,6 @@ notificationController.post("/list", async (req, res) => {
     sendResponse(res, 200, "Success", {
       message: "Notification list retrieved successfully!",
       data: notificationList,
-      
       statusCode: 200,
     });
   } catch (error) {
