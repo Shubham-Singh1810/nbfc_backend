@@ -71,7 +71,7 @@ driverController.post(
         category:"Driver",
         subCategory:"Registration",
         notifyUser:"Admin",
-      })
+      },req.io)
 
       // Generate JWT token
       const token = jwt.sign(

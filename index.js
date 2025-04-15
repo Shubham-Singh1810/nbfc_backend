@@ -17,6 +17,28 @@ const io = new Server(server, {
   }
 })
 
+
+
+io.on("connection", (socket) => {
+  console.log("A user connected:", socket.id);
+
+  // Example: listening to an event from client
+  socket.on("sendMessage", (data) => {
+    console.log("Message from client:", data);
+    
+    // Broadcasting to all clients
+    io.emit("receiveMessage", data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
+
+
+
+
+
 app.use('/uploads', express.static('uploads'))
 const PORT = process.env.PORT || 8000;
 

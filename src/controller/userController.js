@@ -12,6 +12,7 @@ const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 
+
 userController.post("/send-otp", async (req, res) => {
   try {
     const { phone, ...otherDetails } = req.body;
@@ -642,6 +643,37 @@ userController.get("/wishlist/:userId", async (req, res) => {
   }
 });
 
+// userController.put("/update", upload.single("profilePic"), async (req, res) => {
+//   try {
+//     const id = req.body.id;
+//     const userData = await User.findById(id);
+//     if (!userData) {
+//       return sendResponse(res, 404, "Failed", {
+//         message: "User not found",
+//       });
+//     }
+//     let updatedData = { ...req.body };
+//     if (req.file) {
+//       const profilePic = await cloudinary.uploader.upload(req.file.path);
+//       updatedData.profilePic = profilePic.url;
+//     }
+//     const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
+//       new: true, // Return the updated document
+//     });
+//     sendResponse(res, 200, "Success", {
+//       message: "User updated successfully!",
+//       data: updatedUser,
+//       statusCode: 200,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error",
+//     });
+//   }
+// });
+
+
 userController.put("/update", upload.single("profilePic"), async (req, res) => {
   try {
     const id = req.body.id;
@@ -651,19 +683,31 @@ userController.put("/update", upload.single("profilePic"), async (req, res) => {
         message: "User not found",
       });
     }
+
     let updatedData = { ...req.body };
+
     if (req.file) {
       const profilePic = await cloudinary.uploader.upload(req.file.path);
       updatedData.profilePic = profilePic.url;
     }
+
     const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
       new: true, // Return the updated document
     });
+
+    // ✅ Emit the event after updating
+    req.io.emit("userUpdated", {
+      message: "User profile updated",
+      userId: updatedUser._id,
+      updatedData: updatedUser,
+    });
+
     sendResponse(res, 200, "Success", {
       message: "User updated successfully!",
       data: updatedUser,
       statusCode: 200,
     });
+
   } catch (error) {
     console.error(error);
     sendResponse(res, 500, "Failed", {
@@ -671,6 +715,7 @@ userController.put("/update", upload.single("profilePic"), async (req, res) => {
     });
   }
 });
+
 
 userController.post("/home-details",  async (req, res) => {
   try {
