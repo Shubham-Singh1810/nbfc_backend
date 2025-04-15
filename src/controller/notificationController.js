@@ -13,41 +13,31 @@ const { sendNotification } = require("../utils/sendNotification");
 notificationController.post("/list", async (req, res) => {
   try {
     const {
-      searchKey = "",
-      status,
+      category,
+      notifyUser,
+      isRead,
       pageNo = 1,
       pageCount = 10,
-      sortByField,
-      sortByOrder,
     } = req.body;
     const query = {};
-    if (status) query.profileStatus = status;
-    if (searchKey) {
-      query.$or = [
-        { firstName: { $regex: searchKey, $options: "i" } },
-        { lastName: { $regex: searchKey, $options: "i" } },
-        { email: { $regex: searchKey, $options: "i" } },
-      ];
+    if(category){
+      query.category = category
     }
-    const sortField = sortByField || "createdAt";
-    const sortOrder = sortByOrder === "asc" ? 1 : -1;
-    const sortOption = { [sortField]: sortOrder };
+    if(notifyUser){
+      query.notifyUser = notifyUser
+    }
+    if(isRead){
+      query.isRead = isRead
+    }
     const notificationList = await Notification.find(query)
-      .sort(sortOption)
+      
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
-    const totalCount = await Notification.countDocuments({});
-    const activeCount = await Notification.countDocuments({
-      profileStatus: "approved",
-    });
+   
     sendResponse(res, 200, "Success", {
       message: "Notification list retrieved successfully!",
       data: notificationList,
-      documentCount: {
-        totalCount,
-        activeCount,
-        inactiveCount: totalCount - activeCount,
-      },
+      
       statusCode: 200,
     });
   } catch (error) {
