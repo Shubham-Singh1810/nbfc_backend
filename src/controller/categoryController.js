@@ -8,7 +8,7 @@ const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const SubCategory = require("../model/subCategory.Schema");
 const Product = require("../model/product.Schema")
-
+const { sendNotification } = require("../utils/sendNotification");
 
 categoryController.post("/create", upload.single("image"), async (req, res) => {
   try {
@@ -24,6 +24,15 @@ categoryController.post("/create", upload.single("image"), async (req, res) => {
       obj = { ...req.body, image: image.url };
     }
     const CategoryCreated = await Category.create(obj);
+    sendNotification({
+                icon:CategoryCreated?.image,
+                title:` has re-uploaded the details`,
+                subTitle:` has re-uploaded the details`,
+                notifyUserId:"Admin",
+                category:"Driver",
+                subCategory:"Profile update",
+                notifyUser:"Admin",
+              }, req.io)
     sendResponse(res, 200, "Success", {
       message: "Category created successfully!",
       data: CategoryCreated,

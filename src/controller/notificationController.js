@@ -48,5 +48,57 @@ notificationController.post("/list", async (req, res) => {
   }
 });
 
+notificationController.put("/update", async (req, res) => {
+  try {
+    const id = req.body._id;
+    const notification = await Notification.findById(id);
+    if (!notification) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Tag set not found",
+        statusCode: 403,
+      });
+    }
+    const updatedNotifcation = await Notification.findByIdAndUpdate(
+      id,
+      req.body,
+      {
+        new: true, // Return the updated document
+      }
+    );
+    sendResponse(res, 200, "Success", {
+      message: "Mark as read!",
+      data: updatedNotifcation,
+      statusCode: 200,
+    });
+  } catch (error) {
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
 
+notificationController.delete("/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const notification = await Notification.findById(id);
+    if (!notification) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Notification not found",
+        statusCode: 404,
+      });
+    }
+    await Notification.findByIdAndDelete(id);
+    sendResponse(res, 200, "Success", {
+      message: "Notification deleted successfully!",
+      statusCode:200
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,   
+    });
+  }
+});
 module.exports = notificationController;

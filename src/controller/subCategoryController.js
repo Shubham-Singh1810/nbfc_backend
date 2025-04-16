@@ -97,10 +97,12 @@ subCategoryController.post("/list", async (req, res) => {
 
 subCategoryController.post("/attribute-list", async (req, res) => {
   try {
-    const { subCategoryId } = req.body;
+    const { productId } = req.body;
+
+    const productDetails = await Product.findOne({_id: productId})
 
     // 1. Get all attributeSets for the subCategory
-    const attributeSetList = await AttributeSet.find({ subCategoryId });
+    const attributeSetList = await AttributeSet.find({ subCategoryId: productDetails?.subCategoryId });
 
     // 2. Collect all attributeSet IDs
     const attributeSetIds = attributeSetList.map((set) => set._id);
@@ -233,48 +235,6 @@ subCategoryController.delete("/delete/:id", async (req, res) => {
   }
 });
 
-// subCategoryController.get("/details/:id", auth, async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const subCategoryDetails = await subCategory.findOne({ _id: id });
-//     const serviceList = await service.find({ subCategoryId: id });
-//     const repairList = await repair.find({ subCategoryId: id });
-//     const installationList = await installation.find({ subCategoryId: id });
-
-//     // Wishlist IDs extract karna
-//     const wishListIds = req.user.wishList.map((item) => item.modelId.toString());
-
-//     // isAdded flag set karna
-//     const updateListWithWishlist = (list, type) => {
-//       return list.map((item) => ({
-//         ...item._doc,
-//         isFavourite: wishListIds.includes(item._id.toString()) &&
-//                  req.user.wishList.some(w => w.modelId.toString() === item._id.toString() && w.modelType === type)
-//       }));
-//     };
-
-//     const updatedServiceList = updateListWithWishlist(serviceList, "service");
-//     const updatedRepairList = updateListWithWishlist(repairList, "repair");
-//     const updatedInstallationList = updateListWithWishlist(installationList, "installation");
-
-//     sendResponse(res, 200, "Success", {
-//       message: "Services of sub category retrieved successfully!",
-//       data: {
-//         subCategoryDetails,
-//         serviceList: updatedServiceList,
-//         repairList: updatedRepairList,
-//         installationList: updatedInstallationList
-//       },
-//       statusCode: 200
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error",
-//       statusCode: 500
-//     });
-//   }
-// });
 
 subCategoryController.get("/details/:id", async (req, res) => {
   try {
