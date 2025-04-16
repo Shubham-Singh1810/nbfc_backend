@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const timestamps = require("mongoose-timestamp");
 const { type } = require("os");
 
-
 const adminSchema = mongoose.Schema({
   profilePic: {
     type: String,
@@ -23,7 +22,11 @@ const adminSchema = mongoose.Schema({
   password: {
     type: String,
   },
-  permissions:[String]
+  permissions: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Role",
+    required: true,
+  },
 });
 
 adminSchema.plugin(timestamps);
