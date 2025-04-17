@@ -468,7 +468,7 @@ productController.put("/update-variant", upload.single("variantImage"), async (r
   }
 });
 
-productController.delete("/delete-variant", async (req, res) => {
+productController.put("/delete-variant", async (req, res) => {
   try {
     const { productId, variantIndex } = req.body;
     const product = await Product.findById(productId);

@@ -41,6 +41,10 @@ const productSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Admin",
   },
+  status:{
+    type: Boolean,
+    default:false
+  },
 
   // Step 2
   minOrderQuantity: {
