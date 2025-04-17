@@ -127,6 +127,15 @@ const productSchema = mongoose.Schema({
       value: [{ type: String }],
     },
   ],
+  productVarients: [
+    {
+      varientKey: { type: String },
+      varientValue: { type: String },
+      varientPrice: { type: Number },
+      varientDiscountedPrice: { type: Number },
+      varientImage: { type: String },
+    },
+  ],
   // admin action
   isActive: {
     type: Boolean,
