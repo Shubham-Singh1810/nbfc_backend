@@ -23,6 +23,7 @@ const bookingController = require("./controller/bookingController");
 const supportController = require("./controller/supportController");
 const notificationController = require("./controller/notificationController");
 const roleController = require("./controller/roleController");
+const permissionController = require("./controller/permissionController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -47,6 +48,7 @@ router.use("/booking", bookingController);
 router.use("/support", supportController);
 router.use("/notification", notificationController);
 router.use("/role", roleController);
+router.use("/permission", permissionController);
 
 
 module.exports = router;
