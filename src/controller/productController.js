@@ -567,4 +567,41 @@ productController.put("/add-attribute", async (req, res) => {
   }
 });
 
+
+productController.put("/delete-attribute", async (req, res) => {
+  try {
+    const { productId, attributeIndex } = req.body;
+    const product = await Product.findById(productId);
+    if (!product) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Product not found",
+        statusCode: 404
+      });
+    }
+
+    if (!product.productOtherDetails[attributeIndex]) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Attribute not found",
+        statusCode: 400
+      });
+    }
+
+    product.productOtherDetails.splice(attributeIndex, 1);
+    await product.save();
+
+    sendResponse(res, 200, "Success", {
+      message: "Attribute deleted successfully!",
+      data: product.productOtherDetails,
+      statusCode: 200
+    });
+
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500
+    });
+  }
+});
+
 module.exports = productController;
