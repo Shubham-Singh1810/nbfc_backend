@@ -9,7 +9,25 @@ const bookingSchema = mongoose.Schema({
         type: String,
         require: true,
     },
-    product:  [{productId:{ type: String, ref: "Product" },quantity:{ type: Number }}],
+    bookingQuantity:{
+        type: String
+    },
+    bookingPrice:{
+        type: String
+    },
+    modeOfPayment:{
+        type: String,
+        enum: ["COD", "Online"],
+    },
+    paymentId:{
+        type: String
+    },
+    product:  [
+        {productId:{ type: String, ref: "Product" },
+        quantity:{ type: Number },
+        totalPrice:{ type: Number },
+        deliveryStatus:{ type: Boolean, default:false },
+    }],
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

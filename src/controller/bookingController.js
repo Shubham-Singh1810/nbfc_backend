@@ -13,7 +13,7 @@ const path = require("path");
 
 bookingController.post("/create", async (req, res) => {
   try {
-    const { userId, totalAmount, status, product } = req.body;
+    const { userId, totalAmount, status, product, bookingQuantity, bookingPrice, modeOfPayment,  paymentId, } = req.body;
 
     // Validate required fields
     if (!userId) {
@@ -35,6 +35,10 @@ bookingController.post("/create", async (req, res) => {
       totalAmount,
       status,
       product,
+      bookingQuantity,
+      bookingPrice,
+      modeOfPayment,
+      paymentId
     };
 
     const bookingCreated = await Booking.create(bookingData);
