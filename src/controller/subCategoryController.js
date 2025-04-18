@@ -99,21 +99,31 @@ subCategoryController.post("/attribute-list", async (req, res) => {
   try {
     const { productId } = req.body;
 
-    const productDetails = await Product.findOne({_id: productId})
+    const productDetails = await Product.findOne({ _id: productId });
 
-    // 1. Get all attributeSets for the subCategory
-    const attributeSetList = await AttributeSet.find({ subCategoryId: productDetails?.subCategoryId });
+    if (!productDetails) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Product not found",
+      });
+    }
 
-    // 2. Collect all attributeSet IDs
+    // get list of attributeSets under this product's subcategory
+    const attributeSetList = await AttributeSet.find({ subCategoryId: productDetails.subCategoryId });
     const attributeSetIds = attributeSetList.map((set) => set._id);
 
-    // 3. Fetch all attributes for all attributeSets
+    // get all attributes under those sets
     const attributeList = await Attribute.find({
       attributeSetId: { $in: attributeSetIds },
     });
 
-    // 4. Format attributeList
-    const formattedAttributes = attributeList.map((attr) => ({
+    // extract keys already added in productOtherDetails
+    const alreadyAddedAttributeNames = productDetails.productOtherDetails.map((detail) => detail.key);
+
+    // filter out already added attributes
+    const filteredAttributes = attributeList.filter(attr => !alreadyAddedAttributeNames.includes(attr.name));
+
+    // format result
+    const formattedAttributes = filteredAttributes.map((attr) => ({
       attributeId: attr._id,
       name: attr.name,
       value: attr.value,
@@ -121,12 +131,13 @@ subCategoryController.post("/attribute-list", async (req, res) => {
       status: attr.status,
     }));
 
-    // 5. Send flat list
+    // send response
     sendResponse(res, 200, "Success", {
       message: "Attribute list retrieved successfully!",
       data: formattedAttributes,
       statusCode: 200,
     });
+
   } catch (error) {
     console.error(error);
     sendResponse(res, 500, "Failed", {
@@ -134,6 +145,7 @@ subCategoryController.post("/attribute-list", async (req, res) => {
     });
   }
 });
+
 
 subCategoryController.put(
   "/update",
