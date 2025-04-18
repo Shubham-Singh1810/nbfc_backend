@@ -149,7 +149,9 @@ productController.get("/details/:id", async (req, res) => {
     const id = req.params.id;
     const product = await Product.findOne({ _id: id })
     .populate("categoryId")
-    .populate("subCategoryId");
+    .populate("subCategoryId")
+     .populate("brandId")
+    .populate("zipcodeId");
     if (product) {
       return sendResponse(res, 200, "Success", {
         message: "Product details fetched  successfully",
