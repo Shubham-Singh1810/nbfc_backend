@@ -118,9 +118,8 @@ subCategoryController.post("/attribute-list", async (req, res) => {
 
     // extract keys already added in productOtherDetails
     const alreadyAddedAttributeNames = productDetails.productOtherDetails.map((detail) => detail.key);
-
     // filter out already added attributes
-    const filteredAttributes = attributeList.filter(attr => !alreadyAddedAttributeNames.includes(attr.name));
+    const filteredAttributes = attributeList.filter(attr => !alreadyAddedAttributeNames.includes(attr?.name));
 
     // format result
     const formattedAttributes = filteredAttributes.map((attr) => ({
