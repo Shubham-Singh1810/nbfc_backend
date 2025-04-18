@@ -533,4 +533,38 @@ productController.get("/list-variants/:productId", async (req, res) => {
 });
 
 
+productController.post("/add-attribute", async (req, res) => {
+  try {
+    const { id, key, value } = req.body;
+    const product = await Product.findById(id);
+    if (!product) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Product not found",
+        statusCode: 403
+      });
+    }
+
+    const attribute = {
+      key,
+      value
+    };
+
+    product.productOtherDetails.push(attribute);
+    await product.save();
+
+    sendResponse(res, 200, "Success", {
+      message: "Attribute added successfully!",
+      data: product.productOtherDetails,
+      statusCode: 200
+    });
+
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500
+    });
+  }
+});
+
 module.exports = productController;
