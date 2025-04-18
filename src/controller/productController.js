@@ -533,7 +533,7 @@ productController.get("/list-variants/:productId", async (req, res) => {
 });
 
 
-productController.post("/add-attribute", async (req, res) => {
+productController.put("/add-attribute", async (req, res) => {
   try {
     const { id, key, value } = req.body;
     const product = await Product.findById(id);
