@@ -24,4 +24,4 @@ const subCategorySchema = mongoose.Schema({
 });
 
 subCategorySchema.plugin(timestamps);
-module.exports = mongoose.model("subCategory", subCategorySchema);
+module.exports = mongoose.model("SubCategory", subCategorySchema);

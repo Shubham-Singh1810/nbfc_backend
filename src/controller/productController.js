@@ -147,7 +147,9 @@ productController.delete("/delete/:id", async (req, res) => {
 productController.get("/details/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    const product = await Product.findOne({ _id: id });
+    const product = await Product.findOne({ _id: id })
+    .populate("categoryId")
+    .populate("subCategoryId");
     if (product) {
       return sendResponse(res, 200, "Success", {
         message: "Product details fetched  successfully",
