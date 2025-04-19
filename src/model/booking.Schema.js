@@ -9,6 +9,14 @@ const bookingSchema = mongoose.Schema({
         type: String,
         require: true,
     },
+    signature: {
+        type: String,
+        require: true,
+    },
+    orderId: {
+        type: String,
+        require: true,
+    },
     modeOfPayment:{
         type: String,
         enum: ["COD", "Online"],
@@ -25,6 +33,11 @@ const bookingSchema = mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
+        required: true, 
+    },
+    addressId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Address",
         required: true, 
     },
 });
