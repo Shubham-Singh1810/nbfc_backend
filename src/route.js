@@ -24,6 +24,7 @@ const supportController = require("./controller/supportController");
 const notificationController = require("./controller/notificationController");
 const roleController = require("./controller/roleController");
 const permissionController = require("./controller/permissionController");
+const ticketCategoryController = require("./controller/ticketCategoryController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -49,6 +50,7 @@ router.use("/support", supportController);
 router.use("/notification", notificationController);
 router.use("/role", roleController);
 router.use("/permission", permissionController);
+router.use("/ticket-category", ticketCategoryController);
 
 
 module.exports = router;
