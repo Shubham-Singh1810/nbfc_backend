@@ -7,33 +7,66 @@ require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 
+// ticketController.post("/create", upload.single("image"), async (req, res) => {
+//     try {
+//       let obj;
+//       if (req.file) {
+//         let image = await cloudinary.uploader.upload(req.file.path, function (err, result) {
+//           if (err) {
+//             return err;
+//           } else {
+//             return result;
+//           }
+//         });
+//         obj = { ...req.body, image: image.url };
+//       }
+//       const ticketCreated = await Ticket.create(obj);
+//       sendResponse(res, 200, "Success", {
+//         message: "Ticket created successfully!",
+//         data: ticketCreated,
+//         statusCode: 200
+//       });
+//     } catch (error) {
+//       console.error(error);
+//       sendResponse(res, 500, "Failed", {
+//         message: error.message || "Internal server error",
+//         statusCode: 500
+//       });
+//     }
+//   });
+
+
+
+
+
 ticketController.post("/create", upload.single("image"), async (req, res) => {
-    try {
-      let obj;
-      if (req.file) {
-        let image = await cloudinary.uploader.upload(req.file.path, function (err, result) {
-          if (err) {
-            return err;
-          } else {
-            return result;
-          }
-        });
-        obj = { ...req.body, image: image.url };
-      }
-      const ticketCreated = await Ticket.create(obj);
-      sendResponse(res, 200, "Success", {
-        message: "Ticket created successfully!",
-        data: ticketCreated,
-        statusCode: 200
-      });
-    } catch (error) {
-      console.error(error);
-      sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error",
-        statusCode: 500
-      });
+  try {
+    let obj = req.body;
+
+    if (req.file) {
+      const image = await cloudinary.uploader.upload(req.file.path);
+      obj.image = image.url;
     }
-  });
+
+    const ticketCreated = await Ticket.create(obj);
+
+    sendResponse(res, 200, "Success", {
+      message: "Ticket created successfully!",
+      data: ticketCreated,
+      statusCode: 200
+    });
+
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500
+    });
+  }
+});
+
+
+
 
 ticketController.post("/list", async (req, res) => {
   try {
