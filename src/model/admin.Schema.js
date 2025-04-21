@@ -22,7 +22,7 @@ const adminSchema = mongoose.Schema({
   password: {
     type: String,
   },
-  permissions: {
+  role: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Role",
     required: true,

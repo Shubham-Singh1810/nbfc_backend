@@ -26,6 +26,7 @@ const roleController = require("./controller/roleController");
 const permissionController = require("./controller/permissionController");
 const ticketCategoryController = require("./controller/ticketCategoryController");
 const ticketController = require("./controller/ticketController");
+const chatController = require("./controller/chatController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -53,6 +54,7 @@ router.use("/role", roleController);
 router.use("/permission", permissionController);
 router.use("/ticket-category", ticketCategoryController);
 router.use("/ticket", ticketController);
+router.use("/chat", chatController);
 
 
 module.exports = router;
