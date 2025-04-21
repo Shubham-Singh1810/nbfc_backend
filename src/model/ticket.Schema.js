@@ -13,7 +13,7 @@ const ticketSchema = mongoose.Schema({
   },
   image: {
     type: String,
-    required: true,
+    // required: true,
   },
   userType: {
     type: String,
