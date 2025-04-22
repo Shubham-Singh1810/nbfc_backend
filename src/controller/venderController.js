@@ -55,7 +55,7 @@ venderController.post("/sign-up", upload.single("profilePic"), async (req, res) 
       category:"Vender",
       subCategory:"Registration",
       notifyUser:"Admin",
-    })
+    },req.io)
     // Generate JWT token
     const token = jwt.sign(
       { userId: newVender._id, phone: newVender.phone },
@@ -120,7 +120,7 @@ venderController.post("/otp-verification", async (req, res) => {
               category:"Vender",
               subCategory:"Verification",
               notifyUser:"Admin",
-            })
+            }, req.io)
       return sendResponse(res, 200, "Success", {
         message: "Otp verified successfully",
         data: updatedVender,
@@ -316,7 +316,7 @@ venderController.put(
           category:"Vender",
           subCategory:"Profile update",
           notifyUser:"Admin",
-        })
+        }, req.io)
       }
          if(req.body.profileStatus=="rejected"){
                 sendNotification({
@@ -327,7 +327,7 @@ venderController.put(
                   category:"Vender",
                   subCategory:"Profile update",
                   notifyUser:"Vender",
-                })
+                }, req.io)
               }
       if(req.body.profileStatus=="approved"){
         sendNotification({
@@ -338,7 +338,7 @@ venderController.put(
           category:"Vender",
           subCategory:"Profile update",
           notifyUser:"Vender",
-        })
+        }, req.io)
       }
       if(req.body.profileStatus=="storeDetailsCompleted"){
         sendNotification({
@@ -349,7 +349,7 @@ venderController.put(
           category:"Vender",
           subCategory:"Profile update",
           notifyUser:"Vender",
-        })
+        }, req.io)
       }
       sendResponse(res, 200, "Success", {
         message: "Vendor updated successfully!",
