@@ -2,6 +2,7 @@ const express = require("express");
 const { sendResponse, generateOTP } = require("../utils/common");
 require("dotenv").config();
 const Driver = require("../model/driver.Schema");
+const Booking = require("../model/booking.Schema");
 const driverController = express.Router();
 const axios = require("axios");
 require("dotenv").config();
@@ -444,5 +445,100 @@ driverController.put("/update", upload.fields([
     }
   }
 );
+
+driverController.post("/assign-product", async (req, res) => {
+  try {
+    const { orderId, productId, driverId } = req.body;
+
+    const order = await Booking.findById(orderId);
+    if (!order) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Order not found",
+        statusCode: 404,
+      });
+    }
+
+    const driver = await Driver.findById(driverId);
+    if (!driver) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Driver not found",
+        statusCode: 404,
+      });
+    }
+
+    let productFound = false;
+
+    order.product = order.product.map((item) => {
+      if (item.productId.toString() === productId) {
+        productFound = true;
+        item.driverId = driverId;
+      }
+      return item;
+    });
+
+    if (!productFound) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Product not found in order",
+        statusCode: 404,
+      });
+    }
+
+    await order.save();
+
+    return sendResponse(res, 200, "Success", {
+      message: "Product assigned to driver successfully",
+      data: order,
+      statusCode: 200,
+    });
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
+    });
+  }
+});
+
+driverController.get("/assigned-products/:driverId", async (req, res) => {
+  try {
+    const { driverId } = req.params;
+
+    const orders = await Booking.find({ "product.driverId": driverId })
+      .populate("product.productId")
+      .populate("product.driverId")
+      .populate("userId") 
+      .populate("addressId"); 
+
+    const assignedProducts = [];
+
+    orders.forEach(order => {
+      order.product.forEach(item => {
+        if (item.driverId && item.driverId._id.toString() === driverId) {
+          assignedProducts.push({
+            orderId: order._id,
+            product: item.productId,
+            quantity: item.quantity,
+            totalPrice: item.totalPrice,
+            deliveryStatus: item.deliveryStatus,
+            customer: order.userId,
+            address: order.addressId,
+            assignedAt: order.updatedAt
+          });
+        }
+      });
+    });
+
+    return sendResponse(res, 200, "Success", {
+      message: "Assigned products fetched successfully",
+      data: assignedProducts,
+      statusCode: 200,
+    });
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
+
 
 module.exports = driverController;
