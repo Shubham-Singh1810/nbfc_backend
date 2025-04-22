@@ -15,21 +15,15 @@ const { isReadable } = require("stream");
 
 chatController.post("/create", upload.single("image"), async (req, res) => {
   try {
-    let obj;
+    let obj = req.body;
+
     if (req.file) {
-      let image = await cloudinary.uploader.upload(
-        req.file.path,
-        function (err, result) {
-          if (err) {
-            return err;
-          } else {
-            return result;
-          }
-        }
-      );
-      obj = { ...req.body, image: image.url };
+      const image = await cloudinary.uploader.upload(req.file.path);
+      obj.image = image.url;
     }
+
     const chatCreated = await Chat.create(obj);
+
     sendResponse(res, 200, "Success", {
       message: "Chat created successfully!",
       data: chatCreated,
@@ -43,8 +37,6 @@ chatController.post("/create", upload.single("image"), async (req, res) => {
     });
   }
 });
-
-
 
 chatController.post("/list/:id", async (req, res) => {
   try {
@@ -95,7 +87,6 @@ chatController.post("/list/:id", async (req, res) => {
   }
 });
 
-
 chatController.put("/update", async (req, res) => {
   try {
     const id = req.body.id;
@@ -121,7 +112,5 @@ chatController.put("/update", async (req, res) => {
     });
   }
 });
-
-
 
 module.exports = chatController;
