@@ -173,7 +173,7 @@ userController.post("/otp-verification", async (req, res) => {
     if (user) {
       const updatedUser = await User.findByIdAndUpdate(
         user._id,
-        { isPhoneVerified: true, profileStatus: "completed" },
+        { isPhoneVerified: true },
         { new: true }
       );
       return sendResponse(res, 200, "Success", {
@@ -690,7 +690,7 @@ userController.put("/update", upload.single("profilePic"), async (req, res) => {
       const profilePic = await cloudinary.uploader.upload(req.file.path);
       updatedData.profilePic = profilePic.url;
     }
-
+    updatedData.profileStatus = "completed";
     const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
       new: true, // Return the updated document
     });
