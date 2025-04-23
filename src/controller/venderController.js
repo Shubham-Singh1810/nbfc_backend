@@ -3,6 +3,7 @@ const { sendResponse, generateOTP } = require("../utils/common");
 require("dotenv").config();
 const Vender = require("../model/vender.Schema");
 const Product = require("../model/product.Schema");
+const Booking = require("../model/booking.Schema");
 const venderController = express.Router();
 const axios = require("axios");
 require("dotenv").config();
@@ -489,5 +490,42 @@ venderController.post("/list", async (req, res) => {
     });
   }
 });
+
+venderController.get("/orders/:venderId", async (req, res) => {
+  try {
+    const venderId = req.params.venderId;
+
+    // Step 1: Fetch all orders and populate product.productId
+    const allOrders = await Booking.find()
+      .populate("product.productId")
+      .populate("userId")
+      .populate("addressId");
+
+    // Step 2: Filter orders where at least one product in the order was created by this vendor
+    const vendorOrders = allOrders.filter(order =>
+      order.product.some(p => p.productId?.createdBy?.toString() === venderId)
+    );
+
+    if (vendorOrders.length > 0) {
+      return sendResponse(res, 200, "Success", {
+        message: "Orders fetched successfully for the given vendor",
+        data: vendorOrders,
+        statusCode: 200,
+      });
+    } else {
+      return sendResponse(res, 404, "Failed", {
+        message: "No orders found for this vendor",
+        statusCode: 404,
+      });
+    }
+
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
+    });
+  }
+});
+
 
 module.exports = venderController;

@@ -29,6 +29,11 @@ const bookingSchema = mongoose.Schema({
         quantity:{ type: Number },
         totalPrice:{ type: Number },
         deliveryStatus:{ type: Boolean, default:false },
+        driverId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Driver",
+            required: true, 
+        },
     }],
     userId: {
         type: mongoose.Schema.Types.ObjectId,
