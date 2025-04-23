@@ -12,7 +12,6 @@ const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 
-
 userController.post("/send-otp", async (req, res) => {
   try {
     const { phone, ...otherDetails } = req.body;
@@ -317,15 +316,15 @@ userController.post("/list", async (req, res) => {
     const userList = await User.find(query)
       .sort(sortOption)
       .limit(parseInt(pageCount))
-      .skip(parseInt(pageNo - 1) * parseInt(pageCount))
-      // .populate({
-      //   path: "product",
-      //   select: "name description", 
-      // })
-      // .populate({
-      //   path: "createdBy",
-      //   select: "name", 
-      // });
+      .skip(parseInt(pageNo - 1) * parseInt(pageCount));
+    // .populate({
+    //   path: "product",
+    //   select: "name description",
+    // })
+    // .populate({
+    //   path: "createdBy",
+    //   select: "name",
+    // });
     const totalCount = await User.countDocuments({});
     const activeCount = await User.countDocuments({ status: true });
     sendResponse(res, 200, "Success", {
@@ -513,43 +512,43 @@ userController.get("/cart/:userId", async (req, res) => {
     let actualTotalAmount = 0;
     let discountedTotalAmount = 0;
 
-    const cartDetails = user.cartItems.map((item) => {
-      const product = item.productId;
+    const cartDetails = user.cartItems
+      .map((item) => {
+        const product = item.productId;
 
-      if (!product) {
-        return null; // skip this cart item if product is not found
-      }
+        if (!product) {
+          return null; // skip this cart item if product is not found
+        }
 
-      const quantity = item.quantity || 1;
-      const price = product.price
-      const discounted_price = product.discountedPrice
-    
+        const quantity = item.quantity || 1;
+        const price = product.price;
+        const discounted_price = product.discountedPrice;
 
-      const actualPrice = price * quantity;
-      const discountedPrice = discounted_price * quantity;
-      actualTotalAmount += actualPrice;
-      discountedTotalAmount += discountedPrice;
+        const actualPrice = price * quantity;
+        const discountedPrice = discounted_price * quantity;
+        actualTotalAmount += actualPrice;
+        discountedTotalAmount += discountedPrice;
 
-      return {
-        _id: product._id,
-        name: product.name,
-        productHeroImage: product.productHeroImage,
-        productGallery: product.productGallery,
-        categoryId: product.categoryId,
-        subCategoryId: product.subCategoryId,
-        price: product.price || 0,
-        discountedPrice: product.discountedPrice || 0,
-        description: product.description,
-        codAvailable: product.codAvailable,
-        isActive: product.isActive,
-        updatedAt: product.updatedAt,
-        createdAt: product.createdAt,
-        quantity,
-        totalItemPrice:actualPrice,
-        totalItemDiscountedPrice:discountedPrice,
-      
-      };
-    }).filter(Boolean); // remove null values if any product was missing
+        return {
+          _id: product._id,
+          name: product.name,
+          productHeroImage: product.productHeroImage,
+          productGallery: product.productGallery,
+          categoryId: product.categoryId,
+          subCategoryId: product.subCategoryId,
+          price: product.price || 0,
+          discountedPrice: product.discountedPrice || 0,
+          description: product.description,
+          codAvailable: product.codAvailable,
+          isActive: product.isActive,
+          updatedAt: product.updatedAt,
+          createdAt: product.createdAt,
+          quantity,
+          totalItemPrice: actualPrice,
+          totalItemDiscountedPrice: discountedPrice,
+        };
+      })
+      .filter(Boolean); // remove null values if any product was missing
 
     sendResponse(res, 200, "Success", {
       message: "Cart items retrieved successfully",
@@ -557,7 +556,6 @@ userController.get("/cart/:userId", async (req, res) => {
       actualTotalAmount,
       discountedTotalAmount,
     });
-
   } catch (error) {
     console.error(error);
     sendResponse(res, 500, "Failed", {
@@ -673,7 +671,6 @@ userController.get("/wishlist/:userId", async (req, res) => {
 //   }
 // });
 
-
 userController.put("/update", upload.single("profilePic"), async (req, res) => {
   try {
     const id = req.body.id;
@@ -707,7 +704,6 @@ userController.put("/update", upload.single("profilePic"), async (req, res) => {
       data: updatedUser,
       statusCode: 200,
     });
-
   } catch (error) {
     console.error(error);
     sendResponse(res, 500, "Failed", {
@@ -716,17 +712,22 @@ userController.put("/update", upload.single("profilePic"), async (req, res) => {
   }
 });
 
-
-userController.post("/home-details",  async (req, res) => {
+userController.post("/home-details", async (req, res) => {
   try {
-    const homeCategory = await Category.find({})
-    const bestSellerSubCategory = await SubCategory.find({})
-    const homeSubCategory = await SubCategory.find({})
-    const trendingProducts = await Product.find({})
-    const bestSellerProducts = await Product.find({})
+    const homeCategory = await Category.find({});
+    const bestSellerSubCategory = await SubCategory.find({});
+    const homeSubCategory = await SubCategory.find({});
+    const trendingProducts = await Product.find({});
+    const bestSellerProducts = await Product.find({});
     sendResponse(res, 200, "Success", {
       message: "Home page data fetched successfully!",
-      data: {homeCategory, bestSellerSubCategory, homeSubCategory, trendingProducts,bestSellerProducts},
+      data: {
+        homeCategory,
+        bestSellerSubCategory,
+        homeSubCategory,
+        trendingProducts,
+        bestSellerProducts,
+      },
       statusCode: 200,
     });
   } catch (error) {

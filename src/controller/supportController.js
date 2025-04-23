@@ -24,12 +24,34 @@ supportController.post("/add-contact-query", async (req, res) => {
     });
   }
 });
-supportController.get("/list-contact-query", async (req, res) => {
+supportController.post("/list-contact-query", async (req, res) => {
   try {
-    const contactList = await Contact.find({});
+    const {
+      searchKey = "",
+      category,
+      pageNo = 1,
+      pageCount = 10,
+      sortByField,
+      sortByOrder,
+    } = req.body;
+    const query = {};
+    if (category) query.category = category;
+    if (searchKey) query.question = { $regex: searchKey, $options: "i" };
+    const sortField = sortByField || "createdAt";
+    const sortOrder = sortByOrder === "asc" ? 1 : -1;
+    const sortOption = { [sortField]: sortOrder };
+    const contactList = await Contact.find(query)
+      .sort(sortOption)
+      .limit(parseInt(pageCount))
+      .skip(parseInt(pageNo - 1) * parseInt(pageCount));
+    const userQueries = await Contact.countDocuments({ category: "user" });
+    const driverQueries = await Contact.countDocuments({ category: "driver" });
+    const vendorQueries = await Contact.countDocuments({ category: "vender" });
+
     sendResponse(res, 200, "Success", {
-      message: "Contact query list retrived successfully",
+      message: "Contact list retrived successfully.",
       data: contactList,
+      documentCount:{userQueries, driverQueries, vendorQueries},
       statusCode: 200,
     });
   } catch (error) {
