@@ -111,6 +111,7 @@ bookingController.post("/list", async (req, res) => {
   }
 });
 
+
 bookingController.get("/details/:userId", async (req, res) => {
   try {
     const userId = req.params.userId;

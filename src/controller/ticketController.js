@@ -43,10 +43,12 @@ ticketController.post("/list", async (req, res) => {
       pageCount = 10,
       sortByField,
       sortByOrder,
+      userId
     } = req.body;
     const query = {};
     if (status) query.status = status;
     if (searchKey) query.name = { $regex: searchKey, $options: "i" };
+    if (userId) query.userId = userId;
     const sortField = sortByField || "createdAt";
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };
