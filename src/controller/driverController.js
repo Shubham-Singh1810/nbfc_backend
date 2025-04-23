@@ -122,24 +122,34 @@ driverController.post(
 
 driverController.post("/otp-verification", async (req, res) => {
   try {
-    const { phone, phoneOtp } = req.body;
+    const { phone, phoneOtp, isforgetPassword } = req.body;
+
     const user = await Driver.findOne({ phone, phoneOtp });
     if (user) {
+      const updatedFields = {
+        isPhoneVerified: true,
+      };
+
+      if (!isforgetPassword) {
+        updatedFields.profileStatus = "completed";
+      }
+
       const updatedDriver = await Driver.findByIdAndUpdate(
         user._id,
-        { isPhoneVerified: true, profileStatus: "completed" },
-        { isPhoneVerified: true,  profileStatus: req?.body?.isforgetPassword ? user?.profileStatus:  "completed" },
+        updatedFields,
         { new: true }
       );
+
       sendNotification({
-        icon:updatedDriver.profilePic,
-        title:`${updatedDriver.firstName} has verified thier phone number`,
-        subTitle:`${updatedDriver.firstName} has verified thier phone number`,
-        notifyUserId:"Admin",
-        category:"Driver",
-        subCategory:"Verification",
-        notifyUser:"Admin",
-      })
+        icon: updatedDriver.profilePic,
+        title: `${updatedDriver.firstName} has verified their phone number`,
+        subTitle: `${updatedDriver.firstName} has verified their phone number`,
+        notifyUserId: "Admin",
+        category: "Driver",
+        subCategory: "Verification",
+        notifyUser: "Admin",
+      });
+
       return sendResponse(res, 200, "Success", {
         message: "Otp verified successfully",
         data: updatedDriver,
@@ -158,6 +168,7 @@ driverController.post("/otp-verification", async (req, res) => {
     });
   }
 });
+
 
 driverController.post("/login", async (req, res) => {
   try {

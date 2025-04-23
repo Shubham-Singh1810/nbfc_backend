@@ -372,11 +372,13 @@ venderController.delete("/delete/:id", async (req, res) => {
     if (!vender) {
       return sendResponse(res, 404, "Failed", {
         message: "Vender not found",
+        statusCode:400
       });
     }
     await Vender.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
       message: "Vender deleted successfully!",
+      statusCode:200
     });
   } catch (error) {
     console.error(error);
