@@ -641,36 +641,6 @@ userController.get("/wishlist/:userId", async (req, res) => {
   }
 });
 
-// userController.put("/update", upload.single("profilePic"), async (req, res) => {
-//   try {
-//     const id = req.body.id;
-//     const userData = await User.findById(id);
-//     if (!userData) {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "User not found",
-//       });
-//     }
-//     let updatedData = { ...req.body };
-//     if (req.file) {
-//       const profilePic = await cloudinary.uploader.upload(req.file.path);
-//       updatedData.profilePic = profilePic.url;
-//     }
-//     const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
-//       new: true, // Return the updated document
-//     });
-//     sendResponse(res, 200, "Success", {
-//       message: "User updated successfully!",
-//       data: updatedUser,
-//       statusCode: 200,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error",
-//     });
-//   }
-// });
-
 userController.put("/update", upload.single("profilePic"), async (req, res) => {
   try {
     const id = req.body.id;

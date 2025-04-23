@@ -606,4 +606,57 @@ productController.put("/delete-attribute", async (req, res) => {
   }
 });
 
+productController.post("/filter-list", async (req, res) => {
+  try {
+    const {
+      searchKey = "",
+      status,
+      pageNo = 1,
+      pageCount = 10,
+      sortByField,
+      sortByOrder,
+    } = req.body;
+
+    const query = {};
+    if (status) query.status = status;
+    if (searchKey) query.name = { $regex: searchKey, $options: "i" };
+
+    // Construct sorting object
+    const sortField = sortByField || "createdAt";
+    const sortOrder = sortByOrder === "asc" ? 1 : -1;
+    const sortOption = { [sortField]: sortOrder };
+
+    // Fetch the category list
+    const productList = await Product.find(query)
+      .sort(sortOption)
+      .limit(parseInt(pageCount))
+      .skip(parseInt(pageNo - 1) * parseInt(pageCount))
+      .populate({
+        path: "categoryId",
+        select: "name description", 
+      })
+      .populate({
+        path: "createdBy",
+        select: "name", 
+      });
+    const totalCount = await Product.countDocuments({});
+    const activeCount = await Product.countDocuments({ status: true });
+    sendResponse(res, 200, "Success", {
+      message: "Product list retrieved successfully!",
+      data: productList,
+      documentCount: {
+        totalCount,
+        activeCount,
+        inactiveCount: totalCount - activeCount,
+      },
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
 module.exports = productController;
