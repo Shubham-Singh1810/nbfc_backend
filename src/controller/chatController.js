@@ -6,6 +6,7 @@ const User = require("../model/user.Schema");
 const Vendor = require("../model/vender.Schema");
 const Driver = require("../model/driver.Schema");
 const Admin = require("../model/address.Schema");
+const Ticket = require("../model/ticket.Schema");
 const chatController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
@@ -41,6 +42,20 @@ chatController.post("/create", upload.single("image"), async (req, res) => {
 chatController.post("/list/:id", async (req, res) => {
   try {
     const id = req.params.id;
+    const ticketDetails = await Ticket.findOne({_id:id}).populate("ticketCategoryId");
+    let userDetails = null;
+    const userType = ticketDetails?.userType;
+    const userId = ticketDetails?.userId;
+    console.log(userId, userType)
+    if (userType == "User") {
+      userDetails = await User.findOne({_id:userId});
+    } else if (userType == "Vender") {
+      userDetails = await Vendor.findOne({_id:userId});
+    } else if (userType == "Driver") {
+      userDetails = await Driver.findOne({_id:userId});
+    } else if (userType == "Admin") {
+      userDetails = await Admin.findById({_id:userId});
+    }
     const chatList = await Chat.find({ ticketId: id }).lean();
     const userUnreadCount = await Chat.countDocuments({
       ticketId: id,
@@ -52,27 +67,12 @@ chatController.post("/list/:id", async (req, res) => {
       isRead: false,
       userType: "Admin",
     });
-    const populatedChats = await Promise.all(
-      chatList.map(async (chat) => {
-        let userDetails = null;
-        if (chat.userType === "User") {
-          userDetails = await User.findById(chat.userId).lean();
-        } else if (chat.userType === "Vender") {
-          userDetails = await Vendor.findById(chat.userId).lean();
-        } else if (chat.userType === "Driver") {
-          userDetails = await Driver.findById(chat.userId).lean();
-        } else if (chat.userType === "Admin") {
-          userDetails = await Admin.findById(chat.userId).lean();
-        }
-        return {
-          ...chat,
-          userDetails,
-        };
-      })
-    );
+    
     sendResponse(res, 200, "Success", {
       message: "Chat list retrieved successfully!",
-      data: populatedChats,
+      data: chatList,
+      ticketDetails, 
+      userDetails,
       documentCount: {
         adminUnreadCount,
         userUnreadCount,
