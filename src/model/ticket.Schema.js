@@ -17,7 +17,7 @@ const ticketSchema = mongoose.Schema({
   },
   userType: {
     type: String,
-    enum: ["User", "Vender", "Driver", "Admin"],
+    enum: ["User", "Vender", "Driver"],
   },
   status: {
     type: Boolean,

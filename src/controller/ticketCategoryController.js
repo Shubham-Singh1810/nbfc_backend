@@ -11,7 +11,7 @@ ticketCategoryController.post("/create", async (req, res) => {
   try {
     const ticketCategoryCreated = await TicketCategory.create(req.body);
     sendResponse(res, 200, "Success", {
-      message: "ticketCategory created successfully!",
+      message: "Ticket Category created successfully!",
       data: ticketCategoryCreated,
       statusCode: 200,
     });
@@ -47,7 +47,7 @@ ticketCategoryController.post("/list", async (req, res) => {
     const totalCount = await TicketCategory.countDocuments({});
     const activeCount = await TicketCategory.countDocuments({ status: true });
     sendResponse(res, 200, "Success", {
-      message: "TicketCategory list retrieved successfully!",
+      message: "Ticket Category list retrieved successfully!",
       data: ticketCategoryList,
       documentCount: {
         totalCount,
@@ -71,7 +71,7 @@ ticketCategoryController.put("/update", async (req, res) => {
     const ticketCategory = await TicketCategory.findById(id);
     if (!ticketCategory) {
       return sendResponse(res, 404, "Failed", {
-        message: "ticketCategory not found",
+        message: "Ticket Category not found",
         statusCode: 403,
       });
     }
@@ -83,7 +83,7 @@ ticketCategoryController.put("/update", async (req, res) => {
       }
     );
     sendResponse(res, 200, "Success", {
-      message: "ticketCategory updated successfully!",
+      message: "Ticket Category updated successfully!",
       data: updatedTicketCategory,
       statusCode: 200,
     });
@@ -101,13 +101,13 @@ ticketCategoryController.delete("/delete/:id", async (req, res) => {
     const ticketCategory = await TicketCategory.findById(id);
     if (!ticketCategory) {
       return sendResponse(res, 404, "Failed", {
-        message: "TicketCategory not found",
+        message: "Ticket Category not found",
         statusCode: 404,
       });
     }
     await TicketCategory.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
-      message: "TicketCategory deleted successfully!",
+      message: "Ticket Category deleted successfully!",
       statusCode:200
     });
   } catch (error) {
@@ -124,7 +124,7 @@ ticketCategoryController.get("/details/:id", async (req, res) => {
     const { id } = req.params;
     const ticketCategoryDetails = await TicketCategory.findOne({ _id: id });
     sendResponse(res, 200, "Success", {
-      message: "ticketCategory retrived successfully!",
+      message: "Ticket Category retrived successfully!",
       data: { ticketCategoryDetails },
       statusCode: 200,
     });
