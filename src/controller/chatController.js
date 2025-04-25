@@ -46,7 +46,6 @@ chatController.post("/list/:id", async (req, res) => {
     let userDetails = null;
     const userType = ticketDetails?.userType;
     const userId = ticketDetails?.userId;
-    console.log(userId, userType)
     if (userType == "User") {
       userDetails = await User.findOne({_id:userId});
     } else if (userType == "Vender") {
@@ -67,7 +66,6 @@ chatController.post("/list/:id", async (req, res) => {
       isRead: false,
       userType: "Admin",
     });
-    
     sendResponse(res, 200, "Success", {
       message: "Chat list retrieved successfully!",
       data: chatList,
