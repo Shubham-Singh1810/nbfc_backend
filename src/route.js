@@ -28,6 +28,7 @@ const ticketCategoryController = require("./controller/ticketCategoryController"
 const ticketController = require("./controller/ticketController");
 const chatController = require("./controller/chatController");
 const notifyController = require("./controller/notifyController");
+const productFaqController = require("./controller/productFaqController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -57,6 +58,7 @@ router.use("/ticket-category", ticketCategoryController);
 router.use("/ticket", ticketController);
 router.use("/chat", chatController);
 router.use("/notify", notifyController);
+router.use("/productFaq", productFaqController);
 
 
 module.exports = router;
