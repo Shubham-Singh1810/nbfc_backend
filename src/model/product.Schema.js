@@ -152,6 +152,205 @@ const productSchema = mongoose.Schema({
   specialApperence: {
     type: String,
   },
+
+
+  // details for product verification
+  isNameApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isTagsApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isProductTypeApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isTaxApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isMadeInApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isHsnCodeApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isShortDescriptionApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isStatusApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isMinOrderQuantityApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isMaxOrderQuantityApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isWarrantyPeriodApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isGuaranteePeriodApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isCategoryIdApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isSubCategoryIdApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isStockQuantityApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isBrandIdApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isZipcodeIdApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isProductVideoUrlApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isDescriptionApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isPriceApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isDiscountedPriceApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isProductHeroImageApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isProductGalleryApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isProductVideoApproved: {
+    type: Boolean,
+    default: false,
+  },
+
+
+  // reject reason
+nameRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  tagsRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  productTypeRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  taxRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  madeInRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  hsnCodeRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  shortDescriptionRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  statusRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  minOrderQuantityRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  maxOrderQuantityRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  warrantyPeriodRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  guaranteePeriodRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  categoryIdRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  subCategoryIdRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  stockQuantityRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  brandIdRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  zipcodeIdRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  productVideoUrlRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  descriptionRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  priceRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  discountedPriceRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  productHeroImageRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  productGalleryRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  productVideoRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+
 });
 
 productSchema.plugin(timestamps);
