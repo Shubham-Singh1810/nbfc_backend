@@ -15,7 +15,7 @@ const brandSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  categoryIds:  [{ type: String, ref: "Category" }],
 });
-
 brandSchema.plugin(timestamps);
 module.exports = mongoose.model("Brand", brandSchema);
