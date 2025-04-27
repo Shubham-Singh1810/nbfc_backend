@@ -7,20 +7,9 @@ require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 
-adminController.post("/create", upload.single("profilePic"), async (req, res) => {
+adminController.post("/create", async (req, res) => {
   try {
-    let obj;
-    if (req.file) {
-      let image = await cloudinary.uploader.upload(req.file.path, function (err, result) {
-        if (err) {
-          return err;
-        } else {
-          return result;
-        }
-      });
-      obj = { ...req.body, profilePic: image.url };
-    }
-    const AdminData = await Admin.create(obj);
+    const AdminData = await Admin.create(req.body);
     sendResponse(res, 200, "Success", {
       message: "Admin created successfully!",
       data: AdminData,
@@ -90,7 +79,9 @@ adminController.post("/list", async (req, res) => {
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount))
-      
+      .populate({
+        path: "role",
+      });
     const totalCount = await Admin.countDocuments({});
     sendResponse(res, 200, "Success", {
       message: "Admin list retrieved successfully!",
