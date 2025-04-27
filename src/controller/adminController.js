@@ -23,11 +23,35 @@ adminController.post("/create", async (req, res) => {
     });
   }
 });
+adminController.delete("/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const admin = await Admin.findById(id);
+    if (!admin) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Admin not found",
+      });
+    }
+    
+    await Admin.findByIdAndDelete(id);
+    sendResponse(res, 200, "Success", {
+      message: "Admin deleted successfully!",
+      statusCode:200
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
 
 adminController.post("/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      const user = await Admin.findOne({ email, password });
+      const user = await Admin.findOne({ email, password }).populate({
+        path: "role",
+      });;
       if (user) {
         return sendResponse(res, 200, "Success", {
           message: "User logged in successfully",
