@@ -152,6 +152,9 @@ const productSchema = mongoose.Schema({
   specialApperence: {
     type: String,
   },
+  productReturnPeriod:{
+    type: String,
+  },
 
 
   // details for product verification
@@ -251,6 +254,10 @@ const productSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  isProductReturnPeriodApproved: {
+    type: Boolean,
+    default: false,
+  },
 
 
   // reject reason
@@ -347,6 +354,10 @@ nameRejectReason: {
     default: "waiting for approval",
   },
   productVideoRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  productReturnPeriodRejectReason: {
     type: String,
     default: "waiting for approval",
   },
