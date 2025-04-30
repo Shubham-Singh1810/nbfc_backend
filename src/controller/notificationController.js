@@ -9,7 +9,6 @@ const upload = require("../utils/multer");
 const { sendNotification } = require("../utils/sendNotification");
 
 
-
 notificationController.post("/list", async (req, res) => {
   try {
     const {
@@ -101,4 +100,5 @@ notificationController.delete("/delete/:id", async (req, res) => {
     });
   }
 });
+
 module.exports = notificationController;

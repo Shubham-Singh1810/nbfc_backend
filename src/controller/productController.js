@@ -203,6 +203,7 @@ productController.put("/update/hero-image", upload.single("productHeroImage"), a
     });
   }
 });
+
 productController.put("/update/add-product-gallery", upload.array("images"), async (req, res) => {
   try {
     const id = req.body.id;

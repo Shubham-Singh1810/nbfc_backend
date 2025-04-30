@@ -12,7 +12,7 @@ attributeSetController.post("/create", async (req, res) => {
   try {
     const AttributeSetCreated = await AttributeSet.create(req.body);
     sendResponse(res, 200, "Success", {
-      message: "Attribute created successfully!",
+      message: "Attribute Set created successfully!",
       data: AttributeSetCreated,
       statusCode: 200,
     });
@@ -52,7 +52,7 @@ attributeSetController.post("/list", async (req, res) => {
     const totalCount = await AttributeSet.countDocuments({});
     const activeCount = await AttributeSet.countDocuments({ status: true });
     sendResponse(res, 200, "Success", {
-      message: "Attribute list retrieved successfully!",
+      message: "Attribute set list retrieved successfully!",
       data: attributeSetList,
       documentCount: {
         totalCount,

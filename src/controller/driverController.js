@@ -170,7 +170,6 @@ driverController.post("/otp-verification", async (req, res) => {
   }
 });
 
-
 driverController.post("/login", async (req, res) => {
   try {
     const { phone, password } = req.body;

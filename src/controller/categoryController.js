@@ -47,8 +47,6 @@ categoryController.post("/create", upload.single("image"), async (req, res) => {
   }
 });
 
-
-
 categoryController.post("/list", async (req, res) => {
   try {
     const {
@@ -145,7 +143,6 @@ categoryController.put("/update", upload.single("image"), async (req, res) => {
     });
   }
 });
-
 
 categoryController.delete("/delete/:id", async (req, res) => {
   try {

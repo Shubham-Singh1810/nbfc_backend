@@ -150,6 +150,39 @@ const driverSchema = mongoose.Schema({
   password: {
     type: String,
   },
+  vehicalNumber: {
+    type: String,
+  },
+  vehicalType: {
+    type: String,
+  },
+  vehicalImage: {
+    type: String,
+  },
+  isVehicalNumberApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isVehicalTypeApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isVehicalImageApproved: {
+    type: Boolean,
+    default: false,
+  },
+  vehicalNumberRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  vehicalTypeRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  vehicalImageRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
 });
 
 driverSchema.plugin(timestamps);

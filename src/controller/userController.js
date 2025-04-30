@@ -11,6 +11,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
+const auth = require("../utils/auth");
 
 userController.post("/send-otp", async (req, res) => {
   try {
@@ -268,7 +269,7 @@ userController.post("/resend-otp", async (req, res) => {
   }
 });
 
-userController.get("/details/:id", async (req, res) => {
+userController.get("/details/:id", auth, async (req, res) => {
   try {
     const id = req.params.id;
     const user = await User.findOne({ _id: id });
@@ -292,7 +293,7 @@ userController.get("/details/:id", async (req, res) => {
   }
 });
 
-userController.post("/list", async (req, res) => {
+userController.post("/list", auth, async (req, res) => {
   try {
     const {
       searchKey = "",
@@ -345,7 +346,7 @@ userController.post("/list", async (req, res) => {
   }
 });
 
-userController.post("/add-to-cart/:id", async (req, res) => {
+userController.post("/add-to-cart/:id", auth, async (req, res) => {
   try {
     const { id: productId } = req.params;
     const { userId: currentUserId } = req.body;
@@ -427,7 +428,7 @@ userController.post("/add-to-cart/:id", async (req, res) => {
   }
 });
 
-userController.post("/remove-from-cart/:id", async (req, res) => {
+userController.post("/remove-from-cart/:id", auth, async (req, res) => {
   try {
     const { id: productId } = req.params;
     const { userId: currentUserId } = req.body;
@@ -488,7 +489,7 @@ userController.post("/remove-from-cart/:id", async (req, res) => {
   }
 });
 
-userController.get("/cart/:userId", async (req, res) => {
+userController.get("/cart/:userId", auth, async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -564,7 +565,7 @@ userController.get("/cart/:userId", async (req, res) => {
   }
 });
 
-userController.post("/add-to-wishlist/:id", async (req, res) => {
+userController.post("/add-to-wishlist/:id", auth, async (req, res) => {
   try {
     if (!req.params.id) {
       return sendResponse(res, 422, "Failed", {
@@ -611,7 +612,7 @@ userController.post("/add-to-wishlist/:id", async (req, res) => {
   }
 });
 
-userController.get("/wishlist/:userId", async (req, res) => {
+userController.get("/wishlist/:userId", auth, async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -641,7 +642,7 @@ userController.get("/wishlist/:userId", async (req, res) => {
   }
 });
 
-userController.put("/update", upload.single("profilePic"), async (req, res) => {
+userController.put("/update", auth, upload.single("profilePic"), async (req, res) => {
   try {
     const id = req.body.id;
     const userData = await User.findOne({_id: id});
@@ -682,7 +683,7 @@ userController.put("/update", upload.single("profilePic"), async (req, res) => {
   }
 });
 
-userController.post("/home-details", async (req, res) => {
+userController.post("/home-details", auth, async (req, res) => {
   try {
     const homeCategory = await Category.find({});
     const bestSellerSubCategory = await SubCategory.find({});

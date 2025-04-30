@@ -145,7 +145,6 @@ subCategoryController.post("/attribute-list", async (req, res) => {
   }
 });
 
-
 subCategoryController.put(
   "/update",
   upload.single("image"),
@@ -245,7 +244,6 @@ subCategoryController.delete("/delete/:id", async (req, res) => {
     });
   }
 });
-
 
 subCategoryController.get("/details/:id", async (req, res) => {
   try {
