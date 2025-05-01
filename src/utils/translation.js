@@ -210,3 +210,12 @@
 {true ? "Tax updated successfully!":"कर सफलतापूर्वक अपडेट किया गया!"}
 {true ? "Tax deleted successfully!":"कर सफलतापूर्वक हटा दिया गया!"}
 {true ? "Tax retrived successfully!":"कर सफलतापूर्वक प्राप्त किया गया!"}
+
+// ticket category controller
+{true ? "Ticket Category created successfully!":"टिकट श्रेणी सफलतापूर्वक बनाई गई!"}
+{true ? "Ticket Category list retrieved successfully!":"टिकट श्रेणी सूची सफलतापूर्वक प्राप्त हुई!"}
+{true ? "Ticket Category not found":"टिकट श्रेणी नहीं मिली"}
+{true ? "Ticket Category updated successfully!":"टिकट श्रेणी सफलतापूर्वक अपडेट की गई!"}
+{true ? "Ticket Category retrived successfully!":"टिकट श्रेणी सफलतापूर्वक प्राप्त हुई!"}
+
+// ticket controller
