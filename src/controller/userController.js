@@ -535,6 +535,7 @@ userController.get("/cart/:userId", auth, async (req, res) => {
           name: product.name,
           productHeroImage: product.productHeroImage,
           productGallery: product.productGallery,
+          shortDescription: product.shortDescription,
           categoryId: product.categoryId,
           subCategoryId: product.subCategoryId,
           price: product.price || 0,

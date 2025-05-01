@@ -685,12 +685,12 @@ productController.post("/filter-list", async (req, res) => {
     if (categoryId) query.categoryId = categoryId;
     if (subCategoryId) query.subCategoryId = subCategoryId;
     if (price) query.price = price;
-    if (discountedPrice) query.discountedPrice = discountedPrice;
     if (rating) query.rating = rating;
 
     const sortField = sortByField || "createdAt";
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };
+    console.log(sortOption)
 
     const productList = await Product.find(query)
       .sort(sortOption)
