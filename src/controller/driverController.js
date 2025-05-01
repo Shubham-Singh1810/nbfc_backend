@@ -10,6 +10,7 @@ const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const { sendNotification } = require("../utils/sendNotification");
+const auth = require("../utils/auth");
 
 
 driverController.post(
@@ -244,7 +245,7 @@ driverController.post("/resend-otp", async (req, res) => {
   }
 });
 
-driverController.get("/details/:id", async (req, res) => {
+driverController.get("/details/:id", auth, async (req, res) => {
   try {
     const id = req.params.id;
     const driver = await Driver.findOne({ _id: id });
@@ -268,7 +269,7 @@ driverController.get("/details/:id", async (req, res) => {
   }
 });
 
-driverController.post("/list", async (req, res) => {
+driverController.post("/list", auth, async (req, res) => {
   try {
     const {
       searchKey = "",
@@ -317,7 +318,7 @@ driverController.post("/list", async (req, res) => {
   }
 });
 
-driverController.post("/create", async (req, res) => {
+driverController.post("/create", auth, async (req, res) => {
   try {
     const driver = await Driver.create(req.body);
     return sendResponse(res, 200, "Success", {
@@ -333,7 +334,7 @@ driverController.post("/create", async (req, res) => {
   }
 });
 
-driverController.delete("/delete/:id", async (req, res) => {
+driverController.delete("/delete/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const driver = await Driver.findById(id);
@@ -355,7 +356,7 @@ driverController.delete("/delete/:id", async (req, res) => {
   }
 });
 
-driverController.put("/update", upload.fields([
+driverController.put("/update", auth, upload.fields([
     { name: "dlFrontImage", maxCount: 1 },
     { name: "dlBackImage", maxCount: 1 },
     { name: "profilePic", maxCount: 1 },
@@ -456,7 +457,7 @@ driverController.put("/update", upload.fields([
   }
 );
 
-driverController.post("/assign-product", async (req, res) => {
+driverController.post("/assign-product", auth, async (req, res) => {
   try {
     const { orderId, productId, driverId } = req.body;
 
@@ -508,7 +509,7 @@ driverController.post("/assign-product", async (req, res) => {
   }
 });
 
-driverController.get("/assigned-products/:driverId", async (req, res) => {
+driverController.get("/assigned-products/:driverId", auth, async (req, res) => {
   try {
     const { driverId } = req.params;
 
