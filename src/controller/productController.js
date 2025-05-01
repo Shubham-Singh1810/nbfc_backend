@@ -666,6 +666,7 @@ productController.post("/filter-list", async (req, res) => {
     const {
       searchKey = "",
       status,
+      name,
       brandId,
       categoryId,
       subCategoryId,
@@ -681,6 +682,7 @@ productController.post("/filter-list", async (req, res) => {
     const query = {};
     if (status !== undefined) query.status = status;
     if (searchKey) query.name = { $regex: searchKey, $options: "i" };
+    if (name) query.name = name;
     if (brandId) query.brandId = brandId;
     if (categoryId) query.categoryId = categoryId;
     if (subCategoryId) query.subCategoryId = subCategoryId;
