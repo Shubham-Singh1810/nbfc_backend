@@ -683,7 +683,7 @@ userController.put("/update", auth, upload.single("profilePic"), async (req, res
   }
 });
 
-userController.post("/home-details", auth, async (req, res) => {
+userController.post("/home-details",  async (req, res) => {
   try {
     const homeCategory = await Category.find({});
     const bestSellerSubCategory = await SubCategory.find({});
