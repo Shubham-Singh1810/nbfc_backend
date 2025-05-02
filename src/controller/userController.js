@@ -710,4 +710,43 @@ userController.post("/home-details",  async (req, res) => {
   }
 });
 
+userController.post("/remove-all-from-cart/:id", auth, async (req, res) => {
+  try {
+    const { id: productId } = req.params;
+    const { userId: currentUserId } = req.body;
+
+    if (!productId || !currentUserId) {
+      return sendResponse(res, 422, "Failed", {
+        message: "Missing productId or userId!",
+      });
+    }
+
+    const user = await User.findById(currentUserId);
+    if (!user) {
+      return sendResponse(res, 400, "Failed", { message: "User not found!" });
+    }
+
+    const cartItem = user.cartItems.find(
+      (item) => item.productId.toString() === productId
+    );
+
+    if (!cartItem) {
+      return sendResponse(res, 400, "Failed", { message: "Item not in cart!" });
+    }
+
+    // ✅ Remove the product entirely from the cart (regardless of quantity)
+    await User.findByIdAndUpdate(currentUserId, {
+      $pull: { cartItems: { productId } },
+    });
+
+    return sendResponse(res, 200, "Success", { message: "Product removed from cart" });
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
+
 module.exports = userController;
