@@ -258,6 +258,14 @@ const productSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  isProductOtherDetailsApproved: {
+    type: Boolean,
+    default: false,
+  },
+  isProductVariantsApproved: {
+    type: Boolean,
+    default: false,
+  },
 
 
   // reject reason
@@ -358,6 +366,14 @@ nameRejectReason: {
     default: "waiting for approval",
   },
   productReturnPeriodRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  productOtherDetailsRejectReason: {
+    type: String,
+    default: "waiting for approval",
+  },
+  productVariantsRejectReason: {
     type: String,
     default: "waiting for approval",
   },

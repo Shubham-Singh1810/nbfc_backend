@@ -31,7 +31,6 @@ productController.post("/create", async (req, res) => {
   }
 });
 
-
 productController.post("/list", async (req, res) => {
   try {
     const {
