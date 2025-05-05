@@ -41,7 +41,8 @@ const bookingSchema = mongoose.Schema({
           "cancelled",
         ],
       },
-      driverId: {
+      
+      : {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Driver",
         required: true,

@@ -138,76 +138,64 @@ bookingController.get("/details/:userId", async (req, res) => {
   }
 });
 
-bookingController.put("/update",async (req, res) => {
-    try {
-      const id = req.body.id;
-      const venderData = await Vender.findById(id);
-      if (!venderData) {
-        return sendResponse(res, 404, "Failed", {
-          message: "Vender not found",
-        });
-      }
+bookingController.put("/update", async (req, res) => {
+  try {
+    const { id, productId, deliveryStatus } = req.body;
 
-      let updateData = { ...req.body }
-      const updatedUserData = await Vender.findByIdAndUpdate(id, updateData, {
-        new: true,
-      });
-      if(req.body.profileStatus=="reUploaded"){
-        sendNotification({
-          icon:updatedUserData.profilePic,
-          title:`${updatedUserData.firstName} has re-uploaded the details`,
-          subTitle:`${updatedUserData.firstName} has re-uploaded the details`,
-          notifyUserId:"Admin",
-          category:"Vender",
-          subCategory:"Profile update",
-          notifyUser:"Admin",
-        }, req.io)
-      }
-         if(req.body.profileStatus=="rejected"){
-                sendNotification({
-                  icon:updatedUserData.profilePic,
-                  title:`${updatedUserData.firstName} your details has been rejected`,
-                  subTitle:`${updatedUserData.firstName} please go through the details once more`,
-                  notifyUserId:updatedUserData._id,
-                  category:"Vender",
-                  subCategory:"Profile update",
-                  notifyUser:"Vender",
-                }, req.io)
-              }
-      if(req.body.profileStatus=="approved"){
-        sendNotification({
-          icon:updatedUserData.profilePic,
-          title:`${updatedUserData.firstName} your profile has been approved`,
-          subTitle:`${updatedUserData.firstName} congratulations!! your profile has been approved`,
-          notifyUserId:updatedUserData._id,
-          category:"Vender",
-          subCategory:"Profile update",
-          notifyUser:"Vender",
-        }, req.io)
-      }
-      if(req.body.profileStatus=="storeDetailsCompleted"){
-        sendNotification({
-          icon:updatedUserData.profilePic,
-          title:`${updatedUserData.firstName} your storeDetails has been Completed`,
-          subTitle:`${updatedUserData.firstName} congratulations!! your storeDetails has been Completed`,
-          notifyUserId:updatedUserData._id,
-          category:"Vender",
-          subCategory:"Profile update",
-          notifyUser:"Vender",
-        }, req.io)
-      }
-      sendResponse(res, 200, "Success", {
-        message: "Vendor updated successfully!",
-        data: updatedUserData,
-        statusCode: 200,
-      });
-    } catch (error) {
-      console.error(error);
-      sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error.",
+    // Validate input
+    if (!id || !productId || !deliveryStatus) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Missing booking ID, product ID, or delivery status.",
       });
     }
+
+    const allowedStatuses = [
+      "orderPlaced",
+      "orderPacked",
+      "driverAssigned",
+      "driverAccepted",
+      "pickedOrder",
+      "completed",
+      "cancelled",
+    ];
+
+    if (!allowedStatuses.includes(deliveryStatus)) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Invalid delivery status provided.",
+      });
+    }
+
+    // Update the specific product's deliveryStatus
+    const updatedBooking = await Booking.findOneAndUpdate(
+      {
+        _id: id,
+        "product.productId": productId,
+      },
+      {
+        $set: {
+          "product.$.deliveryStatus": deliveryStatus,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedBooking) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Booking or product not found.",
+      });
+    }
+
+    return sendResponse(res, 200, "Success", {
+      message: "Delivery status updated successfully.",
+      data: updatedBooking,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+    });
   }
-);
+});
+
 
 module.exports = bookingController;
