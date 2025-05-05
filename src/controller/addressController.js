@@ -33,11 +33,13 @@ addressController.post("/list", async (req, res) => {
       pageCount = 10,
       sortByField,
       sortByOrder,
+      userId,
     } = req.body;
 
     const query = {};
     if (status) query.status = status;
     if (searchKey) query.name = { $regex: searchKey, $options: "i" };
+    if (userId) query.name = userId;
 
     // Construct sorting object
     const sortField = sortByField || "createdAt";
