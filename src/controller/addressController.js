@@ -39,7 +39,7 @@ addressController.post("/list", async (req, res) => {
     const query = {};
     if (status) query.status = status;
     if (searchKey) query.name = { $regex: searchKey, $options: "i" };
-    if (userId) query.name = userId;
+    if (userId) query.userId = userId;
 
     // Construct sorting object
     const sortField = sortByField || "createdAt";
