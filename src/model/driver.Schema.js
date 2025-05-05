@@ -150,36 +150,36 @@ const driverSchema = mongoose.Schema({
   password: {
     type: String,
   },
-  vehicalNumber: {
+  vehicleNumber: {
     type: String,
   },
-  vehicalType: {
+  vehicleType: {
     type: String,
   },
-  vehicalImage: {
+  vehicleImage: {
     type: String,
   },
-  isVehicalNumberApproved: {
+  isVehicleNumberApproved: {
     type: Boolean,
     default: false,
   },
-  isVehicalTypeApproved: {
+  isVehicleTypeApproved: {
     type: Boolean,
     default: false,
   },
-  isVehicalImageApproved: {
+  isVehicleImageApproved: {
     type: Boolean,
     default: false,
   },
-  vehicalNumberRejectReason: {
+  vehicleNumberRejectReason: {
     type: String,
     default: "waiting for approval",
   },
-  vehicalTypeRejectReason: {
+  vehicleTypeRejectReason: {
     type: String,
     default: "waiting for approval",
   },
-  vehicalImageRejectReason: {
+  vehicleImageRejectReason: {
     type: String,
     default: "waiting for approval",
   },

@@ -11,9 +11,9 @@ if (!admin.apps.length) {
 exports.sendNotification = async (data) => {
   try {
     const notificationCreated = await Notification.create(data);
-    io.emit("notificationCreated", {
-      message: "A New Notification Added",
-    });
+    // io.emit("notificationCreated", {
+    //   message: "A New Notification Added",
+    // });
     const message = {
       notification: {
         title: data?.title || "Default Title",
