@@ -368,6 +368,7 @@ driverController.put("/update", auth, upload.fields([
     { name: "dlFrontImage", maxCount: 1 },
     { name: "dlBackImage", maxCount: 1 },
     { name: "profilePic", maxCount: 1 },
+    { name: "vehicleImage", maxCount: 1 },
   ]),
   async (req, res) => {
     try {
@@ -399,6 +400,12 @@ driverController.put("/update", auth, upload.fields([
             req.files["profilePic"][0].path
           );
           updateData = {...req.body, profilePic: image.url};
+        }
+        if (req.files["vehicleImage"]) {
+          let image = await cloudinary.uploader.upload(
+            req.files["vehicleImage"][0].path
+          );
+          updateData = {...req.body, vehicleImage: image.url};
         }
         
         const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
