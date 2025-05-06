@@ -19,6 +19,7 @@ driverController.post(
     { name: "dlFrontImage", maxCount: 1 },
     { name: "dlBackImage", maxCount: 1 },
     { name: "profilePic", maxCount: 1 },
+    { name: "vehicleImage", maxCount: 1 },
   ]),
   async (req, res) => {
     try {
@@ -56,6 +57,12 @@ driverController.post(
         );
         profilePic = image.url;
       }
+      if (req.files["vehicleImage"]) {
+        let image = await cloudinary.uploader.upload(
+          req.files["vehicleImage"][0].path
+        );
+        vehicleImage = image.url;
+      }
 
       // Create a new user with provided details
       let newDriver = await Driver.create({
@@ -63,6 +70,7 @@ driverController.post(
         phoneOtp: otp,
         dlFrontImage,
         dlBackImage,
+        vehicleImage,
         profilePic,
       });
       sendNotification({
