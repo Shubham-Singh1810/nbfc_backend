@@ -216,7 +216,7 @@ venderController.post("/resend-otp", async (req, res) => {
   }
 });
 
-venderController.get("/details/:id", async (req, res) => {
+venderController.get("/details/:id", auth, async (req, res) => {
   try {
     const id = req.params.id;
     const vender = await Vender.findOne({ _id: id });
@@ -241,7 +241,7 @@ venderController.get("/details/:id", async (req, res) => {
 });
 
 venderController.put(
-  "/update",
+  "/update", auth,
   upload.fields([
     { name: "bussinessLicense", maxCount: 1 },
     { name: "storeLogo", maxCount: 1 },
@@ -367,7 +367,7 @@ venderController.put(
   }
 );
 
-venderController.delete("/delete/:id", async (req, res) => {
+venderController.delete("/delete/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const vender = await Vender.findById(id);
@@ -390,7 +390,7 @@ venderController.delete("/delete/:id", async (req, res) => {
   }
 });
 
-venderController.post("/product-list", async (req, res) => {
+venderController.post("/product-list", auth, async (req, res) => {
   try {
     const {
       searchKey = "",
@@ -440,7 +440,7 @@ venderController.post("/product-list", async (req, res) => {
   }
 });
 
-venderController.post("/list", async (req, res) => {
+venderController.post("/list", auth, async (req, res) => {
   try {
     const {
       searchKey = "",
@@ -492,7 +492,7 @@ venderController.post("/list", async (req, res) => {
   }
 });
 
-venderController.get("/orders/:venderId", async (req, res) => {
+venderController.get("/orders/:venderId", auth, async (req, res) => {
   try {
     const venderId = req.params.venderId;
 
