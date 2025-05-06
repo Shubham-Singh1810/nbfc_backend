@@ -13,9 +13,19 @@ const path = require("path");
 
 bookingController.post("/create", async (req, res) => {
   try {
-    const { userId, totalAmount, status, product,
-       bookingQuantity, bookingPrice, modeOfPayment,
-         paymentId, signature, orderId, addressId  } = req.body;
+    const {
+      userId,
+      totalAmount,
+      status,
+      product,
+      bookingQuantity,
+      bookingPrice,
+      modeOfPayment,
+      paymentId,
+      signature,
+      orderId,
+      addressId,
+    } = req.body;
 
     // Validate required fields
     if (!userId) {
@@ -43,7 +53,7 @@ bookingController.post("/create", async (req, res) => {
       paymentId,
       signature,
       orderId,
-      addressId
+      addressId,
     };
 
     const bookingCreated = await Booking.create(bookingData);
@@ -111,12 +121,47 @@ bookingController.post("/list", async (req, res) => {
   }
 });
 
+// bookingController.get("/details/:userId", async (req, res) => {
+//   try {
+//     const userId = req.params.userId;
+//     const booking = await Booking.find({ userId: userId })
+//       .populate("product.productId")
+//       .populate("userId");
+
+//     if (booking.length > 0) {
+//       return sendResponse(res, 200, "Success", {
+//         message: "Booking details fetched successfully",
+//         data: booking,
+//         statusCode: 200,
+//       });
+//     } else {
+//       return sendResponse(res, 404, "Failed", {
+//         message: "No bookings found for this user",
+//         statusCode: 404,
+//       });
+//     }
+//   } catch (error) {
+//     return sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error.",
+//       statusCode: 500,
+//     });
+//   }
+// });
+
 bookingController.get("/details/:userId", async (req, res) => {
   try {
     const userId = req.params.userId;
+
     const booking = await Booking.find({ userId: userId })
-      .populate("product.productId")
-      .populate("userId");
+      .populate({
+        path: "product.productId",
+        select:
+          "name productType tax madeIn hsnCode shortDescription createdBy status isProductReturnable isCodAllowed isProductTaxIncluded isProductCancelable productGallery isActive productOtherDetails updatedAt createdAt brandId description discountedPrice guaranteePeriod maxOrderQuantity minOrderQuantity price productVideoUrl stockQuantity warrantyPeriod productHeroImage productVideo",
+      })
+      .populate({
+        path: "userId",
+        select: "name email mobileNumber",
+      });
 
     if (booking.length > 0) {
       return sendResponse(res, 200, "Success", {
@@ -197,5 +242,39 @@ bookingController.put("/update", async (req, res) => {
   }
 });
 
+bookingController.get("/order-details/:orderId", async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+
+    const booking = await Booking.findById(orderId)
+      .populate({
+        path: "product.productId",
+        select:
+          "name productType tax madeIn hsnCode shortDescription createdBy status zipcodeId isProductReturnable isCodAllowed isProductTaxIncluded isProductCancelable productGallery isActive updatedAt createdAt brandId categoryId description discountedPrice guaranteePeriod maxOrderQuantity minOrderQuantity price productVideoUrl stockQuantity subCategoryId warrantyPeriod productHeroImage productVideo",
+      })
+      .populate({
+        path: "userId",
+        select: "name email mobileNumber",
+      });
+
+    if (booking) {
+      return sendResponse(res, 200, "Success", {
+        message: "Order details fetched successfully",
+        data: booking,
+        statusCode: 200,
+      });
+    } else {
+      return sendResponse(res, 404, "Failed", {
+        message: "Order not found",
+        statusCode: 404,
+      });
+    }
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
+    });
+  }
+});
 
 module.exports = bookingController;
