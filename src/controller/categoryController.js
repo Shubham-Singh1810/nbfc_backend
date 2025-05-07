@@ -10,42 +10,63 @@ const SubCategory = require("../model/subCategory.Schema");
 const Product = require("../model/product.Schema")
 const { sendNotification } = require("../utils/sendNotification");
 
-categoryController.post("/create", upload.single("image"), async (req, res) => {
-  try {
-    let obj;
-    if (req.file) {
-      let image = await cloudinary.uploader.upload(req.file.path, function (err, result) {
-        if (err) {
-          return err;
-        } else {
-          return result;
-        }
+categoryController.post("/create", upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "coverImage", maxCount: 1 }
+  ]),
+  async (req, res) => {
+    try {
+      let imageUrl = "";
+      let coverImageUrl = "";
+
+      // Upload 'image' to Cloudinary
+      if (req.files?.image?.length) {
+        const uploadedImage = await cloudinary.uploader.upload(req.files.image[0].path);
+        imageUrl = uploadedImage.secure_url;
+      }
+
+      // Upload 'coverImage' to Cloudinary
+      if (req.files?.coverImage?.length) {
+        const uploadedCoverImage = await cloudinary.uploader.upload(req.files.coverImage[0].path);
+        coverImageUrl = uploadedCoverImage.secure_url;
+      }
+
+      const obj = {
+        ...req.body,
+        image: imageUrl,
+        coverImage: coverImageUrl
+      };
+
+      const CategoryCreated = await Category.create(obj);
+
+      // Send notification
+      sendNotification(
+        {
+          icon: CategoryCreated?.image,
+          title: ` has re-uploaded the details`,
+          subTitle: ` has re-uploaded the details`,
+          notifyUserId: "Admin",
+          category: "Driver",
+          subCategory: "Profile update",
+          notifyUser: "Admin"
+        },
+        req.io
+      );
+
+      sendResponse(res, 200, "Success", {
+        message: "Category created successfully!",
+        data: CategoryCreated,
+        statusCode: 200
       });
-      obj = { ...req.body, image: image.url };
+    } catch (error) {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+        statusCode: 500
+      });
     }
-    const CategoryCreated = await Category.create(obj);
-    sendNotification({
-                icon:CategoryCreated?.image,
-                title:` has re-uploaded the details`,
-                subTitle:` has re-uploaded the details`,
-                notifyUserId:"Admin",
-                category:"Driver",
-                subCategory:"Profile update",
-                notifyUser:"Admin",
-              }, req.io)
-    sendResponse(res, 200, "Success", {
-      message: "Category created successfully!",
-      data: CategoryCreated,
-      statusCode: 200
-    });
-  } catch (error) {
-    console.error(error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-      statusCode: 500
-    });
   }
-});
+);
 
 categoryController.post("/list", async (req, res) => {
   try {
@@ -102,47 +123,62 @@ categoryController.get("/product-list/:id", async (req, res) => {
   }
 });
 
-categoryController.put("/update", upload.single("image"), async (req, res) => {
-  try {
-    const id = req.body._id;
-    const category = await Category.findById(id);
-    if (!category) {
-      return sendResponse(res, 404, "Failed", {
-        message: "Category not found",
-        statusCode: 403
-      });
-    }
-    let updatedData = { ...req.body };
-    if (req.file) {
-      // Delete the old image from Cloudinary
-      if (category.image) {
-        const publicId = category.image.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy(publicId, (error, result) => {
-          if (error) {
-            console.error("Error deleting old image from Cloudinary:", error);
-          } else {
-            console.log("Old image deleted from Cloudinary:", result);
-          }
+categoryController.put("/update", upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "coverImage", maxCount: 1 }
+  ]),
+  async (req, res) => {
+    try {
+      const id = req.body._id;
+      const category = await Category.findById(id);
+
+      if (!category) {
+        return sendResponse(res, 404, "Failed", {
+          message: "Category not found",
+          statusCode: 403
         });
       }
-      const image = await cloudinary.uploader.upload(req.file.path);
-      updatedData.image = image.url;
+
+      let updatedData = { ...req.body };
+
+      // Handle 'image'
+      if (req.files?.image?.length) {
+        if (category.image) {
+          const publicId = category.image.split("/").pop().split(".")[0];
+          await cloudinary.uploader.destroy(publicId);
+        }
+        const uploadedImage = await cloudinary.uploader.upload(req.files.image[0].path);
+        updatedData.image = uploadedImage.secure_url;
+      }
+
+      // Handle 'coverImage'
+      if (req.files?.coverImage?.length) {
+        if (category.coverImage) {
+          const publicId = category.coverImage.split("/").pop().split(".")[0];
+          await cloudinary.uploader.destroy(publicId);
+        }
+        const uploadedCoverImage = await cloudinary.uploader.upload(req.files.coverImage[0].path);
+        updatedData.coverImage = uploadedCoverImage.secure_url;
+      }
+
+      const updatedCategory = await Category.findByIdAndUpdate(id, updatedData, {
+        new: true
+      });
+
+      sendResponse(res, 200, "Success", {
+        message: "Category updated successfully!",
+        data: updatedCategory,
+        statusCode: 200
+      });
+    } catch (error) {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+        statusCode: 500
+      });
     }
-    const updatedCategory = await Category.findByIdAndUpdate(id, updatedData, {
-      new: true, // Return the updated document
-    });
-    sendResponse(res, 200, "Success", {
-      message: "Category updated successfully!",
-      data: updatedCategory,
-      statusCode: 200
-    });
-  } catch (error) {
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-      statusCode: 500
-    });
   }
-});
+);
 
 categoryController.delete("/delete/:id", async (req, res) => {
   try {
@@ -176,7 +212,6 @@ categoryController.delete("/delete/:id", async (req, res) => {
     });
   }
 });
-
 
 categoryController.get("/details/:id", async (req, res) => {
   try {

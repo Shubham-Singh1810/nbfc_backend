@@ -21,11 +21,7 @@ const bannerSchema = mongoose.Schema({
   },
   link:{
     type: String,
-  },
-  categoryId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-    },
+  }
 });
 
 bannerSchema.plugin(timestamps);
