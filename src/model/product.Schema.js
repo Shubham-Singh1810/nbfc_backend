@@ -41,12 +41,12 @@ const productSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Admin",
   },
-  status:{
+  status: {
     type: String,
-    default:"pending",
-    enum:["pending", "rejected", "approved", "reUploaded"]
+    default: "pending",
+    enum: ["pending", "rejected", "approved", "reUploaded"]
   },
-
+  
   // Step 2
   minOrderQuantity: {
     type: String,
