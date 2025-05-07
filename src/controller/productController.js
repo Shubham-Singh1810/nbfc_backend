@@ -372,7 +372,7 @@ productController.put("/update-video", upload.single("productVideo"), async (req
 
 productController.post("/add-variant", upload.single("variantImage"), async (req, res) => {
   try {
-    const { id, variantKey, variantValue, variantPrice, variantDiscountedPrice } = req.body;
+    const { id, variantKey, variantValue, variantPrice, variantDiscountedPrice, stockQuantity } = req.body;
     const product = await Product.findById(id);
     if (!product) {
       return sendResponse(res, 404, "Failed", {
@@ -392,7 +392,8 @@ productController.post("/add-variant", upload.single("variantImage"), async (req
       variantValue,
       variantPrice,
       variantDiscountedPrice,
-      variantImage
+      variantImage,
+      stockQuantity
     };
 
     product.productVariants.push(variant);
@@ -438,6 +439,7 @@ productController.put("/update-variant", upload.single("variantImage"), async (r
       variantValue = variant.variantValue,
       variantPrice = variant.variantPrice,
       variantDiscountedPrice = variant.variantDiscountedPrice,
+      stockQuantity = variant.stockQuantity,
     } = req.body;
 
     let variantImage = variant.variantImage;
@@ -452,7 +454,8 @@ productController.put("/update-variant", upload.single("variantImage"), async (r
       variantValue,
       variantPrice,
       variantDiscountedPrice,
-      variantImage
+      variantImage,
+      stockQuantity
     };
 
     await product.save();
