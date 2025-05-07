@@ -42,8 +42,9 @@ const productSchema = mongoose.Schema({
     ref: "Admin",
   },
   status:{
-    type: Boolean,
-    default:false
+    type: String,
+    default:"pending",
+    enum:["pending", "rejected", "approved", "reUploaded"]
   },
 
   // Step 2
@@ -186,10 +187,6 @@ const productSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  isStatusApproved: {
-    type: Boolean,
-    default: false,
-  },
   isMinOrderQuantityApproved: {
     type: Boolean,
     default: false,
@@ -294,10 +291,6 @@ nameRejectReason: {
     default: "waiting for approval",
   },
   shortDescriptionRejectReason: {
-    type: String,
-    default: "waiting for approval",
-  },
-  statusRejectReason: {
     type: String,
     default: "waiting for approval",
   },
