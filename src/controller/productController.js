@@ -88,6 +88,7 @@ productController.put("/update",
   async (req, res) => {
     try {
       const id = req.body.id;
+      console.log(id)
       const productData = await Product.findOne({_id:id});
       if (!productData) {
         return sendResponse(res, 404, "Failed", {
