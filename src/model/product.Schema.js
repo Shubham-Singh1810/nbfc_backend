@@ -139,6 +139,7 @@ const productSchema = mongoose.Schema({
       variantPrice: { type: Number },
       variantDiscountedPrice: { type: Number },
       variantImage: { type: String },
+      stockQuantity: { type: Number },
     },
   ],
   // admin action
