@@ -29,6 +29,7 @@ const ticketController = require("./controller/ticketController");
 const chatController = require("./controller/chatController");
 const notifyController = require("./controller/notifyController");
 const productFaqController = require("./controller/productFaqController");
+const orderVerificationController = require("./controller/orderVerificationController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -59,6 +60,7 @@ router.use("/ticket", ticketController);
 router.use("/chat", chatController);
 router.use("/notify", notifyController);
 router.use("/productFaq", productFaqController);
+router.use("/order-verification", orderVerificationController);
 
 
 module.exports = router;
