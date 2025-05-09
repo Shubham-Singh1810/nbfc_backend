@@ -2,12 +2,18 @@ const mongoose = require("mongoose");
 const timestamps = require("mongoose-timestamp");
 
 const orderVerificationSchema = mongoose.Schema({
-  productId: { 
-    type: mongoose.Schema.Types.ObjectId, ref: "Product"
- },
+  productId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Product",
+  },
+  orderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Booking",
+  },
   driverId: {
-    type: mongoose.Schema.Types.ObjectId, ref: "Driver"
-},
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Driver",
+  },
   image: {
     type: String,
     required: true,
@@ -16,11 +22,10 @@ const orderVerificationSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  verifyOtp: {
+  otp: {
     type: String,
     required: true,
   },
-
 });
 
 orderVerificationSchema.plugin(timestamps);
