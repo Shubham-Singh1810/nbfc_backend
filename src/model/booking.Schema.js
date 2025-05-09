@@ -41,11 +41,23 @@ const bookingSchema = mongoose.Schema({
           "cancelled",
         ],
       },
-      
       driverId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Driver",
-        // required: true,
+      },
+      cancelledBy: {
+        type: String,
+        enum: [
+          "Driver",
+          "User",
+          "Vender"
+        ]
+      },
+      cancelReason: {
+        type: String,
+      },
+      orderNotDeliveredReason: {
+        type: String,
       },
     },
   ],

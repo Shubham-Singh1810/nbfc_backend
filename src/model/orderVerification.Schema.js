@@ -24,7 +24,7 @@ const orderVerificationSchema = mongoose.Schema({
   },
   otp: {
     type: String,
-    required: true,
+    // required: true,
   },
 });
 

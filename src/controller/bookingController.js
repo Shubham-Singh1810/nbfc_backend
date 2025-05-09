@@ -121,33 +121,6 @@ bookingController.post("/list", async (req, res) => {
   }
 });
 
-// bookingController.get("/details/:userId", async (req, res) => {
-//   try {
-//     const userId = req.params.userId;
-//     const booking = await Booking.find({ userId: userId })
-//       .populate("product.productId")
-//       .populate("userId");
-
-//     if (booking.length > 0) {
-//       return sendResponse(res, 200, "Success", {
-//         message: "Booking details fetched successfully",
-//         data: booking,
-//         statusCode: 200,
-//       });
-//     } else {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "No bookings found for this user",
-//         statusCode: 404,
-//       });
-//     }
-//   } catch (error) {
-//     return sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error.",
-//       statusCode: 500,
-//     });
-//   }
-// });
-
 bookingController.get("/details/:userId", async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -273,6 +246,115 @@ bookingController.get("/order-details/:orderId", async (req, res) => {
     return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error.",
       statusCode: 500,
+    });
+  }
+});
+
+bookingController.put("/cancel-product", async (req, res) => {
+  try {
+    const { bookingId, productId, cancelReason, cancelledBy } = req.body;
+
+    // Validate required fields
+    if (!bookingId || !productId || !cancelReason || !cancelledBy) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Missing required fields: bookingId, productId, cancelReason, or cancelledBy",
+      });
+    }
+
+    // Validate cancelledBy role
+    const validRoles = ["Driver", "User", "Vender"];
+    if (!validRoles.includes(cancelledBy)) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Invalid cancelledBy role. Must be one of: Driver, User, Vender",
+      });
+    }
+
+    // Update the product in the booking
+    const updatedBooking = await Booking.findOneAndUpdate(
+      {
+        _id: bookingId,
+        "product.productId": productId,
+      },
+      {
+        $set: {
+          "product.$.deliveryStatus": "cancelled",
+          "product.$.cancelledBy": cancelledBy,
+          "product.$.cancelReason": cancelReason,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedBooking) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Booking or product not found",
+      });
+    }
+
+    return sendResponse(res, 200, "Success", {
+      message: `Product cancelled successfully by ${cancelledBy}`,
+      data: updatedBooking,
+    });
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
+bookingController.put("/mark-not-delivered", async (req, res) => {
+  try {
+    const { bookingId, productId, orderNotDeliveredReason } = req.body;
+
+    // Validate required fields
+    if (!bookingId || !productId || !orderNotDeliveredReason) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Missing required fields: bookingId, productId, or reason",
+      });
+    }
+
+    // Make sure booking and product exist
+    const booking = await Booking.findOne({ _id: bookingId });
+
+    if (!booking) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Booking not found",
+      });
+    }
+
+    const product = booking.product.find(
+      (p) => p.productId.toString() === productId
+    );
+
+    if (!product) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Product not found in booking",
+      });
+    }
+
+    // Only update the not delivered reason (no cancel/update to cancelledBy)
+    const updatedBooking = await Booking.findOneAndUpdate(
+      {
+        _id: bookingId,
+        "product.productId": productId,
+      },
+      {
+        $set: {
+          "product.$.orderNotDeliveredReason": orderNotDeliveredReason,
+        },
+      },
+      { new: true }
+    );
+
+    return sendResponse(res, 200, "Success", {
+      message: "Order not delivered reason submitted successfully",
+      data: updatedBooking,
+    });
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
     });
   }
 });
