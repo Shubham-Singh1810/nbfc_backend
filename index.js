@@ -9,33 +9,33 @@ const {Server} = require("socket.io")
 const app = express();
 const server = createServer(app);
 
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-  transports: ['websocket'], // 👈 disable long-polling
-});
+// const io = new Server(server, {
+//   cors: {
+//     origin: "http://localhost:3000",
+//     methods: ["GET", "POST"],
+//     credentials: true,
+//   },
+//   transports: ['websocket'], // 👈 disable long-polling
+// });
 
 
 
 
-io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
+// io.on("connection", (socket) => {
+//   console.log("A user connected:", socket.id);
 
-  // Example: listening to an event from client
-  socket.on("sendMessage", (data) => {
-    console.log("Message from client:", data);
+//   // Example: listening to an event from client
+//   socket.on("sendMessage", (data) => {
+//     console.log("Message from client:", data);
     
-    // Broadcasting to all clients
-    io.emit("receiveMessage", data);
-  });
+//     // Broadcasting to all clients
+//     io.emit("receiveMessage", data);
+//   });
 
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
-});
+//   socket.on("disconnect", () => {
+//     console.log("User disconnected:", socket.id);
+//   });
+// });
 
 
 
