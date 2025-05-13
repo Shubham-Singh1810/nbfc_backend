@@ -11,6 +11,7 @@ const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const { sendNotification } = require("../utils/sendNotification");
 const auth = require("../utils/auth");
+const mongoose = require("mongoose");
 
 
 driverController.post(
@@ -565,6 +566,80 @@ driverController.get("/assigned-products/:driverId", auth, async (req, res) => {
     });
   }
 });
+
+driverController.post("/orders", auth, async (req, res) => {
+  try {
+    const { driverId, deliveryStatus } = req.body;
+
+    if (!driverId) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Driver ID is required",
+        statusCode: 400,
+      });
+    }
+
+    const allowedStatuses = ["driverAssigned", "driverAccepted"];
+    let statusFilter = allowedStatuses;
+
+    if (deliveryStatus) {
+      if (!allowedStatuses.includes(deliveryStatus)) {
+        return sendResponse(res, 400, "Failed", {
+          message: `Invalid deliveryStatus. Allowed values: ${allowedStatuses.join(", ")}`,
+          statusCode: 400,
+        });
+      }
+      statusFilter = [deliveryStatus];
+    }
+
+    // Use driverId as string
+    const orders = await Booking.find({
+      product: {
+        $elemMatch: {
+          driverId: driverId, // treat as string
+          deliveryStatus: { $in: statusFilter },
+        },
+      },
+    })
+      .populate("product.productId")
+      .populate("userId")
+      .populate("addressId");
+
+    const filteredProducts = [];
+
+    orders.forEach(order => {
+      order.product.forEach(item => {
+        if (
+          item.driverId?.toString() === driverId &&
+          statusFilter.includes(item.deliveryStatus)
+        ) {
+          filteredProducts.push({
+            orderId: order._id,
+            product: item.productId,
+            quantity: item.quantity,
+            totalPrice: item.totalPrice,
+            deliveryStatus: item.deliveryStatus,
+            customer: order.userId,
+            address: order.addressId,
+            assignedAt: order.updatedAt,
+          });
+        }
+      });
+    });
+
+    return sendResponse(res, 200, "Success", {
+      message: "Orders fetched successfully",
+      data: filteredProducts,
+      statusCode: 200,
+    });
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
+
+
 
 
 module.exports = driverController;
