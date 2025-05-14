@@ -10,7 +10,6 @@ const auth = require("../utils/auth");
 const fs = require("fs");
 const path = require("path");
 
-
 bookingController.post("/create", async (req, res) => {
   try {
     const {
@@ -77,8 +76,9 @@ bookingController.post("/list", async (req, res) => {
     const {
       searchKey = "",
       status,
+      deliveryStatus,
       pageNo = 1,
-      pageCount = 10,
+      pageCount = 100,
       sortByField,
       sortByOrder,
     } = req.body;
@@ -86,6 +86,7 @@ bookingController.post("/list", async (req, res) => {
     const query = {};
     if (status) query.status = status;
     if (searchKey) query.name = { $regex: searchKey, $options: "i" };
+    if (deliveryStatus) query["product.deliveryStatus"] = deliveryStatus;
 
     // Construct sorting object
     const sortField = sortByField || "createdAt";
@@ -98,11 +99,19 @@ bookingController.post("/list", async (req, res) => {
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount))
       .populate({
-        path: "product",
-        select: "name description",
+        path: "userId",
+      })
+      .populate({
+        path: "addressId",
+      })
+      .populate({
+        path: "product.productId",
+        select: "name",
       });
+
     const totalCount = await Booking.countDocuments({});
     const activeCount = await Booking.countDocuments({ status: true });
+
     sendResponse(res, 200, "Success", {
       message: "Booking list retrieved successfully!",
       data: bookingList,
@@ -120,6 +129,7 @@ bookingController.post("/list", async (req, res) => {
     });
   }
 });
+
 
 bookingController.get("/details/:userId", async (req, res) => {
   try {
@@ -200,17 +210,20 @@ bookingController.put("/update", async (req, res) => {
     if (!updatedBooking) {
       return sendResponse(res, 404, "Failed", {
         message: "Booking or product not found.",
+        statusCode:404
       });
     }
 
     return sendResponse(res, 200, "Success", {
       message: "Delivery status updated successfully.",
       data: updatedBooking,
+      statusCode:200
     });
   } catch (error) {
     console.error(error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error.",
+      statusCode:500
     });
   }
 });
@@ -257,7 +270,8 @@ bookingController.put("/cancel-product", async (req, res) => {
     // Validate required fields
     if (!bookingId || !productId || !cancelReason || !cancelledBy) {
       return sendResponse(res, 400, "Failed", {
-        message: "Missing required fields: bookingId, productId, cancelReason, or cancelledBy",
+        message:
+          "Missing required fields: bookingId, productId, cancelReason, or cancelledBy",
       });
     }
 
@@ -265,7 +279,8 @@ bookingController.put("/cancel-product", async (req, res) => {
     const validRoles = ["Driver", "User", "Vender"];
     if (!validRoles.includes(cancelledBy)) {
       return sendResponse(res, 400, "Failed", {
-        message: "Invalid cancelledBy role. Must be one of: Driver, User, Vender",
+        message:
+          "Invalid cancelledBy role. Must be one of: Driver, User, Vender",
       });
     }
 
