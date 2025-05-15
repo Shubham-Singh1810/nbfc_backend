@@ -11,11 +11,11 @@ const bookingSchema = mongoose.Schema({
   },
   signature: {
     type: String,
-    require: true,
+    required: true,
   },
   orderId: {
     type: String,
-    require: true,
+    required: true,
   },
   modeOfPayment: {
     type: String,
@@ -44,6 +44,10 @@ const bookingSchema = mongoose.Schema({
       driverId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Driver",
+      },
+      venderId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Vender",
       },
       cancelledBy: {
         type: String,

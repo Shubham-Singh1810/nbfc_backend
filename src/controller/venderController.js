@@ -496,16 +496,27 @@ venderController.get("/orders/:venderId", auth, async (req, res) => {
   try {
     const venderId = req.params.venderId;
 
-    // Step 1: Fetch all orders and populate product.productId
     const allOrders = await Booking.find()
       .populate("product.productId")
       .populate("userId")
       .populate("addressId");
 
-    // Step 2: Filter orders where at least one product in the order was created by this vendor
-    const vendorOrders = allOrders.filter(order =>
-      order.product.some(p => p.productId?.createdBy?.toString() === venderId)
-    );
+    const vendorOrders = allOrders
+      .map(order => {
+        const filteredProducts = order.product.filter(
+          p => p.productId?.createdBy?.toString() === venderId
+        );
+
+        if (filteredProducts.length > 0) {
+          return {
+            ...order.toObject(),
+            product: filteredProducts,
+          };
+        }
+
+        return null;
+      })
+      .filter(order => order !== null); 
 
     if (vendorOrders.length > 0) {
       return sendResponse(res, 200, "Success", {
@@ -519,7 +530,6 @@ venderController.get("/orders/:venderId", auth, async (req, res) => {
         statusCode: 404,
       });
     }
-
   } catch (error) {
     return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error.",

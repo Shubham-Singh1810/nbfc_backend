@@ -530,10 +530,19 @@ driverController.get("/assigned-products/:driverId", auth, async (req, res) => {
     const { driverId } = req.params;
 
     const orders = await Booking.find({ "product.driverId": driverId })
-      .populate("product.productId")
+      .populate({
+        path: "product.productId",
+        populate: {
+          path: "createdBy",
+          model: "Vender",
+        },
+      })
       .populate("product.driverId")
-      .populate("userId") 
-      .populate("addressId"); 
+      .populate({
+        path: "userId",
+        select: "-cartItems", // Exclude cartItems
+      })
+      .populate("addressId");
 
     const assignedProducts = [];
 
@@ -541,14 +550,17 @@ driverController.get("/assigned-products/:driverId", auth, async (req, res) => {
       order.product.forEach(item => {
         if (item.driverId && item.driverId._id.toString() === driverId) {
           assignedProducts.push({
-            orderId: order._id,
+            orderId: order.orderId, // Order ID from booking
+            paymentId: order.paymentId || null,
+            modeOfPayment: order.modeOfPayment || null,
             product: item.productId,
             quantity: item.quantity,
             totalPrice: item.totalPrice,
             deliveryStatus: item.deliveryStatus,
+            vendor: item.productId?.createdBy || null,
             customer: order.userId,
             address: order.addressId,
-            assignedAt: order.updatedAt
+            assignedAt: order.updatedAt,
           });
         }
       });
@@ -638,8 +650,6 @@ driverController.post("/orders", auth, async (req, res) => {
     });
   }
 });
-
-
 
 
 module.exports = driverController;
