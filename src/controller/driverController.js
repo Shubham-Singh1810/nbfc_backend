@@ -550,7 +550,8 @@ driverController.get("/assigned-products/:driverId", auth, async (req, res) => {
       order.product.forEach(item => {
         if (item.driverId && item.driverId._id.toString() === driverId) {
           assignedProducts.push({
-            orderId: order.orderId, // Order ID from booking
+            orderId: order._id, // MongoDB Order ObjectId
+            customOrderId: order.orderId || null, // Optional field if you're using your own orderId
             paymentId: order.paymentId || null,
             modeOfPayment: order.modeOfPayment || null,
             product: item.productId,
