@@ -544,32 +544,9 @@ driverController.get("/assigned-products/:driverId", auth, async (req, res) => {
       })
       .populate("addressId");
 
-    const assignedProducts = [];
-
-    orders.forEach(order => {
-      order.product.forEach(item => {
-        if (item.driverId && item.driverId._id.toString() === driverId) {
-          assignedProducts.push({
-            orderId: order._id, // MongoDB Order ObjectId
-            customOrderId: order.orderId || null, // Optional field if you're using your own orderId
-            paymentId: order.paymentId || null,
-            modeOfPayment: order.modeOfPayment || null,
-            product: item.productId,
-            quantity: item.quantity,
-            totalPrice: item.totalPrice,
-            deliveryStatus: item.deliveryStatus,
-            vendor: item.productId?.createdBy || null,
-            customer: order.userId,
-            address: order.addressId,
-            assignedAt: order.updatedAt,
-          });
-        }
-      });
-    });
-
     return sendResponse(res, 200, "Success", {
       message: "Assigned products fetched successfully",
-      data: assignedProducts,
+      data: orders,
       statusCode: 200,
     });
   } catch (error) {
@@ -579,6 +556,40 @@ driverController.get("/assigned-products/:driverId", auth, async (req, res) => {
     });
   }
 });
+
+driverController.get("/assigned-products/:driverId", auth, async (req, res) => {
+  try {
+    const { driverId } = req.params;
+
+    const orders = await Booking.find({ "product.driverId": driverId })
+      .populate({
+        path: "product.productId",
+        populate: {
+          path: "createdBy",
+          model: "Vender",
+        },
+      })
+      .populate("product.driverId")
+      .populate({
+        path: "userId",
+        select: "-cartItems", // Exclude cartItems
+      })
+      .populate("addressId");
+
+    return sendResponse(res, 200, "Success", {
+      message: "Assigned products fetched successfully",
+      data: orders,
+      statusCode: 200,
+    });
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
+
+
 
 driverController.post("/orders", auth, async (req, res) => {
   try {
