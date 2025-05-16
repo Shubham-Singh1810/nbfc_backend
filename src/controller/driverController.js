@@ -525,7 +525,7 @@ driverController.post("/assign-product", auth, async (req, res) => {
   }
 });
 
-driverController.get("/assigned-products/:driverId", auth, async (req, res) => {
+driverController.get("/assigned-products/:driverId", async (req, res) => {
   try {
     const { driverId } = req.params;
 
@@ -540,16 +540,50 @@ driverController.get("/assigned-products/:driverId", auth, async (req, res) => {
       .populate("product.driverId")
       .populate({
         path: "userId",
-        select: "-cartItems", // Exclude cartItems
+        select: "-cartItems",
       })
       .populate("addressId");
 
+    // Vendor-wise grouping as array of objects
+    const vendorWiseProductsMap = new Map();
+
+    orders.forEach((order) => {
+      order.product.forEach((prod) => {
+        const vendor = prod.productId.createdBy;
+        if (vendor) {
+          const vendorId = vendor._id.toString();
+
+          if (!vendorWiseProductsMap.has(vendorId)) {
+            vendorWiseProductsMap.set(vendorId, {
+              vendor: vendor,
+              products: [],
+            });
+          }
+
+          vendorWiseProductsMap.get(vendorId).products.push({
+            bookingId: order._id,
+            product: prod.productId,
+            driver: prod.driverId,
+            quantity: prod.quantity,
+            totalPrice: prod.totalPrice,
+            deliveryStatus: prod.deliveryStatus,
+            user: order.userId,
+            address: order.addressId,
+            order: order, // full order details
+          });
+        }
+      });
+    });
+
+    const vendorWiseProducts = Array.from(vendorWiseProductsMap.values());
+
     return sendResponse(res, 200, "Success", {
       message: "Assigned products fetched successfully",
-      data: orders,
+      data: vendorWiseProducts,
       statusCode: 200,
     });
   } catch (error) {
+    console.log(error);
     return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
       statusCode: 500,
@@ -557,37 +591,7 @@ driverController.get("/assigned-products/:driverId", auth, async (req, res) => {
   }
 });
 
-driverController.get("/assigned-products/:driverId", auth, async (req, res) => {
-  try {
-    const { driverId } = req.params;
 
-    const orders = await Booking.find({ "product.driverId": driverId })
-      .populate({
-        path: "product.productId",
-        populate: {
-          path: "createdBy",
-          model: "Vender",
-        },
-      })
-      .populate("product.driverId")
-      .populate({
-        path: "userId",
-        select: "-cartItems", // Exclude cartItems
-      })
-      .populate("addressId");
-
-    return sendResponse(res, 200, "Success", {
-      message: "Assigned products fetched successfully",
-      data: orders,
-      statusCode: 200,
-    });
-  } catch (error) {
-    return sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-      statusCode: 500,
-    });
-  }
-});
 
 
 
