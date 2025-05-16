@@ -618,6 +618,42 @@ driverController.get("/assigned-products/:driverId", async (req, res) => {
     });
   }
 });
+driverController.get("/assigned-products-user-wise/:driverId", async (req, res) => {
+  try {
+    const { driverId } = req.params;
+
+    const orders = await Booking.find({ "product.driverId": driverId })
+      .populate({
+        path: "product.productId",
+        populate: {
+          path: "createdBy",
+          model: "Vender",
+        },
+      })
+      .populate("product.driverId")
+      .populate({
+        path: "userId",
+        select: "-cartItems",
+      })
+      .populate("addressId");
+
+    
+
+    
+
+    return sendResponse(res, 200, "Success", {
+      message: "Assigned products fetched successfully",
+      data: orders,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.log(error);
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
 
 
 
