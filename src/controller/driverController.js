@@ -544,12 +544,15 @@ driverController.get("/assigned-products/:driverId", async (req, res) => {
       })
       .populate("addressId");
 
-    // Vendor-wise grouping as array of objects
+    // Vendor-wise grouping
     const vendorWiseProductsMap = new Map();
+    const userWiseProductsMap = new Map();
 
     orders.forEach((order) => {
       order.product.forEach((prod) => {
         const vendor = prod.productId.createdBy;
+        const user = order.userId;
+
         if (vendor) {
           const vendorId = vendor._id.toString();
 
@@ -567,19 +570,44 @@ driverController.get("/assigned-products/:driverId", async (req, res) => {
             quantity: prod.quantity,
             totalPrice: prod.totalPrice,
             deliveryStatus: prod.deliveryStatus,
-            user: order.userId,
+            user: user,
             address: order.addressId,
-            order: order, // full order details
+            order: order,
+          });
+        }
+
+        if (user) {
+          const userId = user._id.toString();
+
+          if (!userWiseProductsMap.has(userId)) {
+            userWiseProductsMap.set(userId, {
+              user: user,
+              products: [],
+            });
+          }
+
+          userWiseProductsMap.get(userId).products.push({
+            bookingId: order._id,
+            product: prod.productId,
+            driver: prod.driverId,
+            quantity: prod.quantity,
+            totalPrice: prod.totalPrice,
+            deliveryStatus: prod.deliveryStatus,
+            vendor: vendor,
+            address: order.addressId,
+            order: order,
           });
         }
       });
     });
 
     const vendorWiseProducts = Array.from(vendorWiseProductsMap.values());
+    const userWiseProducts = Array.from(userWiseProductsMap.values());
 
     return sendResponse(res, 200, "Success", {
       message: "Assigned products fetched successfully",
-      data: vendorWiseProducts,
+      vendorWiseProducts,
+      userWiseProducts,
       statusCode: 200,
     });
   } catch (error) {
@@ -590,6 +618,7 @@ driverController.get("/assigned-products/:driverId", async (req, res) => {
     });
   }
 });
+
 
 
 
