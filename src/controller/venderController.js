@@ -538,6 +538,82 @@ venderController.get("/orders/:venderId", auth, async (req, res) => {
   }
 });
 
+// venderController.post("/order-details", auth, async (req, res) => {
+//   try {
+//     const { orderId, venderId } = req.body;
+
+//     if (!orderId || !venderId) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "Please provide both orderId and venderId",
+//         statusCode: 400,
+//       });
+//     }
+
+//     const order = await Booking.findById(orderId)
+//       .populate({
+//         path: "product.productId",
+//         populate: {
+//           path: "createdBy",
+//           model: "Vender",
+//         },
+//       })
+//       .populate("product.driverId")
+//       .populate({
+//         path: "userId",
+//         select: "-cartItems",
+//       })
+//       .populate("addressId");
+
+//     if (!order) {
+//       return sendResponse(res, 404, "Failed", {
+//         message: "Order not found",
+//         statusCode: 404,
+//       });
+//     }
+
+//     const matchedProducts = order.product.filter((prod) => {
+//       return prod.productId?.createdBy?._id?.toString() === venderId;
+//     });
+
+//     if (matchedProducts.length === 0) {
+//       return sendResponse(res, 200, "Success", {
+//         message: "No products found for this vender in the given order",
+//         data: [],
+//         statusCode: 200,
+//       });
+//     }
+
+//     const filteredOrder = {
+//       orderId: order._id,
+//       products: matchedProducts.map((item) => ({
+//         product: item.productId,
+//         quantity: item.quantity,
+//         totalPrice: item.totalPrice,
+//         deliveryStatus: item.deliveryStatus,
+//         assignedAt: order.updatedAt,
+//       })),
+//       customer: order.userId,
+//       address: order.addressId,
+//       paymentDetails: {
+//         modeOfPayment: order.modeOfPayment,
+//         paymentId: order.paymentId,
+//         signature: order.signature,
+//       },
+//     };
+
+//     return sendResponse(res, 200, "Success", {
+//       message: "Order data filtered by vender fetched successfully",
+//       data: filteredOrder,
+//       statusCode: 200,
+//     });
+//   } catch (error) {
+//     return sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error",
+//       statusCode: 500,
+//     });
+//   }
+// });
+
 venderController.post("/order-details", auth, async (req, res) => {
   try {
     const { orderId, venderId } = req.body;
@@ -585,6 +661,7 @@ venderController.post("/order-details", auth, async (req, res) => {
 
     const filteredOrder = {
       orderId: order._id,
+      orderBookedDate: order.createdAt,
       products: matchedProducts.map((item) => ({
         product: item.productId,
         quantity: item.quantity,
@@ -613,7 +690,6 @@ venderController.post("/order-details", auth, async (req, res) => {
     });
   }
 });
-
 
 
 
