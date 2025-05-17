@@ -540,16 +540,16 @@ venderController.get("/orders/:venderId", auth, async (req, res) => {
 
 venderController.post("/order-details", auth, async (req, res) => {
   try {
-    const { venderId, driverId } = req.body;
+    const { orderId, venderId } = req.body;
 
-    if (!venderId && !driverId) {
+    if (!orderId || !venderId) {
       return sendResponse(res, 400, "Failed", {
-        message: "Please provide at least venderId or driverId",
+        message: "Please provide both orderId and venderId",
         statusCode: 400,
       });
     }
 
-    const orders = await Booking.find({})
+    const order = await Booking.findById(orderId)
       .populate({
         path: "product.productId",
         populate: {
@@ -564,47 +564,48 @@ venderController.post("/order-details", auth, async (req, res) => {
       })
       .populate("addressId");
 
-    const filteredOrders = [];
-
-    for (const order of orders) {
-      const matchedProducts = order.product.filter((prod) => {
-        const matchVender = venderId
-          ? prod.productId?.createdBy?._id?.toString() === venderId
-          : true;
-
-        const matchDriver = driverId
-          ? prod.driverId?._id?.toString() === driverId
-          : true;
-
-        return matchVender && matchDriver;
+    if (!order) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Order not found",
+        statusCode: 404,
       });
-
-      if (matchedProducts.length > 0) {
-        filteredOrders.push({
-          orderId: order._id,
-          products: matchedProducts.map((item) => ({
-            product: item.productId,
-            quantity: item.quantity,
-            totalPrice: item.totalPrice,
-            deliveryStatus: item.deliveryStatus,
-            assignedAt: order.updatedAt,
-          })),
-          customer: order.userId,
-          address: order.addressId,
-          paymentDetails: {
-            paymentMode: order.paymentMode,
-            paymentId: order.paymentId,
-            razorpayOrderId: order.razorpayOrderId,
-            razorpayPaymentId: order.razorpayPaymentId,
-            razorpaySignature: order.razorpaySignature,
-          },
-        });
-      }
     }
 
+    const matchedProducts = order.product.filter((prod) => {
+      return prod.productId?.createdBy?._id?.toString() === venderId;
+    });
+
+    if (matchedProducts.length === 0) {
+      return sendResponse(res, 200, "Success", {
+        message: "No products found for this vender in the given order",
+        data: [],
+        statusCode: 200,
+      });
+    }
+
+    const filteredOrder = {
+      orderId: order._id,
+      products: matchedProducts.map((item) => ({
+        product: item.productId,
+        quantity: item.quantity,
+        totalPrice: item.totalPrice,
+        deliveryStatus: item.deliveryStatus,
+        assignedAt: order.updatedAt,
+      })),
+      customer: order.userId,
+      address: order.addressId,
+      paymentDetails: {
+        paymentMode: order.paymentMode,
+        paymentId: order.paymentId,
+        razorpayOrderId: order.razorpayOrderId,
+        razorpayPaymentId: order.razorpayPaymentId,
+        razorpaySignature: order.razorpaySignature,
+      },
+    };
+
     return sendResponse(res, 200, "Success", {
-      message: "Filtered orders fetched successfully",
-      data: filteredOrders,
+      message: "Order data filtered by vender fetched successfully",
+      data: filteredOrder,
       statusCode: 200,
     });
   } catch (error) {
@@ -614,6 +615,7 @@ venderController.post("/order-details", auth, async (req, res) => {
     });
   }
 });
+
 
 
 
