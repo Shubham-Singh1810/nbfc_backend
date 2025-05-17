@@ -595,11 +595,9 @@ venderController.post("/order-details", auth, async (req, res) => {
       customer: order.userId,
       address: order.addressId,
       paymentDetails: {
-        paymentMode: order.paymentMode,
+        modeOfPayment: order.modeOfPayment,
         paymentId: order.paymentId,
-        razorpayOrderId: order.razorpayOrderId,
-        razorpayPaymentId: order.razorpayPaymentId,
-        razorpaySignature: order.razorpaySignature,
+        signature: order.signature,
       },
     };
 
