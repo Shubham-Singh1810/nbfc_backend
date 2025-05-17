@@ -374,4 +374,67 @@ bookingController.put("/mark-not-delivered", async (req, res) => {
   }
 });
 
+bookingController.put("/mark-all", async (req, res) => {
+  try {
+    const { id, productIds, deliveryStatus } = req.body;
+
+    // Validate input
+    if (!id || !productIds || !Array.isArray(productIds) || productIds.length === 0 || !deliveryStatus) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Missing booking ID, product IDs array, or delivery status.",
+      });
+    }
+
+    const allowedStatuses = [
+      "orderPlaced",
+      "orderPacked",
+      "driverAssigned",
+      "driverAccepted",
+      "pickedOrder",
+      "completed",
+      "cancelled",
+    ];
+
+    if (!allowedStatuses.includes(deliveryStatus)) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Invalid delivery status provided.",
+      });
+    }
+
+    // Update deliveryStatus for all matching products in a single booking
+    const updatedBooking = await Booking.findOneAndUpdate(
+      { _id: id },
+      {
+        $set: {
+          "product.$[elem].deliveryStatus": deliveryStatus,
+        },
+      },
+      {
+        arrayFilters: [{ "elem.productId": { $in: productIds } }],
+        new: true,
+      }
+    );
+
+    if (!updatedBooking) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Booking or products not found.",
+        statusCode: 404,
+      });
+    }
+
+    return sendResponse(res, 200, "Success", {
+      message: "Delivery status updated successfully for selected products.",
+      data: updatedBooking,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
+    });
+  }
+});
+
+
 module.exports = bookingController;
