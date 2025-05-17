@@ -538,5 +538,84 @@ venderController.get("/orders/:venderId", auth, async (req, res) => {
   }
 });
 
+venderController.post("/order-details", auth, async (req, res) => {
+  try {
+    const { venderId, driverId } = req.body;
+
+    if (!venderId && !driverId) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Please provide at least venderId or driverId",
+        statusCode: 400,
+      });
+    }
+
+    const orders = await Booking.find({})
+      .populate({
+        path: "product.productId",
+        populate: {
+          path: "createdBy",
+          model: "Vender",
+        },
+      })
+      .populate("product.driverId")
+      .populate({
+        path: "userId",
+        select: "-cartItems",
+      })
+      .populate("addressId");
+
+    const filteredOrders = [];
+
+    for (const order of orders) {
+      const matchedProducts = order.product.filter((prod) => {
+        const matchVender = venderId
+          ? prod.productId?.createdBy?._id?.toString() === venderId
+          : true;
+
+        const matchDriver = driverId
+          ? prod.driverId?._id?.toString() === driverId
+          : true;
+
+        return matchVender && matchDriver;
+      });
+
+      if (matchedProducts.length > 0) {
+        filteredOrders.push({
+          orderId: order._id,
+          products: matchedProducts.map((item) => ({
+            product: item.productId,
+            quantity: item.quantity,
+            totalPrice: item.totalPrice,
+            deliveryStatus: item.deliveryStatus,
+            assignedAt: order.updatedAt,
+          })),
+          customer: order.userId,
+          address: order.addressId,
+          paymentDetails: {
+            paymentMode: order.paymentMode,
+            paymentId: order.paymentId,
+            razorpayOrderId: order.razorpayOrderId,
+            razorpayPaymentId: order.razorpayPaymentId,
+            razorpaySignature: order.razorpaySignature,
+          },
+        });
+      }
+    }
+
+    return sendResponse(res, 200, "Success", {
+      message: "Filtered orders fetched successfully",
+      data: filteredOrders,
+      statusCode: 200,
+    });
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
+
+
+
 
 module.exports = venderController;
