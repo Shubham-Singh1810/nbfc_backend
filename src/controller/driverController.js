@@ -751,78 +751,6 @@ driverController.get("/assigned-products-user-wise/:driverId", async (req, res) 
   }
 });
 
-driverController.post("/orders", auth, async (req, res) => {
-  try {
-    const { driverId, deliveryStatus } = req.body;
-
-    if (!driverId) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Driver ID is required",
-        statusCode: 400,
-      });
-    }
-
-    const allowedStatuses = ["driverAssigned", "driverAccepted",   "pickedOrder", "completed", "cancelled",];
-    let statusFilter = allowedStatuses;
-
-    if (deliveryStatus) {
-      if (!allowedStatuses.includes(deliveryStatus)) {
-        return sendResponse(res, 400, "Failed", {
-          message: `Invalid deliveryStatus. Allowed values: ${allowedStatuses.join(", ")}`,
-          statusCode: 400,
-        });
-      }
-      statusFilter = [deliveryStatus];
-    }
-
-    // Use driverId as string
-    const orders = await Booking.find({
-      product: {
-        $elemMatch: {
-          driverId: driverId, // treat as string
-          deliveryStatus: { $in: statusFilter },
-        },
-      },
-    })
-      .populate("product.productId")
-      .populate("userId")
-      .populate("addressId");
-
-    const filteredProducts = [];
-
-    orders.forEach(order => {
-      order.product.forEach(item => {
-        if (
-          item.driverId?.toString() === driverId &&
-          statusFilter.includes(item.deliveryStatus)
-        ) {
-          filteredProducts.push({
-            orderId: order._id,
-            product: item.productId,
-            quantity: item.quantity,
-            totalPrice: item.totalPrice,
-            deliveryStatus: item.deliveryStatus,
-            customer: order.userId,
-            address: order.addressId,
-            assignedAt: order.updatedAt,
-          });
-        }
-      });
-    });
-
-    return sendResponse(res, 200, "Success", {
-      message: "Orders fetched successfully",
-      data: filteredProducts,
-      statusCode: 200,
-    });
-  } catch (error) {
-    return sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-      statusCode: 500,
-    });
-  }
-});
-
 driverController.post("/my-orders", async (req, res) => {
   try {
     const {
@@ -835,23 +763,37 @@ driverController.post("/my-orders", async (req, res) => {
       date,
     } = req.body;
 
-    const sortField = sortByField || "createdAt";
-    const sortOrder = sortByOrder === "asc" ? 1 : -1;
-    const sortOption = { [sortField]: sortOrder };
+    if (!driverId) {
+      return sendResponse(res, 400, "Failed", {
+        message: "driverId is required",
+        statusCode: 400,
+      });
+    }
 
+    // Build query
     const query = {
       "product.driverId": driverId
     };
 
-    // Add filters dynamically
     if (deliveryStatus) {
+      // Ensure it's not an array
+      if (Array.isArray(deliveryStatus)) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Only one deliveryStatus is allowed",
+          statusCode: 400,
+        });
+      }
       query["product.deliveryStatus"] = deliveryStatus;
     }
 
     if (date) {
       query["product.expectedDeliveryDate"] = date;
     }
-console.log(query)
+
+    const sortField = sortByField || "createdAt";
+    const sortOrder = sortByOrder === "asc" ? 1 : -1;
+    const sortOption = { [sortField]: sortOrder };
+
     const orders = await Booking.find(query)
       .populate({
         path: "product.productId",
@@ -878,7 +820,7 @@ console.log(query)
           if (
             prod.driverId &&
             prod.driverId._id.toString() === driverId &&
-            prod.deliveryStatus === "driverAssigned"
+            prod.deliveryStatus === deliveryStatus
           ) {
             const vendorId = prod.productId.createdBy._id.toString();
 
@@ -901,7 +843,7 @@ console.log(query)
           assignedAt: order.updatedAt
         };
       })
-      .filter(order => order.vendorProducts.length > 0);
+      .filter(order => order.vendorProducts.length > 0); // Only keep orders with matching vendor products
 
     return sendResponse(res, 200, "Success", {
       message: "Assigned products fetched vendor-wise successfully",
@@ -917,6 +859,5 @@ console.log(query)
     });
   }
 });
-
 
 module.exports = driverController;
