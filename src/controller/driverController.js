@@ -622,7 +622,7 @@ driverController.get("/assigned-products-user-wise/:driverId", async (req, res) 
   try {
     const { driverId } = req.params;
 
-    const orders = await Booking.find({ "product.driverId": driverId })
+    const orders = await Booking.find({ "product.driverId": driverId, "product.deliveryStatus": "driverAssigned"  })
       .populate({
         path: "product.productId",
         populate: {
