@@ -63,6 +63,9 @@ const bookingSchema = mongoose.Schema({
       orderNotDeliveredReason: {
         type: String,
       },
+      expectedDeliveryDate: {
+        type: String,
+      },
     },
   ],
   userId: {
