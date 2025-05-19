@@ -538,8 +538,6 @@ venderController.get("/orders/:venderId", auth, async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 // venderController.post("/order-details", auth, async (req, res) => {
 //   try {
 //     const { orderId, venderId } = req.body;
@@ -695,6 +693,5 @@ venderController.post("/order-details", auth, async (req, res) => {
 
 
 
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
 
 module.exports = venderController;
