@@ -622,7 +622,10 @@ driverController.get("/assigned-products-user-wise/:driverId", async (req, res) 
   try {
     const { driverId } = req.params;
 
-    const orders = await Booking.find({ "product.driverId": driverId, "product.deliveryStatus": "driverAssigned"  })
+    const orders = await Booking.find({
+      "product.driverId": driverId,
+      "product.deliveryStatus": "driverAssigned"
+    })
       .populate({
         path: "product.productId",
         populate: {
@@ -637,15 +640,43 @@ driverController.get("/assigned-products-user-wise/:driverId", async (req, res) 
       })
       .populate("addressId");
 
-    
+    // vendor-wise grouping
+    const vendorMap = new Map();
 
-    
+    orders.forEach(order => {
+      order.product.forEach(prod => {
+        if (
+          prod.driverId &&
+          prod.driverId._id.toString() === driverId &&
+          prod.deliveryStatus === "driverAssigned"
+        ) {
+          const vendorId = prod.productId.createdBy._id.toString();
+
+          if (!vendorMap.has(vendorId)) {
+            vendorMap.set(vendorId, {
+              vendorDetails: prod.productId.createdBy,
+              products: [],
+            });
+          }
+
+          vendorMap.get(vendorId).products.push({
+            bookingId: order._id,
+            userId: order.userId,
+            addressId: order.addressId,
+            productDetails: prod,
+          });
+        }
+      });
+    });
+
+    const result = Array.from(vendorMap.values());
 
     return sendResponse(res, 200, "Success", {
-      message: "Assigned products fetched successfully",
-      data: orders,
+      message: "Assigned products fetched vendor-wise successfully",
+      data: result,
       statusCode: 200,
     });
+
   } catch (error) {
     console.log(error);
     return sendResponse(res, 500, "Failed", {
@@ -654,6 +685,7 @@ driverController.get("/assigned-products-user-wise/:driverId", async (req, res) 
     });
   }
 });
+
 
 driverController.post("/orders", auth, async (req, res) => {
   try {
