@@ -13,10 +13,6 @@ const { sendNotification } = require("../utils/sendNotification");
 const auth = require("../utils/auth");
 const mongoose = require("mongoose");
 
-<<<<<<< HEAD
-=======
-
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
 driverController.post(
   "/sign-up",
   upload.fields([
@@ -77,20 +73,6 @@ driverController.post(
         vehicleImage,
         profilePic,
       });
-<<<<<<< HEAD
-      sendNotification(
-        {
-          icon: newDriver.profilePic,
-          title: "A new driver registered",
-          subTitle: `${newDriver.firstName} has registered to the portal`,
-          notifyUserId: "Admin",
-          category: "Driver",
-          subCategory: "Registration",
-          notifyUser: "Admin",
-        },
-        req.io
-      );
-=======
       sendNotification({
         icon:newDriver.profilePic,
         title:"A new driver registered",
@@ -100,7 +82,6 @@ driverController.post(
         subCategory:"Registration",
         notifyUser:"Admin",
       },req.io)
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
 
       // Generate JWT token
       const token = jwt.sign(
@@ -296,11 +277,7 @@ driverController.get("/details/:id", auth, async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-driverController.post("/list", async (req, res) => {
-=======
 driverController.post("/list", auth, async (req, res) => {
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
   try {
     const {
       searchKey = "",
@@ -387,14 +364,7 @@ driverController.delete("/delete/:id", auth, async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-driverController.put(
-  "/update",
-  auth,
-  upload.fields([
-=======
 driverController.put("/update", auth, upload.fields([
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
     { name: "dlFrontImage", maxCount: 1 },
     { name: "dlBackImage", maxCount: 1 },
     { name: "profilePic", maxCount: 1 },
@@ -409,100 +379,32 @@ driverController.put("/update", auth, upload.fields([
           message: "Driver not found",
         });
       }
-<<<<<<< HEAD
-      let updateData = { ...req.body };
-      if (req.file || req.files) {
-=======
       let updateData = {...req.body}
       if(req.file || req.files){
       
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
         if (req.files["dlFrontImage"]) {
           let image = await cloudinary.uploader.upload(
             req.files["dlFrontImage"][0].path
           );
-<<<<<<< HEAD
-          updateData = { ...req.body, dlFrontImage: image.url };
-        }
-
-=======
           updateData = {...req.body, dlFrontImage: image.url};
         }
   
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
         if (req.files["dlBackImage"]) {
           let image = await cloudinary.uploader.upload(
             req.files["dlBackImage"][0].path
           );
-<<<<<<< HEAD
-          updateData = { ...req.body, dlBackImage: image.url };
-=======
           updateData = {...req.body, dlBackImage: image.url};
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
         }
         if (req.files["profilePic"]) {
           let image = await cloudinary.uploader.upload(
             req.files["profilePic"][0].path
           );
-<<<<<<< HEAD
-          updateData = { ...req.body, profilePic: image.url };
-=======
           updateData = {...req.body, profilePic: image.url};
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
         }
         if (req.files["vehicleImage"]) {
           let image = await cloudinary.uploader.upload(
             req.files["vehicleImage"][0].path
           );
-<<<<<<< HEAD
-          updateData = { ...req.body, vehicleImage: image.url };
-        }
-
-        const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
-          new: true,
-        });
-        if (req.body.profileStatus == "reUploaded") {
-          sendNotification(
-            {
-              icon: updatedUserData.profilePic,
-              title: `${updatedUserData.firstName} has re-uploaded the details`,
-              subTitle: `${updatedUserData.firstName} has re-uploaded the details`,
-              notifyUserId: "Admin",
-              category: "Driver",
-              subCategory: "Profile update",
-              notifyUser: "Admin",
-            },
-            req.io
-          );
-        }
-        if (req.body.profileStatus == "rejected") {
-          sendNotification(
-            {
-              icon: updatedUserData.profilePic,
-              title: `${updatedUserData.firstName} your details has been rejected`,
-              subTitle: `${updatedUserData.firstName} please go through the details once more`,
-              notifyUserId: updatedUserData._id,
-              category: "Driver",
-              subCategory: "Profile update",
-              notifyUser: "Driver",
-            },
-            req.io
-          );
-        }
-        if (req.body.profileStatus == "approved") {
-          sendNotification(
-            {
-              icon: updatedUserData.profilePic,
-              title: `${updatedUserData.firstName} your profile has been approved`,
-              subTitle: `${updatedUserData.firstName} congratulations!! your profile has been approved`,
-              notifyUserId: updatedUserData._id,
-              category: "Driver",
-              subCategory: "Profile update",
-              notifyUser: "Driver",
-            },
-            req.io
-          );
-=======
           updateData = {...req.body, vehicleImage: image.url};
         }
         
@@ -541,26 +443,12 @@ driverController.put("/update", auth, upload.fields([
             subCategory:"Profile update",
             notifyUser:"Driver",
           }, req.io)
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
         }
         sendResponse(res, 200, "Success", {
           message: "Driver updated successfully!",
           data: updatedUserData,
           statusCode: 200,
         });
-<<<<<<< HEAD
-      } else {
-        const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
-          new: true,
-        });
-
-        sendResponse(res, 200, "Success", {
-          message: "Driver updated successfully!",
-          data: updatedUserData,
-          statusCode: 200,
-        });
-      }
-=======
       }
       else{
         const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
@@ -575,7 +463,6 @@ driverController.put("/update", auth, upload.fields([
 
       }
       
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
     } catch (error) {
       console.error(error);
       sendResponse(res, 500, "Failed", {
@@ -585,118 +472,6 @@ driverController.put("/update", auth, upload.fields([
   }
 );
 
-<<<<<<< HEAD
-// driverController.post("/assign-products", auth, async (req, res) => {
-//   try {
-//     const { orderId, productId, driverId } = req.body;
-
-//     const order = await Booking.findById(orderId);
-//     if (!order) {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "Order not found",
-//         statusCode: 404,
-//       });
-//     }
-
-//     const driver = await Driver.findById(driverId);
-//     if (!driver) {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "Driver not found",
-//         statusCode: 404,
-//       });
-//     }
-
-//     let productFound = false;
-
-//     order.product = order.product.map((item) => {
-//       if (item.productId.toString() === productId) {
-//         productFound = true;
-//         item.driverId = driverId;
-//       }
-//       return item;
-//     });
-
-//     if (!productFound) {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "Product not found in order",
-//         statusCode: 404,
-//       });
-//     }
-
-//     await order.save();
-
-//     return sendResponse(res, 200, "Success", {
-//       message: "Product assigned to driver successfully",
-//       data: order,
-//       statusCode: 200,
-//     });
-//   } catch (error) {
-//     return sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error.",
-//       statusCode: 500,
-//     });
-//   }
-// });
-driverController.put("/assign-products", async (req, res) => {
-  try {
-    const { id, productIds, deliveryStatus, driverId } = req.body;
-
-    // Validate input
-    if (!id || !productIds || !Array.isArray(productIds) || productIds.length === 0 || !deliveryStatus || !driverId) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Missing booking ID, product IDs array, delivery status, or driver ID.",
-      });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(driverId)) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Invalid driver ID format.",
-      });
-    }
-
-    const allowedStatuses = [
-      "orderPlaced", "orderPacked", "driverAssigned", "driverAccepted",
-      "pickedOrder", "completed", "cancelled"
-    ];
-
-    if (!allowedStatuses.includes(deliveryStatus)) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Invalid delivery status provided.",
-      });
-    }
-
-    // Assuming 'product' is the array field name and inside each product, the key is 'productId'
-    const updatedBooking = await Booking.findOneAndUpdate(
-  { _id: id },
-  {
-    $set: {
-      "product.$[elem].deliveryStatus": deliveryStatus,
-      "product.$[elem].driverId": new mongoose.Types.ObjectId(driverId),
-    },
-  },
-  {
-    arrayFilters: [{ "elem.productId": { $in: productIds.map(id => new mongoose.Types.ObjectId(id)) } }],
-    new: true,
-  }
-);
-
-
-    if (!updatedBooking) {
-      return sendResponse(res, 404, "Failed", {
-        message: "Booking or products not found.",
-      });
-    }
-
-    return sendResponse(res, 200, "Success", {
-      message: "Driver assigned and delivery status updated successfully.",
-      data: updatedBooking,
-      statusCode: 200,
-    });
-  } catch (error) {
-    console.error(error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error.",
-=======
 driverController.post("/assign-product", auth, async (req, res) => {
   try {
     const { orderId, productId, driverId } = req.body;
@@ -745,17 +520,10 @@ driverController.post("/assign-product", auth, async (req, res) => {
     return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error.",
       statusCode: 500,
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
     });
   }
 });
 
-<<<<<<< HEAD
-
-
-
-=======
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
 driverController.get("/assigned-products/:driverId", async (req, res) => {
   try {
     const { driverId } = req.params;
@@ -849,43 +617,6 @@ driverController.get("/assigned-products/:driverId", async (req, res) => {
     });
   }
 });
-<<<<<<< HEAD
-driverController.get(
-  "/assigned-products-user-wise/:driverId",
-  async (req, res) => {
-    try {
-      const { driverId } = req.params;
-
-      const orders = await Booking.find({ "product.driverId": driverId })
-        .populate({
-          path: "product.productId",
-          populate: {
-            path: "createdBy",
-            model: "Vender",
-          },
-        })
-        .populate("product.driverId")
-        .populate({
-          path: "userId",
-          select: "-cartItems",
-        })
-        .populate("addressId");
-
-      return sendResponse(res, 200, "Success", {
-        message: "Assigned products fetched successfully",
-        data: orders,
-        statusCode: 200,
-      });
-    } catch (error) {
-      console.log(error);
-      return sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error",
-        statusCode: 500,
-      });
-    }
-  }
-);
-=======
 driverController.get("/assigned-products-user-wise/:driverId", async (req, res) => {
   try {
     const { driverId } = req.params;
@@ -927,7 +658,6 @@ driverController.get("/assigned-products-user-wise/:driverId", async (req, res) 
 
 
 
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
 
 driverController.post("/orders", auth, async (req, res) => {
   try {
@@ -946,13 +676,7 @@ driverController.post("/orders", auth, async (req, res) => {
     if (deliveryStatus) {
       if (!allowedStatuses.includes(deliveryStatus)) {
         return sendResponse(res, 400, "Failed", {
-<<<<<<< HEAD
-          message: `Invalid deliveryStatus. Allowed values: ${allowedStatuses.join(
-            ", "
-          )}`,
-=======
           message: `Invalid deliveryStatus. Allowed values: ${allowedStatuses.join(", ")}`,
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
           statusCode: 400,
         });
       }
@@ -974,13 +698,8 @@ driverController.post("/orders", auth, async (req, res) => {
 
     const filteredProducts = [];
 
-<<<<<<< HEAD
-    orders.forEach((order) => {
-      order.product.forEach((item) => {
-=======
     orders.forEach(order => {
       order.product.forEach(item => {
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
         if (
           item.driverId?.toString() === driverId &&
           statusFilter.includes(item.deliveryStatus)
@@ -1012,8 +731,4 @@ driverController.post("/orders", auth, async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
-
->>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
 module.exports = driverController;
