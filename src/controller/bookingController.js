@@ -130,7 +130,10 @@ bookingController.post("/list", async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d0728d613466a09326ec1c0b28faf357b4862827
 bookingController.get("/details/:userId", async (req, res) => {
   try {
     const userId = req.params.userId;
