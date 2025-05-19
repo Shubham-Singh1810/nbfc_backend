@@ -640,10 +640,10 @@ driverController.get("/assigned-products-user-wise/:driverId", async (req, res) 
       })
       .populate("addressId");
 
-    // vendor-wise grouping
-    const vendorMap = new Map();
+    const result = orders.map(order => {
+      // vendor wise grouping inside each booking
+      const vendorMap = new Map();
 
-    orders.forEach(order => {
       order.product.forEach(prod => {
         if (
           prod.driverId &&
@@ -659,17 +659,17 @@ driverController.get("/assigned-products-user-wise/:driverId", async (req, res) 
             });
           }
 
-          vendorMap.get(vendorId).products.push({
-            bookingId: order._id,
-            userId: order.userId,
-            addressId: order.addressId,
-            productDetails: prod,
-          });
+          vendorMap.get(vendorId).products.push(prod);
         }
       });
-    });
 
-    const result = Array.from(vendorMap.values());
+      return {
+        _id: order._id,
+        userId: order.userId,
+        addressId: order.addressId,
+        vendorProducts: Array.from(vendorMap.values()),
+      };
+    }).filter(order => order.vendorProducts.length > 0); // only orders with assigned products
 
     return sendResponse(res, 200, "Success", {
       message: "Assigned products fetched vendor-wise successfully",
@@ -685,6 +685,7 @@ driverController.get("/assigned-products-user-wise/:driverId", async (req, res) 
     });
   }
 });
+
 
 
 driverController.post("/orders", auth, async (req, res) => {
