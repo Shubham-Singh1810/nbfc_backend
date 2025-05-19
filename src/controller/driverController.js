@@ -617,6 +617,7 @@ driverController.get("/assigned-products/:driverId", async (req, res) => {
     });
   }
 });
+
 driverController.get("/assigned-products-user-wise/:driverId", async (req, res) => {
   try {
     const { driverId } = req.params;
@@ -653,11 +654,6 @@ driverController.get("/assigned-products-user-wise/:driverId", async (req, res) 
     });
   }
 });
-
-
-
-
-
 
 driverController.post("/orders", auth, async (req, res) => {
   try {
