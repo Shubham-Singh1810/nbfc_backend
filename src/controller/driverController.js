@@ -708,24 +708,45 @@ driverController.get("/assigned-products-user-wise/:driverId", async (req, res) 
       // vendor wise grouping inside each booking
       const vendorMap = new Map();
 
+      // order.product.forEach(prod => {
+      //   if (
+      //     prod.driverId &&
+      //     prod.driverId._id.toString() === driverId &&
+      //     prod.deliveryStatus === "driverAssigned"
+      //   ) {
+      //     const vendorId = prod.productId.createdBy._id.toString();
+
+      //     if (!vendorMap.has(vendorId)) {
+      //       vendorMap.set(vendorId, {
+      //         vendorDetails: prod.productId.createdBy,
+      //         products: [],
+      //       });
+      //     }
+
+      //     vendorMap.get(vendorId).products.push(prod);
+      //   }
+      // });
+
       order.product.forEach(prod => {
         if (
           prod.driverId &&
           prod.driverId._id.toString() === driverId &&
           prod.deliveryStatus === "driverAssigned"
         ) {
-          const vendorId = prod.productId.createdBy._id.toString();
-
+          const vendorId = prod.productId?.createdBy?._id?.toString();
+      
+          if (!vendorId) return; // skip if product or vendor is missing
+      
           if (!vendorMap.has(vendorId)) {
             vendorMap.set(vendorId, {
               vendorDetails: prod.productId.createdBy,
               products: [],
             });
           }
-
+      
           vendorMap.get(vendorId).products.push(prod);
         }
-      });
+      });      
 
       return {
         _id: order._id,
@@ -822,7 +843,8 @@ driverController.post("/my-orders", async (req, res) => {
             prod.driverId._id.toString() === driverId &&
             prod.deliveryStatus === deliveryStatus
           ) {
-            const vendorId = prod.productId.createdBy._id.toString();
+            const vendorId = prod.productId?.createdBy?._id?.toString();
+            if (!vendorId) return;
 
             if (!vendorMap.has(vendorId)) {
               vendorMap.set(vendorId, {
@@ -841,29 +863,17 @@ driverController.post("/my-orders", async (req, res) => {
           addressId: order.addressId,
           vendorProducts: Array.from(vendorMap.values()),
           assignedAt: order.updatedAt,
-          modeOfPayment:order.modeOfPayment,
-          paymentId:order.paymentId,
-          signature:order.signature,
-          orderDate:order.createdAt,
-          totalAmount:order.totalAmount,
+          modeOfPayment: order.modeOfPayment,
+          paymentId: order.paymentId,
+          signature: order.signature,
+          orderDate: order.createdAt,
+          totalAmount: order.totalAmount,
         };
       })
-      .filter(order => order.vendorProducts.length > 0); // Only keep orders with matching vendor products
-
-
-
-          // ✅ Total product count across all vendor groups
-    const totalProductCount = result.reduce((count, order) => {
-      order.vendorProducts.forEach(vendor => {
-        count += vendor.products.length;
-      });
-      return count;
-    }, 0);
+      .filter(order => order.vendorProducts.length > 0);
 
     return sendResponse(res, 200, "Success", {
-      message: "Assigned products fetched vendor-wise successfully",
       data: result,
-      totalProductCount,
       statusCode: 200,
     });
 
@@ -875,5 +885,6 @@ driverController.post("/my-orders", async (req, res) => {
     });
   }
 });
+
 
 module.exports = driverController;
