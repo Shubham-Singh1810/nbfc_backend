@@ -840,7 +840,11 @@ driverController.post("/my-orders", async (req, res) => {
           userId: order.userId,
           addressId: order.addressId,
           vendorProducts: Array.from(vendorMap.values()),
-          assignedAt: order.updatedAt
+          assignedAt: order.updatedAt,
+          modeOfPayment:order.modeOfPayment,
+          paymentId:order.paymentId,
+          signature:order.signature,
+          orderDate:order.createdAt,
         };
       })
       .filter(order => order.vendorProducts.length > 0); // Only keep orders with matching vendor products
