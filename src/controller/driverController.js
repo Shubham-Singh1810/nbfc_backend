@@ -845,6 +845,7 @@ driverController.post("/my-orders", async (req, res) => {
           paymentId:order.paymentId,
           signature:order.signature,
           orderDate:order.createdAt,
+          totalAmount:order.totalAmount,
         };
       })
       .filter(order => order.vendorProducts.length > 0); // Only keep orders with matching vendor products
