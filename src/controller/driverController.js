@@ -850,9 +850,20 @@ driverController.post("/my-orders", async (req, res) => {
       })
       .filter(order => order.vendorProducts.length > 0); // Only keep orders with matching vendor products
 
+
+
+          // ✅ Total product count across all vendor groups
+    const totalProductCount = result.reduce((count, order) => {
+      order.vendorProducts.forEach(vendor => {
+        count += vendor.products.length;
+      });
+      return count;
+    }, 0);
+
     return sendResponse(res, 200, "Success", {
       message: "Assigned products fetched vendor-wise successfully",
       data: result,
+      totalProductCount,
       statusCode: 200,
     });
 
