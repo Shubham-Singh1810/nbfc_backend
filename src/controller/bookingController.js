@@ -2,10 +2,12 @@ const express = require("express");
 const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const Booking = require("../model/booking.Schema");
+const User = require("../model/user.Schema");
 const bookingController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
+const moment = require("moment");
 const auth = require("../utils/auth");
 const fs = require("fs");
 const path = require("path");
@@ -53,9 +55,13 @@ bookingController.post("/create", async (req, res) => {
       signature,
       orderId,
       addressId,
+      expectedDeliveryDate:moment().add(7, 'days').format("DD-MM-YYYY")
     };
 
     const bookingCreated = await Booking.create(bookingData);
+    await User.findByIdAndUpdate(userId, {
+      $set: { cartItems: [] },
+    });
 
     sendResponse(res, 200, "Success", {
       message: "Booking created successfully!",
