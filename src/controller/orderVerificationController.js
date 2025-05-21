@@ -80,6 +80,92 @@ orderVerificationController.post(
   }
 );
 
+
+// orderVerificationController.post("/create", upload.single("image"), async (req, res) => {
+//   try {
+//     const { productIds, orderId, driverId } = req.body;
+
+//     // Ensure productIds is a non-empty array
+//     let parsedProductIds;
+//     if (typeof productIds === "string") {
+//       // If it's a JSON string, parse it
+//       parsedProductIds = JSON.parse(productIds);
+//     } else {
+//       parsedProductIds = productIds;
+//     }
+
+//     if (!Array.isArray(parsedProductIds) || parsedProductIds.length === 0) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "productIds must be a non-empty array",
+//         statusCode: 400,
+//       });
+//     }
+
+//     // Validate order
+//     const orderDetails = await Booking.findOne({ _id: orderId }).populate({
+//       path: "userId",
+//       select: "name description phone",
+//     });
+
+//     if (!orderDetails) {
+//       return sendResponse(res, 404, "Failed", {
+//         message: "Order Id not found",
+//         statusCode: 404,
+//       });
+//     }
+
+//     // Upload image
+//     let imageUrl = null;
+//     if (req.file) {
+//       const image = await cloudinary.uploader.upload(req.file.path);
+//       imageUrl = image.url;
+//     }
+
+//     // Generate OTP
+//     const phoneOtp = generateOTP();
+//     const appHash = "ems/3nG2V1H";
+//     const otpMessage = `<#> ${phoneOtp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
+
+//     // Create a single document with multiple productIds
+//     const createdEntry = await OrderVerification.create({
+//       productIds: parsedProductIds,
+//       orderId,
+//       driverId,
+//       image: imageUrl,
+//       otp: phoneOtp,
+//     });
+
+//     // Send OTP
+//     const otpResponse = await axios.post(
+//       `https://api.authkey.io/request?authkey=${process.env.AUTHKEY_API_KEY}&mobile=${orderDetails?.userId?.phone}&country_code=91&sid=${process.env.AUTHKEY_SENDER_ID}&company=Acediva&otp=${phoneOtp}&message=${encodeURIComponent(otpMessage)}`
+//     );
+
+//     if (otpResponse?.status === "200") {
+//       return sendResponse(res, 200, "Success", {
+//         message: "OTP sent successfully",
+//         data: createdEntry,
+//         statusCode: 200,
+//       });
+//     } else {
+//       return sendResponse(res, 422, "Failed", {
+//         message: "Unable to send OTP",
+//         statusCode: 422,
+//       });
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error",
+//       statusCode: 500,
+//     });
+//   }
+// });
+
+
+
+
+
+
 orderVerificationController.put("/verify-otp", async (req, res) => {
   try {
     const orderVerification = await OrderVerification.findOne({
