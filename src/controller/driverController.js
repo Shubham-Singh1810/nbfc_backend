@@ -1020,5 +1020,109 @@ driverController.post("/my-orders", async (req, res) => {
 });
 
 
+driverController.post("/my-ongoing-orders", async (req, res) => {
+  try {
+    const {
+      deliveryStatus = "pickedOrder", // default to pickedOrder
+      pageNo = 1,
+      pageCount = 10,
+      sortByField,
+      sortByOrder,
+      driverId,
+    } = req.body;
+
+    if (!driverId) {
+      return sendResponse(res, 400, "Failed", {
+        message: "driverId is required",
+        statusCode: 400,
+      });
+    }
+
+    if (Array.isArray(deliveryStatus)) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Only one deliveryStatus is allowed",
+        statusCode: 400,
+      });
+    }
+
+    const query = {
+      "product.driverId": driverId,
+    };
+
+    // Sorting
+    const sortField = sortByField || "createdAt";
+    const sortOrder = sortByOrder === "asc" ? 1 : -1;
+    const sortOption = { [sortField]: sortOrder };
+
+    const bookings = await Booking.find(query)
+      .populate({
+        path: "product.productId",
+        populate: { path: "createdBy", model: "Vender" },
+      })
+      .populate("product.driverId")
+      .populate({ path: "userId", select: "-cartItems" })
+      .populate("addressId")
+      .sort(sortOption)
+      .skip((pageNo - 1) * pageCount)
+      .limit(pageCount);
+
+    const result = bookings.map(order => {
+      const vendorMap = new Map();
+      let includeBooking = false;
+
+      order.product?.forEach(prod => {
+        const prodDriverId = prod.driverId?._id?.toString();
+        const prodVendorId = prod.productId?.createdBy?._id?.toString();
+
+        if (prodDriverId === driverId && prodVendorId) {
+          if (prod.deliveryStatus === deliveryStatus) {
+            includeBooking = true;
+          }
+
+          if (!vendorMap.has(prodVendorId)) {
+            vendorMap.set(prodVendorId, {
+              vendorDetails: prod.productId.createdBy,
+              products: [],
+            });
+          }
+
+          vendorMap.get(prodVendorId).products.push(prod);
+        }
+      });
+
+      return {
+        includeBooking,
+        orderData: {
+          _id: order._id,
+          userId: order.userId,
+          addressId: order.addressId,
+          vendorProducts: Array.from(vendorMap.values()),
+          modeOfPayment: order.modeOfPayment,
+          paymentId: order.paymentId,
+          signature: order.signature,
+          orderDate: order.createdAt,
+          assignedAt: order.updatedAt,
+          totalAmount: order.totalAmount,
+        },
+      };
+    });
+
+    const filteredResult = result
+      .filter(({ includeBooking, orderData }) => includeBooking && orderData.vendorProducts.length)
+      .map(({ orderData }) => orderData);
+
+    return sendResponse(res, 200, "Success", {
+      data: filteredResult,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
+
 
 module.exports = driverController;

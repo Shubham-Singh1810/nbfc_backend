@@ -163,9 +163,6 @@ orderVerificationController.post(
 
 
 
-
-
-
 orderVerificationController.put("/verify-otp", async (req, res) => {
   try {
     const orderVerification = await OrderVerification.findOne({
