@@ -310,7 +310,6 @@ productController.post("/delete/product-gallery", async (req, res) => {
   }
 });
 
-
 productController.put("/update-video", upload.single("productVideo"), async (req, res) => {
   try {
     const { id } = req.body;
@@ -426,7 +425,7 @@ productController.post("/add-variant", upload.array("variantImage"), async (req,
   }
 });
 
-productController.put("/update-variant", upload.single("variantImage"), async (req, res) => {
+productController.put("/update-variant", async (req, res) => {
   try {
     const { productId, variantIndex } = req.body;
     const product = await Product.findById(productId);
@@ -453,12 +452,6 @@ productController.put("/update-variant", upload.single("variantImage"), async (r
       variantDiscountedPrice = variant.variantDiscountedPrice,
       stockQuantity = variant.stockQuantity,
     } = req.body;
-
-    let variantImage = variant.variantImage;
-    if (req.file) {
-      const uploaded = await cloudinary.uploader.upload(req.file.path);
-      variantImage = uploaded.secure_url;
-    }
 
     // Update the variant
     product.productVariants[variantIndex] = {
@@ -519,6 +512,75 @@ productController.put("/delete-variant", async (req, res) => {
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
       statusCode: 500
+    });
+  }
+});
+
+productController.post("/delete/variant-gallery", async (req, res) => {
+  try {
+    const { id, variantIndex, imageIndex } = req.body;
+
+    if (!id || variantIndex || imageIndex  === undefined) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Product ID, variantIndex and imageIndex are required",
+        statusCode: 400,
+      });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Product not found",
+        statusCode: 404,
+      });
+    }
+
+    const variant = product.productVariants;
+    
+    if (!variant || variantIndex < 0 || variantIndex >= variant.length) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Invalid variant index",
+        statusCode: 400,
+      });
+    }
+
+    const variantGallery = variant.variantImage;
+    
+    if (!variantGallery || imageIndex < 0 || imageIndex >= variantGallery.length) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Invalid image index",
+        statusCode: 400,
+      });
+    }
+
+    const imageUrl = variantGallery[imageIndex];
+
+    // Delete from Cloudinary if image is stored there
+    const publicId = imageUrl.split("/").pop().split(".")[0];
+    await cloudinary.uploader.destroy(publicId, (error, result) => {
+      if (error) {
+        console.error("Cloudinary delete error:", error);
+      } else {
+        console.log("Image deleted from Cloudinary:", result);
+      }
+    });
+
+    // Remove the image from productGallery
+    variantGallery.splice(imageIndex, 1);
+    variant.variantImage = variantGallery;
+    product.productVariant = variant;
+    const updatedProduct = await product.save();
+
+    sendResponse(res, 200, "Success", {
+      message: "product variant image deleted successfully",
+      data: updatedProduct,
+      statusCode: 200,
+    });
+
+  } catch (error) {
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal Server Error",
+      statusCode: 500,
     });
   }
 });
