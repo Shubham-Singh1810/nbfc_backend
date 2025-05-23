@@ -12,6 +12,7 @@ const auth = require("../utils/auth");
 const fs = require("fs");
 const path = require("path");
 
+
 bookingController.post("/create", async (req, res) => {
   try {
     const {
@@ -28,7 +29,6 @@ bookingController.post("/create", async (req, res) => {
       addressId,
     } = req.body;
 
-    // Validate required fields
     if (!userId) {
       return sendResponse(res, 400, "Failed", {
         message: "userId is required in the request body",
@@ -43,11 +43,17 @@ bookingController.post("/create", async (req, res) => {
       });
     }
 
+    // Add expectedDeliveryDate for each product
+    const updatedProducts = product.map(item => ({
+      ...item,
+      expectedDeliveryDate: moment().add(7, "days").format("DD-MM-YYYY"),
+    }));
+
     const bookingData = {
       userId,
       totalAmount,
       status,
-      product,
+      product: updatedProducts, // updated products with expectedDeliveryDate
       bookingQuantity,
       bookingPrice,
       modeOfPayment,
@@ -55,10 +61,10 @@ bookingController.post("/create", async (req, res) => {
       signature,
       orderId,
       addressId,
-      expectedDeliveryDate:moment().add(7, 'days').format("DD-MM-YYYY")
     };
 
     const bookingCreated = await Booking.create(bookingData);
+
     await User.findByIdAndUpdate(userId, {
       $set: { cartItems: [] },
     });
@@ -76,6 +82,7 @@ bookingController.post("/create", async (req, res) => {
     });
   }
 });
+
 
 bookingController.post("/list", async (req, res) => {
   try {
