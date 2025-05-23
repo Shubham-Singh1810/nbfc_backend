@@ -5,6 +5,7 @@ const Driver = require("../model/driver.Schema");
 const Booking = require("../model/booking.Schema");
 const driverController = express.Router();
 const axios = require("axios");
+const moment = require("moment");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
@@ -527,12 +528,15 @@ driverController.put("/update", auth, upload.fields([
 
 driverController.put("/assign-products", async (req, res) => {
   try {
-    const { id, productIds, deliveryStatus, driverId } = req.body;
+    const { id, productIds, deliveryStatus, driverId, expectedDeliveryDate } = req.body;
 
     // Validate input
-    if (!id || !productIds || !Array.isArray(productIds) || productIds.length === 0 || !deliveryStatus || !driverId) {
+    if (
+      !id || !productIds || !Array.isArray(productIds) || productIds.length === 0 ||
+      !deliveryStatus || !driverId || !expectedDeliveryDate
+    ) {
       return sendResponse(res, 400, "Failed", {
-        message: "Missing booking ID, product IDs array, delivery status, or driver ID.",
+        message: "Missing booking ID, product IDs array, delivery status, driver ID, or expected delivery date.",
       });
     }
 
@@ -553,21 +557,20 @@ driverController.put("/assign-products", async (req, res) => {
       });
     }
 
-    // Assuming 'product' is the array field name and inside each product, the key is 'productId'
     const updatedBooking = await Booking.findOneAndUpdate(
-  { _id: id },
-  {
-    $set: {
-      "product.$[elem].deliveryStatus": deliveryStatus,
-      "product.$[elem].driverId": new mongoose.Types.ObjectId(driverId),
-    },
-  },
-  {
-    arrayFilters: [{ "elem.productId": { $in: productIds.map(id => new mongoose.Types.ObjectId(id)) } }],
-    new: true,
-  }
-);
-
+      { _id: id },
+      {
+        $set: {
+          "product.$[elem].deliveryStatus": deliveryStatus,
+          "product.$[elem].driverId": new mongoose.Types.ObjectId(driverId),
+          "product.$[elem].expectedDeliveryDate": expectedDeliveryDate,
+        },
+      },
+      {
+        arrayFilters: [{ "elem.productId": { $in: productIds.map(id => id.toString()) } }],
+        new: true,
+      }
+    );
 
     if (!updatedBooking) {
       return sendResponse(res, 404, "Failed", {
@@ -576,7 +579,7 @@ driverController.put("/assign-products", async (req, res) => {
     }
 
     return sendResponse(res, 200, "Success", {
-      message: "Driver assigned and delivery status updated successfully.",
+      message: "Driver assigned, expected delivery date, and delivery status updated successfully.",
       data: updatedBooking,
       statusCode: 200,
     });
@@ -708,24 +711,45 @@ driverController.get("/assigned-products-user-wise/:driverId", async (req, res) 
       // vendor wise grouping inside each booking
       const vendorMap = new Map();
 
+      // order.product.forEach(prod => {
+      //   if (
+      //     prod.driverId &&
+      //     prod.driverId._id.toString() === driverId &&
+      //     prod.deliveryStatus === "driverAssigned"
+      //   ) {
+      //     const vendorId = prod.productId.createdBy._id.toString();
+
+      //     if (!vendorMap.has(vendorId)) {
+      //       vendorMap.set(vendorId, {
+      //         vendorDetails: prod.productId.createdBy,
+      //         products: [],
+      //       });
+      //     }
+
+      //     vendorMap.get(vendorId).products.push(prod);
+      //   }
+      // });
+
       order.product.forEach(prod => {
         if (
           prod.driverId &&
           prod.driverId._id.toString() === driverId &&
           prod.deliveryStatus === "driverAssigned"
         ) {
-          const vendorId = prod.productId.createdBy._id.toString();
-
+          const vendorId = prod.productId?.createdBy?._id?.toString();
+      
+          if (!vendorId) return; // skip if product or vendor is missing
+      
           if (!vendorMap.has(vendorId)) {
             vendorMap.set(vendorId, {
               vendorDetails: prod.productId.createdBy,
               products: [],
             });
           }
-
+      
           vendorMap.get(vendorId).products.push(prod);
         }
-      });
+      });      
 
       return {
         _id: order._id,
@@ -751,6 +775,121 @@ driverController.get("/assigned-products-user-wise/:driverId", async (req, res) 
   }
 });
 
+// driverController.post("/my-orders", async (req, res) => {
+//   try {
+//     const {
+//       deliveryStatus,
+//       pageNo = 1,
+//       pageCount = 10,
+//       sortByField,
+//       sortByOrder,
+//       driverId,
+//       date,
+//     } = req.body;
+
+//     if (!driverId) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "driverId is required",
+//         statusCode: 400,
+//       });
+//     }
+
+//     // Build query
+//     const query = {
+//       "product.driverId": driverId
+//     };
+
+//     if (deliveryStatus) {
+//       // Ensure it's not an array
+//       if (Array.isArray(deliveryStatus)) {
+//         return sendResponse(res, 400, "Failed", {
+//           message: "Only one deliveryStatus is allowed",
+//           statusCode: 400,
+//         });
+//       }
+//       query["product.deliveryStatus"] = deliveryStatus;
+//     }
+
+//     if (date) {
+//       query["product.expectedDeliveryDate"] = date;
+//     }
+
+//     const sortField = sortByField || "createdAt";
+//     const sortOrder = sortByOrder === "asc" ? 1 : -1;
+//     const sortOption = { [sortField]: sortOrder };
+
+//     const orders = await Booking.find(query)
+//       .populate({
+//         path: "product.productId",
+//         populate: {
+//           path: "createdBy",
+//           model: "Vender",
+//         },
+//       })
+//       .populate("product.driverId")
+//       .populate({
+//         path: "userId",
+//         select: "-cartItems",
+//       })
+//       .populate("addressId")
+//       .sort(sortOption)
+//       .skip((pageNo - 1) * pageCount)
+//       .limit(pageCount);
+
+//     const result = orders
+//       .map(order => {
+//         const vendorMap = new Map();
+
+//         order.product.forEach(prod => {
+//           if (
+//             prod.driverId &&
+//             prod.driverId._id.toString() === driverId &&
+//             prod.deliveryStatus === deliveryStatus
+//           ) {
+//             const vendorId = prod.productId?.createdBy?._id?.toString();
+//             if (!vendorId) return;
+
+//             if (!vendorMap.has(vendorId)) {
+//               vendorMap.set(vendorId, {
+//                 vendorDetails: prod.productId.createdBy,
+//                 products: [],
+//               });
+//             }
+
+//             vendorMap.get(vendorId).products.push(prod);
+//           }
+//         });
+
+//         return {
+//           _id: order._id,
+//           userId: order.userId,
+//           addressId: order.addressId,
+//           vendorProducts: Array.from(vendorMap.values()),
+//           assignedAt: order.updatedAt,
+//           modeOfPayment: order.modeOfPayment,
+//           paymentId: order.paymentId,
+//           signature: order.signature,
+//           orderDate: order.createdAt,
+//           totalAmount: order.totalAmount,
+//         };
+//       })
+//       .filter(order => order.vendorProducts.length > 0);
+
+//     return sendResponse(res, 200, "Success", {
+//       data: result,
+//       statusCode: 200,
+//     });
+
+//   } catch (error) {
+//     console.log(error);
+//     return sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error",
+//       statusCode: 500,
+//     });
+//   }
+// });
+
+
 driverController.post("/my-orders", async (req, res) => {
   try {
     const {
@@ -760,7 +899,7 @@ driverController.post("/my-orders", async (req, res) => {
       sortByField,
       sortByOrder,
       driverId,
-      date,
+      expectedDeliveryDateFilter, // "today", "tomorrow", "upcoming"
     } = req.body;
 
     if (!driverId) {
@@ -770,94 +909,219 @@ driverController.post("/my-orders", async (req, res) => {
       });
     }
 
-    // Build query
+    if (Array.isArray(deliveryStatus)) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Only one deliveryStatus is allowed",
+        statusCode: 400,
+      });
+    }
+
     const query = {
-      "product.driverId": driverId
+      "product.driverId": driverId,
     };
 
     if (deliveryStatus) {
-      // Ensure it's not an array
-      if (Array.isArray(deliveryStatus)) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Only one deliveryStatus is allowed",
-          statusCode: 400,
-        });
-      }
       query["product.deliveryStatus"] = deliveryStatus;
     }
 
-    if (date) {
-      query["product.expectedDeliveryDate"] = date;
-    }
+    // Time boundaries
+    const today = moment().startOf("day");
+    const tomorrow = moment().add(1, "days").startOf("day");
+    const dayAfterTomorrow = moment().add(2, "days").startOf("day");
 
+    // Setup sorting
     const sortField = sortByField || "createdAt";
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };
 
-    const orders = await Booking.find(query)
+    const bookings = await Booking.find(query)
       .populate({
         path: "product.productId",
-        populate: {
-          path: "createdBy",
-          model: "Vender",
-        },
+        populate: { path: "createdBy", model: "Vender" },
       })
       .populate("product.driverId")
-      .populate({
-        path: "userId",
-        select: "-cartItems",
-      })
+      .populate({ path: "userId", select: "-cartItems" })
       .populate("addressId")
       .sort(sortOption)
       .skip((pageNo - 1) * pageCount)
       .limit(pageCount);
 
-    const result = orders
-      .map(order => {
-        const vendorMap = new Map();
+    const result = bookings.map(order => {
+      const vendorMap = new Map();
 
-        order.product.forEach(prod => {
-          if (
-            prod.driverId &&
-            prod.driverId._id.toString() === driverId &&
-            prod.deliveryStatus === deliveryStatus
-          ) {
-            const vendorId = prod.productId.createdBy._id.toString();
+      order.product?.forEach(prod => {
+        const prodDriverId = prod.driverId?._id?.toString();
+        const prodVendorId = prod.productId?.createdBy?._id?.toString();
 
-            if (!vendorMap.has(vendorId)) {
-              vendorMap.set(vendorId, {
-                vendorDetails: prod.productId.createdBy,
-                products: [],
-              });
-            }
-
-            vendorMap.get(vendorId).products.push(prod);
+        if (
+          prodDriverId === driverId &&
+          prod.deliveryStatus === deliveryStatus &&
+          prodVendorId
+        ) {
+          if (!vendorMap.has(prodVendorId)) {
+            vendorMap.set(prodVendorId, {
+              vendorDetails: prod.productId.createdBy,
+              products: [],
+            });
           }
-        });
 
-        return {
-          _id: order._id,
-          userId: order.userId,
-          addressId: order.addressId,
-          vendorProducts: Array.from(vendorMap.values()),
-          assignedAt: order.updatedAt
-        };
-      })
-      .filter(order => order.vendorProducts.length > 0); // Only keep orders with matching vendor products
+          vendorMap.get(prodVendorId).products.push(prod);
+        }
+      });
 
-    return sendResponse(res, 200, "Success", {
-      message: "Assigned products fetched vendor-wise successfully",
-      data: result,
-      statusCode: 200,
+      return {
+        _id: order._id,
+        userId: order.userId,
+        addressId: order.addressId,
+        vendorProducts: Array.from(vendorMap.values()),
+        modeOfPayment: order.modeOfPayment,
+        paymentId: order.paymentId,
+        signature: order.signature,
+        orderDate: order.createdAt,
+        assignedAt: order.updatedAt,
+        totalAmount: order.totalAmount,
+      };
     });
 
+    const filteredResult = result.filter(order => {
+      if (!order.vendorProducts.length) return false;
+
+      // Flatten products
+      const products = order.vendorProducts.flatMap(v => v.products);
+
+      const match = products.some(prod => {
+        const expectedDate = moment(prod.expectedDeliveryDate, "DD-MM-YYYY");
+
+        if (expectedDeliveryDateFilter === "today") {
+          return expectedDate.isSame(today, "day");
+        } else if (expectedDeliveryDateFilter === "tomorrow") {
+          return expectedDate.isSame(tomorrow, "day");
+        } else if (expectedDeliveryDateFilter === "upcoming") {
+          return expectedDate.isAfter(tomorrow, "day");
+        }
+
+        return true;
+      });
+
+      return match;
+    });
+
+    return sendResponse(res, 200, "Success", {
+      data: filteredResult,
+      statusCode: 200,
+    });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
       statusCode: 500,
     });
   }
 });
+
+driverController.post("/my-ongoing-orders", async (req, res) => {
+  try {
+    const {
+      deliveryStatus = "pickedOrder", // default to pickedOrder
+      pageNo = 1,
+      pageCount = 10,
+      sortByField,
+      sortByOrder,
+      driverId,
+    } = req.body;
+
+    if (!driverId) {
+      return sendResponse(res, 400, "Failed", {
+        message: "driverId is required",
+        statusCode: 400,
+      });
+    }
+
+    if (Array.isArray(deliveryStatus)) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Only one deliveryStatus is allowed",
+        statusCode: 400,
+      });
+    }
+
+    const query = {
+      "product.driverId": driverId,
+    };
+
+    // Sorting
+    const sortField = sortByField || "createdAt";
+    const sortOrder = sortByOrder === "asc" ? 1 : -1;
+    const sortOption = { [sortField]: sortOrder };
+
+    const bookings = await Booking.find(query)
+      .populate({
+        path: "product.productId",
+        populate: { path: "createdBy", model: "Vender" },
+      })
+      .populate("product.driverId")
+      .populate({ path: "userId", select: "-cartItems" })
+      .populate("addressId")
+      .sort(sortOption)
+      .skip((pageNo - 1) * pageCount)
+      .limit(pageCount);
+
+    const result = bookings.map(order => {
+      const vendorMap = new Map();
+      let includeBooking = false;
+
+      order.product?.forEach(prod => {
+        const prodDriverId = prod.driverId?._id?.toString();
+        const prodVendorId = prod.productId?.createdBy?._id?.toString();
+
+        if (prodDriverId === driverId && prodVendorId) {
+          if (prod.deliveryStatus === deliveryStatus) {
+            includeBooking = true;
+          }
+
+          if (!vendorMap.has(prodVendorId)) {
+            vendorMap.set(prodVendorId, {
+              vendorDetails: prod.productId.createdBy,
+              products: [],
+            });
+          }
+
+          vendorMap.get(prodVendorId).products.push(prod);
+        }
+      });
+
+      return {
+        includeBooking,
+        orderData: {
+          _id: order._id,
+          userId: order.userId,
+          addressId: order.addressId,
+          vendorProducts: Array.from(vendorMap.values()),
+          modeOfPayment: order.modeOfPayment,
+          paymentId: order.paymentId,
+          signature: order.signature,
+          orderDate: order.createdAt,
+          assignedAt: order.updatedAt,
+          totalAmount: order.totalAmount,
+        },
+      };
+    });
+
+    const filteredResult = result
+      .filter(({ includeBooking, orderData }) => includeBooking && orderData.vendorProducts.length)
+      .map(({ orderData }) => orderData);
+
+    return sendResponse(res, 200, "Success", {
+      data: filteredResult,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
+
 
 module.exports = driverController;

@@ -250,6 +250,7 @@ productController.put("/update/add-product-gallery", upload.array("images"), asy
     });
   }
 });
+
 productController.post("/delete/product-gallery", async (req, res) => {
   try {
     const { id, index } = req.body;
@@ -308,7 +309,6 @@ productController.post("/delete/product-gallery", async (req, res) => {
     });
   }
 });
-
 
 productController.put("/update-video", upload.single("productVideo"), async (req, res) => {
   try {
@@ -371,7 +371,7 @@ productController.put("/update-video", upload.single("productVideo"), async (req
   }
 });
 
-productController.post("/add-variant", upload.single("variantImage"), async (req, res) => {
+productController.post("/add-variant", upload.array("variantImage"), async (req, res) => {
   try {
     const { id, variantKey, variantValue, variantPrice, variantDiscountedPrice, stockQuantity } = req.body;
     const product = await Product.findById(id);
@@ -382,18 +382,28 @@ productController.post("/add-variant", upload.single("variantImage"), async (req
       });
     }
 
-    let variantImage = "";
-    if (req.file) {
-      const uploaded = await cloudinary.uploader.upload(req.file.path);
-      variantImage = uploaded.secure_url;
+    if (!req.files || req.files.length === 0) {
+      return sendResponse(res, 400, "Failed", {
+        message: "At least one image file is required",
+        statusCode: 400,
+      });
     }
+
+    // Upload all images to Cloudinary
+    const uploadedUrls = [];
+    for (const file of req.files) {
+      const uploadedImage = await cloudinary.uploader.upload(file.path);
+      uploadedUrls.push(uploadedImage.secure_url);
+    }
+
+  
 
     const variant = {
       variantKey,
       variantValue,
       variantPrice,
       variantDiscountedPrice,
-      variantImage,
+      variantImage:uploadedUrls,
       stockQuantity
     };
 
@@ -415,7 +425,7 @@ productController.post("/add-variant", upload.single("variantImage"), async (req
   }
 });
 
-productController.put("/update-variant", upload.single("variantImage"), async (req, res) => {
+productController.put("/update-variant", async (req, res) => {
   try {
     const { productId, variantIndex } = req.body;
     const product = await Product.findById(productId);
@@ -442,12 +452,6 @@ productController.put("/update-variant", upload.single("variantImage"), async (r
       variantDiscountedPrice = variant.variantDiscountedPrice,
       stockQuantity = variant.stockQuantity,
     } = req.body;
-
-    let variantImage = variant.variantImage;
-    if (req.file) {
-      const uploaded = await cloudinary.uploader.upload(req.file.path);
-      variantImage = uploaded.secure_url;
-    }
 
     // Update the variant
     product.productVariants[variantIndex] = {
@@ -512,6 +516,75 @@ productController.put("/delete-variant", async (req, res) => {
   }
 });
 
+productController.post("/delete/variant-gallery", async (req, res) => {
+  try {
+    const { id, variantIndex, imageIndex } = req.body;
+
+    if (!id || variantIndex || imageIndex  === undefined) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Product ID, variantIndex and imageIndex are required",
+        statusCode: 400,
+      });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Product not found",
+        statusCode: 404,
+      });
+    }
+
+    const variant = product.productVariants;
+    
+    if (!variant || variantIndex < 0 || variantIndex >= variant.length) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Invalid variant index",
+        statusCode: 400,
+      });
+    }
+
+    const variantGallery = variant.variantImage;
+    
+    if (!variantGallery || imageIndex < 0 || imageIndex >= variantGallery.length) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Invalid image index",
+        statusCode: 400,
+      });
+    }
+
+    const imageUrl = variantGallery[imageIndex];
+
+    // Delete from Cloudinary if image is stored there
+    const publicId = imageUrl.split("/").pop().split(".")[0];
+    await cloudinary.uploader.destroy(publicId, (error, result) => {
+      if (error) {
+        console.error("Cloudinary delete error:", error);
+      } else {
+        console.log("Image deleted from Cloudinary:", result);
+      }
+    });
+
+    // Remove the image from productGallery
+    variantGallery.splice(imageIndex, 1);
+    variant.variantImage = variantGallery;
+    product.productVariant = variant;
+    const updatedProduct = await product.save();
+
+    sendResponse(res, 200, "Success", {
+      message: "product variant image deleted successfully",
+      data: updatedProduct,
+      statusCode: 200,
+    });
+
+  } catch (error) {
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal Server Error",
+      statusCode: 500,
+    });
+  }
+});
+
 productController.get("/list-variants/:productId", async (req, res) => {
   try {
     const { productId } = req.params;
@@ -537,7 +610,6 @@ productController.get("/list-variants/:productId", async (req, res) => {
     });
   }
 });
-
 
 productController.put("/add-attribute", async (req, res) => {
   try {
@@ -572,7 +644,6 @@ productController.put("/add-attribute", async (req, res) => {
     });
   }
 });
-
 
 productController.put("/delete-attribute", async (req, res) => {
   try {
@@ -609,60 +680,6 @@ productController.put("/delete-attribute", async (req, res) => {
     });
   }
 });
-
-// productController.post("/filter-list", async (req, res) => {
-//   try {
-//     const {
-//       searchKey = "",
-//       status,
-//       pageNo = 1,
-//       pageCount = 10,
-//       sortByField,
-//       sortByOrder,
-//     } = req.body;
-
-//     const query = {};
-//     if (status) query.status = status;
-//     if (searchKey) query.name = { $regex: searchKey, $options: "i" };
-
-//     // Construct sorting object
-//     const sortField = sortByField || "createdAt";
-//     const sortOrder = sortByOrder === "asc" ? 1 : -1;
-//     const sortOption = { [sortField]: sortOrder };
-
-//     // Fetch the category list
-//     const productList = await Product.find(query)
-//       .sort(sortOption)
-//       .limit(parseInt(pageCount))
-//       .skip(parseInt(pageNo - 1) * parseInt(pageCount))
-//       .populate({
-//         path: "categoryId",
-//         select: "name description", 
-//       })
-//       .populate({
-//         path: "createdBy",
-//         select: "name", 
-//       });
-//     const totalCount = await Product.countDocuments({});
-//     const activeCount = await Product.countDocuments({ status: true });
-//     sendResponse(res, 200, "Success", {
-//       message: "Product list retrieved successfully!",
-//       data: productList,
-//       documentCount: {
-//         totalCount,
-//         activeCount,
-//         inactiveCount: totalCount - activeCount,
-//       },
-//       statusCode: 200,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error",
-//     });
-//   }
-// });
-
 
 productController.post("/filter-list", async (req, res) => {
   try {

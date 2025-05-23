@@ -2,10 +2,12 @@ const mongoose = require("mongoose");
 const timestamps = require("mongoose-timestamp");
 
 const orderVerificationSchema = mongoose.Schema({
-  productId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Product",
-  },
+  productId: 
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+    },
   orderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Booking",
