@@ -145,18 +145,13 @@ bookingController.get("/details/:userId", async (req, res) => {
         select: "name email mobileNumber",
       });
 
-    if (booking.length > 0) {
+    
       return sendResponse(res, 200, "Success", {
         message: "Booking details fetched successfully",
         data: booking,
         statusCode: 200,
       });
-    } else {
-      return sendResponse(res, 404, "Failed", {
-        message: "No bookings found for this user",
-        statusCode: 404,
-      });
-    }
+    
   } catch (error) {
     return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error.",

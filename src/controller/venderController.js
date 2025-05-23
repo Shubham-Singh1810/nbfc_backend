@@ -440,7 +440,7 @@ venderController.post("/product-list", auth, async (req, res) => {
   }
 });
 
-venderController.post("/list", auth, async (req, res) => {
+venderController.post("/list",  async (req, res) => {
   try {
     const {
       searchKey = "",

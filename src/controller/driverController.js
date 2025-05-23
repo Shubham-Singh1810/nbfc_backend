@@ -277,7 +277,7 @@ driverController.get("/details/:id", auth, async (req, res) => {
   }
 });
 
-driverController.post("/list", auth, async (req, res) => {
+driverController.post("/list",  async (req, res) => {
   try {
     const {
       searchKey = "",
