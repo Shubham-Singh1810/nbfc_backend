@@ -110,7 +110,6 @@ bookingController.post("/create", async (req, res) => {
   }
 });
 
-
 bookingController.post("/list", async (req, res) => {
   try {
     const {
