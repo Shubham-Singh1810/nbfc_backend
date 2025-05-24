@@ -3,6 +3,7 @@ const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const Booking = require("../model/booking.Schema");
 const User = require("../model/user.Schema");
+const Admin = require("../model/admin.Schema");
 const bookingController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
@@ -11,6 +12,7 @@ const moment = require("moment");
 const auth = require("../utils/auth");
 const fs = require("fs");
 const path = require("path");
+const {sendNotification} = require("../utils/sendNotification")
 
 
 bookingController.post("/create", async (req, res) => {
@@ -65,9 +67,34 @@ bookingController.post("/create", async (req, res) => {
 
     const bookingCreated = await Booking.create(bookingData);
 
-    await User.findByIdAndUpdate(userId, {
+    let updatedUser = await User.findByIdAndUpdate(userId, {
       $set: { cartItems: [] },
     });
+
+    const superAdmin = await Admin.findOne({role:"680e3c4dd3f86cb24e34f6a6"});
+
+    sendNotification({
+      title:"New Order",
+      subTitle:`${updatedUser?.firstName} has placed a new order.`,
+      icon:updatedUser?.profilePic,
+      notifyUserId:"admin",
+      category:"Booking",
+      subCategory:"New Order",
+      notifyUser:"Admin",
+      fcmToken:superAdmin?.deviceId
+    })
+
+    sendNotification({
+      title:"Order Placed",
+      subTitle:`Your order has beed placed successfully.`,
+      icon:"https://cdn-icons-png.flaticon.com/128/190/190411.png",
+      notifyUserId:userId,
+      category:"Booking",
+      subCategory:"New Order",
+      notifyUser:"User",
+      fcmToken:updatedUser?.androidDeviceId
+    })
+    
 
     sendResponse(res, 200, "Success", {
       message: "Booking created successfully!",
