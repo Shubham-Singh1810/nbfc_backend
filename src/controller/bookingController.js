@@ -72,7 +72,8 @@ bookingController.post("/create", async (req, res) => {
     });
 
     const superAdmin = await Admin.findOne({role:"680e3c4dd3f86cb24e34f6a6"});
-
+    console.log(superAdmin?.deviceId);
+    console.log(updatedUser?.androidDeviceId);
     sendNotification({
       title:"New Order",
       subTitle:`${updatedUser?.firstName} has placed a new order.`,
@@ -94,6 +95,8 @@ bookingController.post("/create", async (req, res) => {
       notifyUser:"User",
       fcmToken:updatedUser?.androidDeviceId
     })
+
+
     
 
     sendResponse(res, 200, "Success", {
