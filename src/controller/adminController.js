@@ -71,9 +71,14 @@ adminController.post("/login", async (req, res) => {
       path: "role",
     });
     if (user) {
+      let updatedAdmin = await Admin.findByIdAndUpdate(user?._id, {deviceId:req?.body?.deviceId}, {
+      new: true,
+    }).populate({
+      path: "role",
+    });
       return sendResponse(res, 200, "Success", {
         message: "User logged in successfully",
-        data: user,
+        data: updatedAdmin,
         statusCode: 200,
       });
     } else {

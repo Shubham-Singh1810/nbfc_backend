@@ -101,4 +101,20 @@ notificationController.delete("/delete/:id", async (req, res) => {
   }
 });
 
+notificationController.post("/create", async (req, res) => {
+  try {
+    await sendNotification(req.body);
+    sendResponse(res, 200, "Success", {
+      message: "Notification send successfully",
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
+
 module.exports = notificationController;

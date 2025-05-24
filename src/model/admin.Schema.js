@@ -27,6 +27,9 @@ const adminSchema = mongoose.Schema({
     ref: "Role",
     required: true,
   },
+  deviceId:{
+    type: String
+  }
 });
 
 adminSchema.plugin(timestamps);
