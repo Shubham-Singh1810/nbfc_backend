@@ -37,7 +37,6 @@ const auth = require("../utils/auth");
 // });
 
 
-
 productRatingController.post("/create", upload.single("image"), async (req, res) => {
   try {
     let obj = { ...req.body }; // Start with form data
@@ -64,7 +63,6 @@ productRatingController.post("/create", upload.single("image"), async (req, res)
     });
   }
 });
-
 
 productRatingController.post("/list", async (req, res) => {
   try {
