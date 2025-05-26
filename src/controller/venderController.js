@@ -640,13 +640,6 @@ venderController.post("/order-details", auth, async (req, res) => {
       })
       .populate("addressId");
 
-    if (!order) {
-      return sendResponse(res, 404, "Failed", {
-        message: "Order not found",
-        statusCode: 404,
-      });
-    }
-
     const matchedProducts = order.product.filter((prod) => {
       return prod.productId?.createdBy?._id?.toString() === venderId;
     });
@@ -690,8 +683,6 @@ venderController.post("/order-details", auth, async (req, res) => {
     });
   }
 });
-
-
 
 
 module.exports = venderController;

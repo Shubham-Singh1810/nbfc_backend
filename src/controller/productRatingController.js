@@ -119,13 +119,6 @@ productRatingController.get("/details/:productId", async (req, res) => {
       .populate("userId", "firstName lastName profilePic") 
       .sort({ createdAt: -1 }); 
 
-    if (ratings.length === 0) {
-      return sendResponse(res, 404, "Failed", {
-        message: "No ratings found for this product.",
-        statusCode: 404,
-      });
-    }
-
     return sendResponse(res, 200, "Success", {
       message: "Product ratings fetched successfully.",
       data: ratings,
