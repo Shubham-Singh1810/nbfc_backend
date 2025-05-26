@@ -88,7 +88,7 @@ productRatingController.get("/details/:productId", async (req, res) => {
     const { productId } = req.params;
 
     const ratings = await Rating.find({ productId })
-      .populate("userId", "FullName Email") 
+      .populate("userId", "firstName lastName profilePic") 
       .sort({ createdAt: -1 }); 
 
     if (ratings.length === 0) {
