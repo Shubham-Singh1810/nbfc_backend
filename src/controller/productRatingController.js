@@ -83,6 +83,34 @@ productRatingController.post("/list", async (req, res) => {
   }
 });
 
+productRatingController.get("/details/:productId", async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    const ratings = await Rating.find({ productId })
+      .populate("userId", "FullName Email") 
+      .sort({ createdAt: -1 }); 
+
+    if (ratings.length === 0) {
+      return sendResponse(res, 404, "Failed", {
+        message: "No ratings found for this product.",
+        statusCode: 404,
+      });
+    }
+
+    return sendResponse(res, 200, "Success", {
+      message: "Product ratings fetched successfully.",
+      data: ratings,
+      statusCode: 200,
+    });
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
+    });
+  }
+});
+
 productRatingController.put("/update", upload.single("image"), async (req, res) => {
   try {
     const id = req.body._id;
