@@ -516,20 +516,13 @@ venderController.get("/orders/:venderId", auth, async (req, res) => {
 
         return null;
       })
-      .filter(order => order !== null); 
+      .filter(order => order !== null);
 
-    if (vendorOrders.length > 0) {
-      return sendResponse(res, 200, "Success", {
-        message: "Orders fetched successfully for the given vendor",
-        data: vendorOrders,
-        statusCode: 200,
-      });
-    } else {
-      return sendResponse(res, 404, "Failed", {
-        message: "No orders found for this vendor",
-        statusCode: 404,
-      });
-    }
+    return sendResponse(res, 200, "Success", {
+      message: "Orders fetched successfully for the given vendor",
+      data: vendorOrders, // Can be empty array
+      statusCode: 200,
+    });
   } catch (error) {
     return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error.",
