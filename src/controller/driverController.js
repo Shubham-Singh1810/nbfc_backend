@@ -204,10 +204,63 @@ driverController.post("/login", async (req, res) => {
   }
 });
 
+// driverController.post("/resend-otp", async (req, res) => {
+//   try {
+//     const { phone } = req.body;
+//     const user = await Driver.findOne({ phone });
+//     if (user) {
+//       const otp = generateOTP();
+//       const updatedDriver = await Driver.findByIdAndUpdate(
+//         user._id,
+//         { phoneOtp: otp },
+//         { new: true }
+//       );
+
+//       // OTP message for autofill
+//       const appHash = "ems/3nG2V1H"; // Replace with your actual hash
+//       const otpMessage = `<#> ${otp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
+
+//       let otpResponse = await axios.post(
+//         `https://api.authkey.io/request?authkey=${
+//           process.env.AUTHKEY_API_KEY
+//         }&mobile=${req.body.phone}&country_code=91&sid=${
+//           process.env.AUTHKEY_SENDER_ID
+//         }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
+//       );
+
+//       if (otpResponse?.status == "200") {
+//         return sendResponse(res, 200, "Success", {
+//           message: "OTP sent successfully",
+//           data: updatedDriver,
+//           statusCode: 200,
+//         });
+//       } else {
+//         return sendResponse(res, 422, "Failed", {
+//           message: "Unable to send OTP",
+//           statusCode: 200,
+//         });
+//       }
+//     } else {
+//       return sendResponse(res, 422, "Failed", {
+//         message: "Phone number is not registered",
+//         statusCode: 422,
+//       });
+//     }
+//   } catch (error) {
+//     return sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error.",
+//       statusCode: 500,
+//     });
+//   }
+// });
+
+
+
 driverController.post("/resend-otp", async (req, res) => {
   try {
     const { phone } = req.body;
     const user = await Driver.findOne({ phone });
+
     if (user) {
       const otp = generateOTP();
       const updatedDriver = await Driver.findByIdAndUpdate(
@@ -235,13 +288,14 @@ driverController.post("/resend-otp", async (req, res) => {
           statusCode: 200,
         });
       } else {
-        return sendResponse(res, 422, "Failed", {
+        return sendResponse(res, 200, "Success", {
           message: "Unable to send OTP",
-          statusCode: 200,
+          data: updatedDriver,
+          statusCode: 422,
         });
       }
     } else {
-      return sendResponse(res, 422, "Failed", {
+      return sendResponse(res, 200, "Success", {
         message: "Phone number is not registered",
         statusCode: 422,
       });
@@ -253,6 +307,7 @@ driverController.post("/resend-otp", async (req, res) => {
     });
   }
 });
+
 
 driverController.get("/details/:id", auth, async (req, res) => {
   try {
