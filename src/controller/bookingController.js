@@ -280,8 +280,17 @@ bookingController.put("/update", async (req, res) => {
         statusCode:404
       });
     }
-    // if(deliveryStatus == orderPacked){
-      
+    // if(deliveryStatus == "orderPacked"){
+    //   await sendNotification({
+    //     title: "New Order",
+    //     subTitle: `${updatedUser?.firstName} has placed a new order.`,
+    //     icon: updatedUser?.profilePic,
+    //     notifyUserId: "admin",
+    //     category: "Booking",
+    //     subCategory: "New Order",
+    //     notifyUser: "Admin",
+    //     fcmToken: superAdmin.deviceId,
+    //   });
     // }
     return sendResponse(res, 200, "Success", {
       message: "Delivery status updated successfully.",
