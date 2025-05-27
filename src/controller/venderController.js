@@ -498,7 +498,7 @@ venderController.get("/orders/:venderId", auth, async (req, res) => {
 
     const allOrders = await Booking.find()
       .populate("product.productId")
-      .populate("userId")
+      .populate({ path: "userId", select: "firstName lastName email phone" })
       .populate("addressId");
 
     const vendorOrders = allOrders
@@ -516,7 +516,8 @@ venderController.get("/orders/:venderId", auth, async (req, res) => {
 
         return null;
       })
-      .filter(order => order !== null);
+      .filter(order => order !== null)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     return sendResponse(res, 200, "Success", {
       message: "Orders fetched successfully for the given vendor",

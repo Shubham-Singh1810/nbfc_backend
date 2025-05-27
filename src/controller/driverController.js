@@ -204,58 +204,6 @@ driverController.post("/login", async (req, res) => {
   }
 });
 
-// driverController.post("/resend-otp", async (req, res) => {
-//   try {
-//     const { phone } = req.body;
-//     const user = await Driver.findOne({ phone });
-//     if (user) {
-//       const otp = generateOTP();
-//       const updatedDriver = await Driver.findByIdAndUpdate(
-//         user._id,
-//         { phoneOtp: otp },
-//         { new: true }
-//       );
-
-//       // OTP message for autofill
-//       const appHash = "ems/3nG2V1H"; // Replace with your actual hash
-//       const otpMessage = `<#> ${otp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
-
-//       let otpResponse = await axios.post(
-//         `https://api.authkey.io/request?authkey=${
-//           process.env.AUTHKEY_API_KEY
-//         }&mobile=${req.body.phone}&country_code=91&sid=${
-//           process.env.AUTHKEY_SENDER_ID
-//         }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
-//       );
-
-//       if (otpResponse?.status == "200") {
-//         return sendResponse(res, 200, "Success", {
-//           message: "OTP sent successfully",
-//           data: updatedDriver,
-//           statusCode: 200,
-//         });
-//       } else {
-//         return sendResponse(res, 422, "Failed", {
-//           message: "Unable to send OTP",
-//           statusCode: 200,
-//         });
-//       }
-//     } else {
-//       return sendResponse(res, 422, "Failed", {
-//         message: "Phone number is not registered",
-//         statusCode: 422,
-//       });
-//     }
-//   } catch (error) {
-//     return sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error.",
-//       statusCode: 500,
-//     });
-//   }
-// });
-
-
-
 driverController.post("/resend-otp", async (req, res) => {
   try {
     const { phone } = req.body;
@@ -307,7 +255,6 @@ driverController.post("/resend-otp", async (req, res) => {
     });
   }
 });
-
 
 driverController.get("/details/:id", auth, async (req, res) => {
   try {
@@ -528,59 +475,6 @@ driverController.put("/update", auth, upload.fields([
   }
 );
  
-// driverController.post("/assign-product", auth, async (req, res) => {
-//   try {
-//     const { orderId, productId, driverId } = req.body;
-
-//     const order = await Booking.findById(orderId);
-//     if (!order) {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "Order not found",
-//         statusCode: 404,
-//       });
-//     }
-
-//     const driver = await Driver.findById(driverId);
-//     if (!driver) {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "Driver not found",
-//         statusCode: 404,
-//       });
-//     }
-
-//     let productFound = false;
-
-//     order.product = order.product.map((item) => {
-//       if (item.productId.toString() === productId) {
-//         productFound = true;
-//         item.driverId = driverId;
-//       }
-//       return item;
-//     });
-
-//     if (!productFound) {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "Product not found in order",
-//         statusCode: 404,
-//       });
-//     }
-
-//     await order.save();
-
-//     return sendResponse(res, 200, "Success", {
-//       message: "Product assigned to driver successfully",
-//       data: order,
-//       statusCode: 200,
-//     });
-//   } catch (error) {
-//     return sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error.",
-//       statusCode: 500,
-//     });
-//   }
-// });
-
-
 driverController.put("/assign-products", async (req, res) => {
   try {
     const { id, productIds, deliveryStatus, driverId, expectedDeliveryDate } = req.body;
@@ -992,10 +886,10 @@ driverController.post("/my-orders", async (req, res) => {
     const bookings = await Booking.find(query)
       .populate({
         path: "product.productId",
-        populate: { path: "createdBy", model: "Vender" },
+        populate: { path: "createdBy", model: "Vender", select: "firstName lastName address storeName profilePic" },
       })
       .populate("product.driverId")
-      .populate({ path: "userId", select: "-cartItems" })
+      .populate({ path: "userId", select: "firstName lastName phone cartItems " })
       .populate("addressId")
       .sort(sortOption)
       .skip((pageNo - 1) * pageCount)
@@ -1061,10 +955,18 @@ driverController.post("/my-orders", async (req, res) => {
       return match;
     });
 
-    return sendResponse(res, 200, "Success", {
-      data: filteredResult,
-      statusCode: 200,
-    });
+    // return sendResponse(res, 200, "Success", {
+    //   data: filteredResult,
+    //   statusCode: 200,
+    // });
+
+    // Sort by assignedAt (descending = latest first)
+filteredResult.sort((a, b) => new Date(b.assignedAt) - new Date(a.assignedAt));
+
+return sendResponse(res, 200, "Success", {
+  data: filteredResult,
+  statusCode: 200,
+});
   } catch (error) {
     console.error(error);
     return sendResponse(res, 500, "Failed", {
@@ -1111,10 +1013,10 @@ driverController.post("/my-ongoing-orders", async (req, res) => {
     const bookings = await Booking.find(query)
       .populate({
         path: "product.productId",
-        populate: { path: "createdBy", model: "Vender" },
+        populate: { path: "createdBy", model: "Vender", select: "firstName lastName" },
       })
       .populate("product.driverId")
-      .populate({ path: "userId", select: "-cartItems" })
+      .populate({ path: "userId", select: "-cartItems -wishListItems" })
       .populate("addressId")
       .sort(sortOption)
       .skip((pageNo - 1) * pageCount)
@@ -1165,10 +1067,20 @@ driverController.post("/my-ongoing-orders", async (req, res) => {
       .filter(({ includeBooking, orderData }) => includeBooking && orderData.vendorProducts.length)
       .map(({ orderData }) => orderData);
 
-    return sendResponse(res, 200, "Success", {
-      data: filteredResult,
-      statusCode: 200,
-    });
+    // return sendResponse(res, 200, "Success", {
+    //   data: filteredResult,
+    //   statusCode: 200,
+    // });
+
+
+    // Sort by assignedAt (latest first)
+filteredResult.sort((a, b) => new Date(b.assignedAt) - new Date(a.assignedAt));
+
+return sendResponse(res, 200, "Success", {
+  data: filteredResult,
+  statusCode: 200,
+});
+
   } catch (error) {
     console.error(error);
     return sendResponse(res, 500, "Failed", {

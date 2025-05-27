@@ -3,6 +3,7 @@ const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const Booking = require("../model/booking.Schema");
 const User = require("../model/user.Schema");
+const Vender = require("../model/vender.Schema");
 const Admin = require("../model/admin.Schema");
 const bookingController = express.Router();
 require("dotenv").config();
@@ -13,6 +14,7 @@ const auth = require("../utils/auth");
 const fs = require("fs");
 const path = require("path");
 const {sendNotification} = require("../utils/sendNotification")
+
 
 
 bookingController.post("/create", async (req, res) => {
@@ -31,22 +33,15 @@ bookingController.post("/create", async (req, res) => {
       addressId,
     } = req.body;
 
-    if (!userId) {
+    if (!userId || !status) {
       return sendResponse(res, 400, "Failed", {
-        message: "userId is required in the request body",
+        message: !userId ? "userId is required" : "status is required",
         statusCode: 400,
       });
     }
 
-    if (!status) {
-      return sendResponse(res, 400, "Failed", {
-        message: "status is required in the request body",
-        statusCode: 400,
-      });
-    }
-
-    // Add expectedDeliveryDate for each product
-    const updatedProducts = product.map(item => ({
+    // Add expectedDeliveryDate to each product
+    const updatedProducts = product.map((item) => ({
       ...item,
       expectedDeliveryDate: moment().add(7, "days").format("DD-MM-YYYY"),
     }));
@@ -55,7 +50,7 @@ bookingController.post("/create", async (req, res) => {
       userId,
       totalAmount,
       status,
-      product: updatedProducts, // updated products with expectedDeliveryDate
+      product: updatedProducts,
       bookingQuantity,
       bookingPrice,
       modeOfPayment,
@@ -65,39 +60,75 @@ bookingController.post("/create", async (req, res) => {
       addressId,
     };
 
+    // Create booking
     const bookingCreated = await Booking.create(bookingData);
 
-    let updatedUser = await User.findByIdAndUpdate(userId, {
-      $set: { cartItems: [] },
-    });
+    // Clear user cart
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: { cartItems: [] } },
+      { new: true }
+    );
 
-    const superAdmin = await Admin.findOne({role:"680e3c4dd3f86cb24e34f6a6"});
-    console.log(superAdmin?.deviceId);
-    console.log(updatedUser?.androidDeviceId);
-    sendNotification({
-      title:"New Order",
-      subTitle:`${updatedUser?.firstName} has placed a new order.`,
-      icon:updatedUser?.profilePic,
-      notifyUserId:"admin",
-      category:"Booking",
-      subCategory:"New Order",
-      notifyUser:"Admin",
-      fcmToken:superAdmin?.deviceId
-    })
+    // Notify Admin
+    const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
+    if (superAdmin?.deviceId) {
+      await sendNotification({
+        title: "New Order",
+        subTitle: `${updatedUser?.firstName} has placed a new order.`,
+        icon: updatedUser?.profilePic,
+        notifyUserId: "admin",
+        category: "Booking",
+        subCategory: "New Order",
+        notifyUser: "Admin",
+        fcmToken: superAdmin.deviceId,
+      });
+    }
 
-    sendNotification({
-      title:"Order Placed",
-      subTitle:`Your order has beed placed successfully.`,
-      icon:"https://cdn-icons-png.flaticon.com/128/190/190411.png",
-      notifyUserId:userId,
-      category:"Booking",
-      subCategory:"New Order",
-      notifyUser:"User",
-      fcmToken:updatedUser?.androidDeviceId
-    })
+    // Notify User
+    if (updatedUser?.androidDeviceId) {
+      await sendNotification({
+        title: "Order Placed",
+        subTitle: `Your order has been placed successfully.`,
+        icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
+        notifyUserId: userId,
+        category: "Booking",
+        subCategory: "New Order",
+        notifyUser: "User",
+        fcmToken: updatedUser.androidDeviceId,
+      });
+    }
 
+    // Populate productId to access createdBy (vendor ID)
+    const populatedBooking = await Booking.findById(bookingCreated._id).populate("product.productId");
 
-    
+    for (const item of populatedBooking.product) {
+      const createdById = item.productId?.createdBy;
+
+      if (!createdById) {
+        console.warn("Product createdBy missing, skipping vendor notification.");
+        continue;
+      }
+
+      const vendor = await Vender.findById(createdById);
+      if (!vendor || !vendor.androidDeviceId) {
+        console.warn(`Vendor or FCM token missing for vendor ID: ${createdById}`);
+        continue;
+      }
+
+      await sendNotification({
+        title: "New Order",
+        subTitle: `${updatedUser?.firstName} has placed a new order.`,
+        icon: updatedUser?.profilePic,
+        notifyUserId: vendor._id,
+        category: "Booking",
+        subCategory: "New Order",
+        notifyUser: "Vender",
+        fcmToken: vendor.androidDeviceId,
+      });
+
+      console.log(`Notification sent to vendor ID: ${vendor._id}`);
+    }
 
     sendResponse(res, 200, "Success", {
       message: "Booking created successfully!",
@@ -105,7 +136,7 @@ bookingController.post("/create", async (req, res) => {
       statusCode: 200,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Booking error:", error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
       statusCode: 500,
@@ -249,7 +280,9 @@ bookingController.put("/update", async (req, res) => {
         statusCode:404
       });
     }
-
+    // if(deliveryStatus == orderPacked){
+      
+    // }
     return sendResponse(res, 200, "Success", {
       message: "Delivery status updated successfully.",
       data: updatedBooking,
