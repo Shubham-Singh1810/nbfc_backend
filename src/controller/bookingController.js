@@ -4,6 +4,7 @@ require("dotenv").config();
 const Booking = require("../model/booking.Schema");
 const User = require("../model/user.Schema");
 const Vender = require("../model/vender.Schema");
+const Product = require("../model/product.Schema");
 const Admin = require("../model/admin.Schema");
 const bookingController = express.Router();
 require("dotenv").config();
@@ -280,18 +281,45 @@ bookingController.put("/update", async (req, res) => {
         statusCode:404
       });
     }
-    // if(deliveryStatus == "orderPacked"){
-    //   await sendNotification({
-    //     title: "New Order",
-    //     subTitle: `${updatedUser?.firstName} has placed a new order.`,
-    //     icon: updatedUser?.profilePic,
-    //     notifyUserId: "admin",
-    //     category: "Booking",
-    //     subCategory: "New Order",
-    //     notifyUser: "Admin",
-    //     fcmToken: superAdmin.deviceId,
-    //   });
-    // }
+    const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
+    const userDetails = await User.findOne({ _id: updatedBooking.userId });
+    const productDetails = await Product.findOne({ _id:productId });
+    const venderDetails = await Vender.findOne({ _id:productDetails.createdBy });
+    if(deliveryStatus == "orderPacked"){
+       sendNotification({
+        title: "Order Packed",
+        subTitle: "Please assign a driver for this booking",
+        icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
+        notifyUserId: "admin",
+        category: "Booking",
+        subCategory: "Order Packed",
+        notifyUser: "Admin",
+        fcmToken: superAdmin.deviceId,
+      });
+      
+      sendNotification({
+        title: "Order Packed",
+        subTitle: "Your order has been packed by the vendor",
+        icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
+        notifyUserId: userDetails._id,
+        category: "Booking",
+        subCategory: "Order Packed",
+        notifyUser: "User",
+        fcmToken: userDetails.androidDeviceId,
+      });
+
+      sendNotification({
+        title: "Order Packed",
+        subTitle: "Your order has been marked as packed, driver coming soon ",
+        icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
+        notifyUserId: venderDetails._id,
+        category: "Booking",
+        subCategory: "Order Packed",
+        notifyUser: "Vender",
+        fcmToken: venderDetails.androidDeviceId,
+      });
+
+    }
     return sendResponse(res, 200, "Success", {
       message: "Delivery status updated successfully.",
       data: updatedBooking,
