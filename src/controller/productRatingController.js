@@ -10,60 +10,47 @@ const upload = require("../utils/multer");
 const auth = require("../utils/auth");
 
 
-// productRatingController.post("/create", upload.single("image"), async (req, res) => {
-//   try {
-//     let obj;
-//     if (req.file) {
-//       let image = await cloudinary.uploader.upload(req.file.path, function (err, result) {
-//         if (err) {
-//           return err;
-//         } else {
-//           return result;
-//         }
-//       });
-//       obj = { ...req.body, image: image.url };
-//     }
-//     const ratingCreated = await Rating.create(obj);
-//     sendResponse(res, 200, "Success", {
-//       message: "Rating created successfully!",
-//       data: ratingCreated,
-//       statusCode:200
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error",
-//     });
-//   }
-// });
-
-
 productRatingController.post("/create", upload.single("image"), async (req, res) => {
   try {
-    let obj = { ...req.body }; // Start with form data
+    let obj = { ...req.body };
 
-    // If image is present, upload to Cloudinary
     if (req.file) {
       const image = await cloudinary.uploader.upload(req.file.path);
-      obj.image = image.url; // Add image URL to the object
+      obj.image = image.url;
     }
 
-    // Create the rating document
     const ratingCreated = await Rating.create(obj);
 
+    // ⭐ Calculate the average rating of this product
+    const productId = ratingCreated.productId;
+
+    const allRatings = await Rating.find({ productId });
+
+    const totalRatings = allRatings.length;
+    const sumRatings = allRatings.reduce((sum, item) => sum + Number(item.rating), 0);
+
+    const averageRating = (sumRatings / totalRatings).toFixed(1); // 1 decimal point ka average
+
+    // ⭐ Update product's rating field
+    await Product.findByIdAndUpdate(productId, {
+      rating: averageRating,
+    });
+
     sendResponse(res, 200, "Success", {
-      message: "Rating created successfully!",
+      message: "Rating created and product rating updated successfully!",
       data: ratingCreated,
+      averageRating,
       statusCode: 200,
     });
   } catch (error) {
-    console.error("Error creating rating:", error);
+    console.error(error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
-      statusCode: 500,
     });
   }
 });
+
+
 
 productRatingController.post("/list", async (req, res) => {
   try {
