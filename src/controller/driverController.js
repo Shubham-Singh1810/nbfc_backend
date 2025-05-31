@@ -74,15 +74,17 @@ driverController.post(
         vehicleImage,
         profilePic,
       });
+      const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
       sendNotification({
         icon:newDriver.profilePic,
-        title:"A new driver registered",
+        title:"Driver registered",
         subTitle:`${newDriver.firstName} has registered to the portal`,
         notifyUserId:"Admin",
         category:"Driver",
         subCategory:"Registration",
         notifyUser:"Admin",
-      },req.io)
+        fcmToken: superAdmin.deviceId,
+      })
 
       // Generate JWT token
       const token = jwt.sign(
@@ -150,15 +152,16 @@ driverController.post("/otp-verification", async (req, res) => {
         updatedFields,
         { new: true }
       );
-
+      const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
       sendNotification({
         icon: updatedDriver.profilePic,
-        title: `${updatedDriver.firstName} has verified their phone number`,
+        title: "OTP verified",
         subTitle: `${updatedDriver.firstName} has verified their phone number`,
         notifyUserId: "Admin",
         category: "Driver",
         subCategory: "Verification",
         notifyUser: "Admin",
+        fcmToken: superAdmin.deviceId,
       });
 
       return sendResponse(res, 200, "Success", {
@@ -208,6 +211,7 @@ driverController.post("/resend-otp", async (req, res) => {
   try {
     const { phone } = req.body;
     const user = await Driver.findOne({ phone });
+
     if (user) {
       const otp = generateOTP();
       const updatedDriver = await Driver.findByIdAndUpdate(
@@ -235,13 +239,14 @@ driverController.post("/resend-otp", async (req, res) => {
           statusCode: 200,
         });
       } else {
-        return sendResponse(res, 422, "Failed", {
+        return sendResponse(res, 200, "Success", {
           message: "Unable to send OTP",
-          statusCode: 200,
+          data: updatedDriver,
+          statusCode: 422,
         });
       }
     } else {
-      return sendResponse(res, 422, "Failed", {
+      return sendResponse(res, 200, "Success", {
         message: "Phone number is not registered",
         statusCode: 422,
       });
@@ -257,19 +262,28 @@ driverController.post("/resend-otp", async (req, res) => {
 driverController.get("/details/:id", auth, async (req, res) => {
   try {
     const id = req.params.id;
-    const driver = await Driver.findOne({ _id: id });
-    if (driver) {
-      return sendResponse(res, 200, "Success", {
-        message: "Driver details fetched  successfully",
-        data: driver,
-        statusCode: 200,
-      });
-    } else {
+    const driver = await Driver.findOne({ _id: id }).lean();
+
+    if (!driver) {
       return sendResponse(res, 404, "Failed", {
         message: "Driver not found",
         statusCode: 404,
       });
     }
+
+    // Extract non-approved field names
+    const nonApprovedFields = Object.keys(driver).filter(
+      (key) => key.startsWith("is") && key.endsWith("Approved") && driver[key] === false
+    );
+
+    return sendResponse(res, 200, "Success", {
+      message: "Driver details fetched successfully",
+      data: {
+        driverDetails: driver,
+        nonApprovedFields, // Array of field names
+      },
+      statusCode: 200,
+    });
   } catch (error) {
     return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error.",
@@ -412,38 +426,42 @@ driverController.put("/update", auth, upload.fields([
         const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
           new: true, 
         });
+        const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
         if(req.body.profileStatus=="reUploaded"){
           sendNotification({
             icon:updatedUserData.profilePic,
-            title:`${updatedUserData.firstName} has re-uploaded the details`,
-            subTitle:`${updatedUserData.firstName} has re-uploaded the details`,
+            title: "Re Uploaded",
+            subTitle:`${updatedUserData.firstName} has re-uploaded the details.`,
             notifyUserId:"Admin",
             category:"Driver",
             subCategory:"Profile update",
             notifyUser:"Admin",
-          }, req.io)
+            fcmToken: superAdmin.deviceId,
+          })
         }
         if(req.body.profileStatus=="rejected"){
           sendNotification({
             icon:updatedUserData.profilePic,
-            title:`${updatedUserData.firstName} your details has been rejected`,
-            subTitle:`${updatedUserData.firstName} please go through the details once more`,
+            title:"Details rejected",
+            subTitle:`${updatedUserData.firstName} please go through the detail once more.`,
             notifyUserId:updatedUserData._id,
             category:"Driver",
             subCategory:"Profile update",
             notifyUser:"Driver",
-          }, req.io)
+            fcmToken: superAdmin.deviceId,
+          })
         }
         if(req.body.profileStatus=="approved"){
           sendNotification({
             icon:updatedUserData.profilePic,
-            title:`${updatedUserData.firstName} your profile has been approved`,
-            subTitle:`${updatedUserData.firstName} congratulations!! your profile has been approved`,
+            title:"Profile Approved",
+            subTitle:`${updatedUserData.firstName} congratulations!! your profile has been approved.`,
             notifyUserId:updatedUserData._id,
             category:"Driver",
             subCategory:"Profile update",
             notifyUser:"Driver",
-          }, req.io)
+            fcmToken: superAdmin.deviceId,
+          })
         }
         sendResponse(res, 200, "Success", {
           message: "Driver updated successfully!",
@@ -473,59 +491,6 @@ driverController.put("/update", auth, upload.fields([
   }
 );
  
-// driverController.post("/assign-product", auth, async (req, res) => {
-//   try {
-//     const { orderId, productId, driverId } = req.body;
-
-//     const order = await Booking.findById(orderId);
-//     if (!order) {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "Order not found",
-//         statusCode: 404,
-//       });
-//     }
-
-//     const driver = await Driver.findById(driverId);
-//     if (!driver) {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "Driver not found",
-//         statusCode: 404,
-//       });
-//     }
-
-//     let productFound = false;
-
-//     order.product = order.product.map((item) => {
-//       if (item.productId.toString() === productId) {
-//         productFound = true;
-//         item.driverId = driverId;
-//       }
-//       return item;
-//     });
-
-//     if (!productFound) {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "Product not found in order",
-//         statusCode: 404,
-//       });
-//     }
-
-//     await order.save();
-
-//     return sendResponse(res, 200, "Success", {
-//       message: "Product assigned to driver successfully",
-//       data: order,
-//       statusCode: 200,
-//     });
-//   } catch (error) {
-//     return sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error.",
-//       statusCode: 500,
-//     });
-//   }
-// });
-
-
 driverController.put("/assign-products", async (req, res) => {
   try {
     const { id, productIds, deliveryStatus, driverId, expectedDeliveryDate } = req.body;
@@ -937,10 +902,10 @@ driverController.post("/my-orders", async (req, res) => {
     const bookings = await Booking.find(query)
       .populate({
         path: "product.productId",
-        populate: { path: "createdBy", model: "Vender" },
+        populate: { path: "createdBy", model: "Vender", select: "firstName lastName address storeName profilePic" },
       })
       .populate("product.driverId")
-      .populate({ path: "userId", select: "-cartItems" })
+      .populate({ path: "userId", select: "firstName lastName phone cartItems " })
       .populate("addressId")
       .sort(sortOption)
       .skip((pageNo - 1) * pageCount)
@@ -1006,10 +971,18 @@ driverController.post("/my-orders", async (req, res) => {
       return match;
     });
 
-    return sendResponse(res, 200, "Success", {
-      data: filteredResult,
-      statusCode: 200,
-    });
+    // return sendResponse(res, 200, "Success", {
+    //   data: filteredResult,
+    //   statusCode: 200,
+    // });
+
+    // Sort by assignedAt (descending = latest first)
+filteredResult.sort((a, b) => new Date(b.assignedAt) - new Date(a.assignedAt));
+
+return sendResponse(res, 200, "Success", {
+  data: filteredResult,
+  statusCode: 200,
+});
   } catch (error) {
     console.error(error);
     return sendResponse(res, 500, "Failed", {
@@ -1056,10 +1029,10 @@ driverController.post("/my-ongoing-orders", async (req, res) => {
     const bookings = await Booking.find(query)
       .populate({
         path: "product.productId",
-        populate: { path: "createdBy", model: "Vender" },
+        populate: { path: "createdBy", model: "Vender", select: "firstName lastName" },
       })
       .populate("product.driverId")
-      .populate({ path: "userId", select: "-cartItems" })
+      .populate({ path: "userId", select: "-cartItems -wishListItems" })
       .populate("addressId")
       .sort(sortOption)
       .skip((pageNo - 1) * pageCount)
@@ -1110,10 +1083,20 @@ driverController.post("/my-ongoing-orders", async (req, res) => {
       .filter(({ includeBooking, orderData }) => includeBooking && orderData.vendorProducts.length)
       .map(({ orderData }) => orderData);
 
-    return sendResponse(res, 200, "Success", {
-      data: filteredResult,
-      statusCode: 200,
-    });
+    // return sendResponse(res, 200, "Success", {
+    //   data: filteredResult,
+    //   statusCode: 200,
+    // });
+
+
+    // Sort by assignedAt (latest first)
+filteredResult.sort((a, b) => new Date(b.assignedAt) - new Date(a.assignedAt));
+
+return sendResponse(res, 200, "Success", {
+  data: filteredResult,
+  statusCode: 200,
+});
+
   } catch (error) {
     console.error(error);
     return sendResponse(res, 500, "Failed", {

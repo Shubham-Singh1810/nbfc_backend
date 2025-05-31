@@ -10,44 +10,57 @@ const upload = require("../utils/multer");
 const auth = require("../utils/auth");
 
 
+// productRatingController.post("/create", upload.single("image"), async (req, res) => {
+//   try {
+//     let obj;
+//     if (req.file) {
+//       let image = await cloudinary.uploader.upload(req.file.path, function (err, result) {
+//         if (err) {
+//           return err;
+//         } else {
+//           return result;
+//         }
+//       });
+//       obj = { ...req.body, image: image.url };
+//     }
+//     const ratingCreated = await Rating.create(obj);
+//     sendResponse(res, 200, "Success", {
+//       message: "Rating created successfully!",
+//       data: ratingCreated,
+//       statusCode:200
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error",
+//     });
+//   }
+// });
+
+
 productRatingController.post("/create", upload.single("image"), async (req, res) => {
   try {
-    let obj;
+    let obj = { ...req.body }; // Start with form data
+
+    // If image is present, upload to Cloudinary
     if (req.file) {
-      let image = await cloudinary.uploader.upload(req.file.path, function (err, result) {
-        if (err) {
-          return err;
-        } else {
-          return result;
-        }
-      });
-      obj = { ...req.body, image: image.url };
+      const image = await cloudinary.uploader.upload(req.file.path);
+      obj.image = image.url; // Add image URL to the object
     }
+
+    // Create the rating document
     const ratingCreated = await Rating.create(obj);
-    
-    const productId = ratingCreated.productId;
-
-    const allRatings = await Rating.find({ productId });
-
-    const totalRatings = allRatings.length;
-    const sumRatings = allRatings.reduce((sum, item) => sum + Number(item.rating), 0);
-
-    const averageRating = (sumRatings / totalRatings).toFixed(1); 
-
-    // ⭐ Update product's rating field
-    await Product.findByIdAndUpdate(productId, {
-      rating: averageRating,
-    });
 
     sendResponse(res, 200, "Success", {
       message: "Rating created successfully!",
       data: ratingCreated,
-      statusCode:200
+      statusCode: 200,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error creating rating:", error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
+      statusCode: 500,
     });
   }
 });
@@ -95,6 +108,27 @@ productRatingController.post("/list", async (req, res) => {
     console.error(error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
+    });
+  }
+});
+
+productRatingController.get("/details/:productId", async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    const ratings = await Rating.find({ productId })
+      .populate("userId", "firstName lastName profilePic") 
+      .sort({ createdAt: -1 }); 
+
+    return sendResponse(res, 200, "Success", {
+      message: "Product ratings fetched successfully.",
+      data: ratings,
+      statusCode: 200,
+    });
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
     });
   }
 });
