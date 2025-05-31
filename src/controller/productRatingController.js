@@ -2,6 +2,7 @@ const express = require("express");
 const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const Rating = require("../model/productRating.Schema");
+const Product = require("../model/product.Schema");
 const productRatingController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
@@ -23,6 +24,21 @@ productRatingController.post("/create", upload.single("image"), async (req, res)
       obj = { ...req.body, image: image.url };
     }
     const ratingCreated = await Rating.create(obj);
+    
+    const productId = ratingCreated.productId;
+
+    const allRatings = await Rating.find({ productId });
+
+    const totalRatings = allRatings.length;
+    const sumRatings = allRatings.reduce((sum, item) => sum + Number(item.rating), 0);
+
+    const averageRating = (sumRatings / totalRatings).toFixed(1); 
+
+    // ⭐ Update product's rating field
+    await Product.findByIdAndUpdate(productId, {
+      rating: averageRating,
+    });
+
     sendResponse(res, 200, "Success", {
       message: "Rating created successfully!",
       data: ratingCreated,
