@@ -12,6 +12,7 @@ const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const auth = require("../utils/auth");
+const {sendNotification} = require("../utils/sendNotification")
 
 userController.post("/send-otp", async (req, res) => {
   try {
@@ -44,7 +45,19 @@ userController.post("/send-otp", async (req, res) => {
       );
       // Store the token in the user object or return it in the response
       user.token = token;
+       const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
+
       user = await User.findByIdAndUpdate(user.id, { token }, { new: true });
+             sendNotification({
+              title: "User registered",
+              subTitle: "A new user registered to the portal.",
+              icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
+              notifyUserId: "admin",
+              category: "User",
+              subCategory: "Register",
+              notifyUser: "Admin",
+              fcmToken: superAdmin.deviceId,
+            });
     } else {
       // Update the existing user's OTP
       user = await User.findByIdAndUpdate(user.id, { phoneOtp }, { new: true });

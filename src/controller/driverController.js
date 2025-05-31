@@ -74,15 +74,17 @@ driverController.post(
         vehicleImage,
         profilePic,
       });
+      const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
       sendNotification({
         icon:newDriver.profilePic,
-        title:"A new driver registered",
+        title:"Driver registered",
         subTitle:`${newDriver.firstName} has registered to the portal`,
         notifyUserId:"Admin",
         category:"Driver",
         subCategory:"Registration",
         notifyUser:"Admin",
-      },req.io)
+        fcmToken: superAdmin.deviceId,
+      })
 
       // Generate JWT token
       const token = jwt.sign(
@@ -150,15 +152,16 @@ driverController.post("/otp-verification", async (req, res) => {
         updatedFields,
         { new: true }
       );
-
+      const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
       sendNotification({
         icon: updatedDriver.profilePic,
-        title: `${updatedDriver.firstName} has verified their phone number`,
+        title: "OTP verified",
         subTitle: `${updatedDriver.firstName} has verified their phone number`,
         notifyUserId: "Admin",
         category: "Driver",
         subCategory: "Verification",
         notifyUser: "Admin",
+        fcmToken: superAdmin.deviceId,
       });
 
       return sendResponse(res, 200, "Success", {
@@ -259,19 +262,28 @@ driverController.post("/resend-otp", async (req, res) => {
 driverController.get("/details/:id", auth, async (req, res) => {
   try {
     const id = req.params.id;
-    const driver = await Driver.findOne({ _id: id });
-    if (driver) {
-      return sendResponse(res, 200, "Success", {
-        message: "Driver details fetched  successfully",
-        data: driver,
-        statusCode: 200,
-      });
-    } else {
+    const driver = await Driver.findOne({ _id: id }).lean();
+
+    if (!driver) {
       return sendResponse(res, 404, "Failed", {
         message: "Driver not found",
         statusCode: 404,
       });
     }
+
+    // Extract non-approved field names
+    const nonApprovedFields = Object.keys(driver).filter(
+      (key) => key.startsWith("is") && key.endsWith("Approved") && driver[key] === false
+    );
+
+    return sendResponse(res, 200, "Success", {
+      message: "Driver details fetched successfully",
+      data: {
+        driverDetails: driver,
+        nonApprovedFields, // Array of field names
+      },
+      statusCode: 200,
+    });
   } catch (error) {
     return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error.",
@@ -414,38 +426,42 @@ driverController.put("/update", auth, upload.fields([
         const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
           new: true, 
         });
+        const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
         if(req.body.profileStatus=="reUploaded"){
           sendNotification({
             icon:updatedUserData.profilePic,
-            title:`${updatedUserData.firstName} has re-uploaded the details`,
-            subTitle:`${updatedUserData.firstName} has re-uploaded the details`,
+            title: "Re Uploaded",
+            subTitle:`${updatedUserData.firstName} has re-uploaded the details.`,
             notifyUserId:"Admin",
             category:"Driver",
             subCategory:"Profile update",
             notifyUser:"Admin",
-          }, req.io)
+            fcmToken: superAdmin.deviceId,
+          })
         }
         if(req.body.profileStatus=="rejected"){
           sendNotification({
             icon:updatedUserData.profilePic,
-            title:`${updatedUserData.firstName} your details has been rejected`,
-            subTitle:`${updatedUserData.firstName} please go through the details once more`,
+            title:"Details rejected",
+            subTitle:`${updatedUserData.firstName} please go through the detail once more.`,
             notifyUserId:updatedUserData._id,
             category:"Driver",
             subCategory:"Profile update",
             notifyUser:"Driver",
-          }, req.io)
+            fcmToken: superAdmin.deviceId,
+          })
         }
         if(req.body.profileStatus=="approved"){
           sendNotification({
             icon:updatedUserData.profilePic,
-            title:`${updatedUserData.firstName} your profile has been approved`,
-            subTitle:`${updatedUserData.firstName} congratulations!! your profile has been approved`,
+            title:"Profile Approved",
+            subTitle:`${updatedUserData.firstName} congratulations!! your profile has been approved.`,
             notifyUserId:updatedUserData._id,
             category:"Driver",
             subCategory:"Profile update",
             notifyUser:"Driver",
-          }, req.io)
+            fcmToken: superAdmin.deviceId,
+          })
         }
         sendResponse(res, 200, "Success", {
           message: "Driver updated successfully!",
