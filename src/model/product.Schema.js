@@ -135,7 +135,9 @@ const productSchema = mongoose.Schema({
   productVariants: [
     {
       variantKey: { type: String },
-      variantValue: [{ type: String }],
+      variantValue: { type: String },
+      variantSecondaryKey: { type: String },
+      variantSecondaryValue: { type: String },
       variantPrice: { type: Number },
       variantDiscountedPrice: { type: Number },
       variantImage: [{ type: String }],

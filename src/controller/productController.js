@@ -152,10 +152,36 @@ productController.get("/details/:id", async (req, res) => {
     .populate("subCategoryId")
      .populate("brandId")
     .populate("zipcodeId");
+    const variantOptions = {};
+
+    product.productVariants.forEach((variant) => {
+      // Primary Variant Key & Value
+      if (variant.variantKey) {
+        if (!variantOptions[variant.variantKey]) {
+          variantOptions[variant.variantKey] = new Set();
+        }
+        variantOptions[variant.variantKey].add(variant.variantValue);
+      }
+  
+      // Secondary Variant Key & Value
+      if (variant.variantSecondaryKey) {
+        if (!variantOptions[variant.variantSecondaryKey]) {
+          variantOptions[variant.variantSecondaryKey] = new Set();
+        }
+        variantOptions[variant.variantSecondaryKey].add(
+          variant.variantSecondaryValue
+        );
+      }
+    });
+  
+    // Convert Set to Array
+    Object.keys(variantOptions).forEach((key) => {
+      variantOptions[key] = [...variantOptions[key]];
+    });
     if (product) {
       return sendResponse(res, 200, "Success", {
         message: "Product details fetched  successfully",
-        data: product,
+        data: {...product.toObject(), variantOptions},
         statusCode: 200,
       });
     } else {
@@ -373,7 +399,7 @@ productController.put("/update-video", upload.single("productVideo"), async (req
 
 productController.post("/add-variant", upload.array("variantImage"), async (req, res) => {
   try {
-    const { id, variantKey, variantValue, variantPrice, variantDiscountedPrice, stockQuantity } = req.body;
+    const { id, variantKey, variantValue, variantPrice, variantDiscountedPrice, stockQuantity, variantSecondaryKey, variantSecondaryValue } = req.body;
     const product = await Product.findById(id);
     if (!product) {
       return sendResponse(res, 404, "Failed", {
@@ -404,7 +430,9 @@ productController.post("/add-variant", upload.array("variantImage"), async (req,
       variantPrice,
       variantDiscountedPrice,
       variantImage:uploadedUrls,
-      stockQuantity
+      stockQuantity,
+      variantSecondaryKey,
+      variantSecondaryValue
     };
 
     product.productVariants.push(variant);
