@@ -270,18 +270,15 @@ driverController.get("/details/:id", auth, async (req, res) => {
         statusCode: 404,
       });
     }
-
-    // Extract non-approved field names
     const nonApprovedFields = Object.keys(driver).filter(
       (key) => key.startsWith("is") && key.endsWith("Approved") && driver[key] === false
     );
 
+    driver.nonApprovedFields = nonApprovedFields;
+
     return sendResponse(res, 200, "Success", {
       message: "Driver details fetched successfully",
-      data: {
-        driverDetails: driver,
-        nonApprovedFields, // Array of field names
-      },
+      data: driver,
       statusCode: 200,
     });
   } catch (error) {
