@@ -247,7 +247,7 @@ venderController.post("/resend-otp", async (req, res) => {
 // });
 
 
-venderController.get("/details/:id", auth, async (req, res) => {
+venderController.get("/details/:id", async (req, res) => {
   try {
     const id = req.params.id;
     const vender = await Vender.findOne({ _id: id }).lean();
@@ -281,7 +281,7 @@ venderController.get("/details/:id", auth, async (req, res) => {
 });
 
 venderController.put(
-  "/update", auth,
+  "/update",
   upload.fields([
     { name: "bussinessLicense", maxCount: 1 },
     { name: "storeLogo", maxCount: 1 },
@@ -371,7 +371,7 @@ venderController.put(
                   category:"Vender",
                   subCategory:"Profile update",
                   notifyUser:"Vender",
-                  fcmToken: superAdmin.deviceId,
+                  fcmToken: updatedUserData.androidDeviceId,
                 })
               }
       if(req.body.profileStatus=="approved"){
@@ -395,7 +395,7 @@ venderController.put(
           category:"Vender",
           subCategory:"Profile update",
           notifyUser:"Vender",
-          fcmToken: superAdmin.deviceId,
+          fcmToken: updatedUserData.androidDeviceId,
         })
       }
       if(req.body.profileStatus=="completed"){
