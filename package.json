@@ -20,6 +20,7 @@
     "express-validator": "^7.2.0",
     "firebase": "^11.6.1",
     "firebase-admin": "^12.5.0",
+    "geolib": "^3.3.4",
     "google-auth-library": "^9.14.1",
     "googleapis": "^144.0.0",
     "http": "^0.0.1-security",

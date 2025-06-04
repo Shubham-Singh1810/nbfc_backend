@@ -57,6 +57,12 @@ const userSchema = mongoose.Schema({
   androidDeviceId: {
       type: String,
   },
+  lat: {
+    type: String,
+  },
+  long: {
+    type: String,
+  },
   cartItems:  [{productId:{ type: String, ref: "Product" },quantity:{ type: Number }}],
   wishListItems: [{ type: String, ref: "Product" }],
 });

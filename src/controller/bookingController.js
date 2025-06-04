@@ -5,6 +5,8 @@ const Booking = require("../model/booking.Schema");
 const User = require("../model/user.Schema");
 const Vender = require("../model/vender.Schema");
 const Product = require("../model/product.Schema");
+const Address = require("../model/address.Schema");
+const Driver = require("../model/driver.Schema");
 const Admin = require("../model/admin.Schema");
 const bookingController = express.Router();
 require("dotenv").config();
@@ -12,6 +14,7 @@ const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const moment = require("moment");
 const auth = require("../utils/auth");
+const geolib = require("geolib");
 const fs = require("fs");
 const path = require("path");
 const {sendNotification} = require("../utils/sendNotification")
@@ -543,26 +546,291 @@ bookingController.put("/mark-not-delivered", async (req, res) => {
 // });
 
 
+// bookingController.put("/mark-all", async (req, res) => {
+//   try {
+//     const { id, productIds, deliveryStatus } = req.body;
+
+//     if (
+//       !id || !productIds || !Array.isArray(productIds) || productIds.length === 0 || !deliveryStatus
+//     ) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "Missing booking ID, product IDs array, or delivery status.",
+//       });
+//     }
+
+//     const allowedStatuses = [
+//       "orderPlaced",
+//       "orderPacked",
+//       "driverAssigned",
+//       "driverAccepted",
+//       "pickedOrder",
+//       "completed",
+//       "cancelled",
+//     ];
+
+//     if (!allowedStatuses.includes(deliveryStatus)) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "Invalid delivery status provided.",
+//       });
+//     }
+
+//     // Update deliveryStatus for all matching products in a single booking
+//     const updatedBooking = await Booking.findOneAndUpdate(
+//       { _id: id },
+//       {
+//         $set: {
+//           "product.$[elem].deliveryStatus": deliveryStatus,
+//         },
+//       },
+//       {
+//         arrayFilters: [{ "elem.productId": { $in: productIds } }],
+//         new: true,
+//       }
+//     );
+//     let isAllProductsMarkedPacked = true;
+//     for(let i = 0; i<updatedBooking.product.length; i++){
+//       if(updatedBooking.product[i].deliveryStatus!="orderPacked"){
+//          isAllProductsMarkedPacked = false;
+//          break;
+//       }
+//     }
+//     if(isAllProductsMarkedPacked){
+//       const approvedDriver = await Driver.find({profileStatus:"approved"})
+
+//     }
+
+//     if (!updatedBooking) {
+//       return sendResponse(res, 404, "Failed", {
+//         message: "Booking or products not found.",
+//         statusCode: 404,
+//       });
+//     }
+
+//     // Send notifications if status is 'orderPacked'
+//     if (deliveryStatus === "orderPacked") {
+//       const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
+//       const userDetails = await User.findOne({ _id: updatedBooking.userId });
+
+//       for (const productId of productIds) {
+//         const productDetails = await Product.findOne({ _id: productId });
+//         const venderDetails = await Vender.findOne({ _id: productDetails.createdBy });
+
+//         // Admin notification
+//         sendNotification({
+//           title: "Order Packed",
+//           subTitle: "Please assign a driver for this booking",
+//           icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
+//           notifyUserId: "admin",
+//           category: "Booking",
+//           subCategory: "Order Packed",
+//           notifyUser: "Admin",
+//           fcmToken: superAdmin?.deviceId,
+//         });
+
+//         // User notification
+//         sendNotification({
+//           title: "Order Packed",
+//           subTitle: "Your order has been packed by the vendor",
+//           icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
+//           notifyUserId: userDetails?._id,
+//           category: "Booking",
+//           subCategory: "Order Packed",
+//           notifyUser: "User",
+//           fcmToken: userDetails?.androidDeviceId,
+//         });
+
+//         // Vendor notification
+//         sendNotification({
+//           title: "Order Packed",
+//           subTitle: "Your order has been marked as packed, driver coming soon",
+//           icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
+//           notifyUserId: venderDetails?._id,
+//           category: "Booking",
+//           subCategory: "Order Packed",
+//           notifyUser: "Vender",
+//           fcmToken: venderDetails?.androidDeviceId,
+//         });
+//       }
+//     }
+
+//     return sendResponse(res, 200, "Success", {
+//       message: "Delivery status updated successfully for selected products.",
+//       data: updatedBooking,
+//       statusCode: 200,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error.",
+//       statusCode: 500,
+//     });
+//   }
+// });
+
+
+// bookingController.put("/mark-all", async (req, res) => {
+//   try {
+//     const { id, productIds, deliveryStatus } = req.body;
+
+//     if (!id || !productIds || !Array.isArray(productIds) || productIds.length === 0 || !deliveryStatus) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "Missing booking ID, product IDs array, or delivery status.",
+//       });
+//     }
+
+//     const allowedStatuses = [
+//       "orderPlaced", "orderPacked", "driverAssigned", "driverAccepted",
+//       "pickedOrder", "completed", "cancelled",
+//     ];
+
+//     if (!allowedStatuses.includes(deliveryStatus)) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "Invalid delivery status provided.",
+//       });
+//     }
+
+//     const updatedBooking = await Booking.findOneAndUpdate(
+//       { _id: id },
+//       {
+//         $set: {
+//           "product.$[elem].deliveryStatus": deliveryStatus,
+//         },
+//       },
+//       {
+//         arrayFilters: [{ "elem.productId": { $in: productIds } }],
+//         new: true,
+//       }
+//     ).lean();
+
+//     if (!updatedBooking) {
+//       return sendResponse(res, 404, "Failed", {
+//         message: "Booking or products not found.",
+//         statusCode: 404,
+//       });
+//     }
+
+//     const isAllProductsMarkedPacked = updatedBooking.product.every(
+//       (p) => p.deliveryStatus === "orderPacked"
+//     );
+
+//     if (isAllProductsMarkedPacked) {
+//       const approvedDrivers = await Driver.find({ profileStatus: "approved" }).lean();
+
+//       const vendorIds = updatedBooking.product.map((p) => p.createdBy);
+//       const vendors = await Vender.find({ _id: { $in: vendorIds } }).lean();
+//       const vendorLocations = vendors.map((v) => {v.lat, v.long});
+
+//       const userAddress = await Address.findById(updatedBooking.userId).lean();
+//       const userLocation = {lat:user.lat, long:user.long};
+
+//       if (!userLocation || !userLocation.lat || !userLocation.long) {
+//         return sendResponse(res, 400, "Failed", {
+//           message: "User delivery location is missing or invalid.",
+//         });
+//       }
+
+//       const allLocations = [...vendorLocations, userLocation];
+//       const avgLat = allLocations.reduce((sum, loc) => sum + loc.lat, 0) / allLocations.length;
+//       const avgLng = allLocations.reduce((sum, loc) => sum + loc.long, 0) / allLocations.length;
+
+//       const maxDistance = 20; // km
+//       const availableDrivers = approvedDrivers.filter((driver) => {
+//         const dx = driver.location.lat - avgLat;
+//         const dy = driver.location.long - avgLng;
+//         const distance = Math.sqrt(dx * dx + dy * dy) * 111; // approx. km
+//         return distance <= maxDistance;
+//       });
+
+//       let assignedDriver = null;
+//       for (const driver of availableDrivers) {
+//         const hasOngoingOrder = await Booking.findOne({
+//           driverId: driver._id,
+//           deliveryStatus: { $in: ["driverAssigned", "driverAccepted", "pickedOrder"] },
+//         });
+//         if (!hasOngoingOrder) {
+//           assignedDriver = driver;
+//           break;
+//         }
+//       }
+
+//       if (assignedDriver) {
+//         await Booking.findByIdAndUpdate(updatedBooking._id, {
+//           driverId: assignedDriver._id,
+//           deliveryStatus: "driverAssigned",
+//         });
+//       }
+//     }
+
+//     if (deliveryStatus === "orderPacked") {
+//       const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
+//       const userDetails = await User.findOne({ _id: updatedBooking.userId });
+
+//       for (const productId of productIds) {
+//         const productDetails = await Product.findOne({ _id: productId });
+//         const venderDetails = await Vender.findOne({ _id: productDetails.createdBy });
+
+//         sendNotification({
+//           title: "Order Packed",
+//           subTitle: "Please assign a driver for this booking",
+//           icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
+//           notifyUserId: "admin",
+//           category: "Booking",
+//           subCategory: "Order Packed",
+//           notifyUser: "Admin",
+//           fcmToken: superAdmin?.deviceId,
+//         });
+
+//         sendNotification({
+//           title: "Order Packed",
+//           subTitle: "Your order has been packed by the vendor",
+//           icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
+//           notifyUserId: userDetails?._id,
+//           category: "Booking",
+//           subCategory: "Order Packed",
+//           notifyUser: "User",
+//           fcmToken: userDetails?.androidDeviceId,
+//         });
+
+//         sendNotification({
+//           title: "Order Packed",
+//           subTitle: "Your order has been marked as packed, driver coming soon",
+//           icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
+//           notifyUserId: venderDetails?._id,
+//           category: "Booking",
+//           subCategory: "Order Packed",
+//           notifyUser: "Vender",
+//           fcmToken: venderDetails?.androidDeviceId,
+//         });
+//       }
+//     }
+
+//     return sendResponse(res, 200, "Success", {
+//       message: "Delivery status updated successfully for selected products.",
+//       data: updatedBooking,
+//       statusCode: 200,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error.",
+//       statusCode: 500,
+//     });
+//   }
+// });
+
 bookingController.put("/mark-all", async (req, res) => {
   try {
     const { id, productIds, deliveryStatus } = req.body;
 
-    if (
-      !id || !productIds || !Array.isArray(productIds) || productIds.length === 0 || !deliveryStatus
-    ) {
+    if (!id || !productIds || !Array.isArray(productIds) || productIds.length === 0 || !deliveryStatus) {
       return sendResponse(res, 400, "Failed", {
         message: "Missing booking ID, product IDs array, or delivery status.",
       });
     }
 
     const allowedStatuses = [
-      "orderPlaced",
-      "orderPacked",
-      "driverAssigned",
-      "driverAccepted",
-      "pickedOrder",
-      "completed",
-      "cancelled",
+      "orderPlaced", "orderPacked", "driverAssigned", "driverAccepted",
+      "pickedOrder", "completed", "cancelled",
     ];
 
     if (!allowedStatuses.includes(deliveryStatus)) {
@@ -571,7 +839,6 @@ bookingController.put("/mark-all", async (req, res) => {
       });
     }
 
-    // Update deliveryStatus for all matching products in a single booking
     const updatedBooking = await Booking.findOneAndUpdate(
       { _id: id },
       {
@@ -583,7 +850,7 @@ bookingController.put("/mark-all", async (req, res) => {
         arrayFilters: [{ "elem.productId": { $in: productIds } }],
         new: true,
       }
-    );
+    ).lean();
 
     if (!updatedBooking) {
       return sendResponse(res, 404, "Failed", {
@@ -592,7 +859,58 @@ bookingController.put("/mark-all", async (req, res) => {
       });
     }
 
-    // Send notifications if status is 'orderPacked'
+    const isAllProductsMarkedPacked = updatedBooking.product.every(
+      (p) => p.deliveryStatus === "orderPacked"
+    );
+
+    if (isAllProductsMarkedPacked) {
+      const approvedDrivers = await Driver.find({ profileStatus: "approved" }).lean();
+
+      const vendorIds = updatedBooking.product.map((p) => p.createdBy);
+      const vendors = await Vender.find({ _id: { $in: vendorIds } }).lean();
+      const vendorPincodes = vendors.map((v) => v.pincode).filter(Boolean);
+
+      const userAddress = await Address.findOne({ userId: updatedBooking.addressId }).lean();
+      const userPincode = userAddress?.pincode;
+
+      if (!userPincode) {
+        return sendResponse(res, 400, "Failed", {
+          message: "User delivery pincode is missing or invalid.",
+        });
+      }
+
+      const relevantPincodes = [...new Set([...vendorPincodes, userPincode])];
+
+      const availableDrivers = await Driver.find({
+        profileStatus: "approved",
+        pincode: { $in: relevantPincodes },
+      }).lean();
+
+      let assignedDriver = null;
+      for (const driver of availableDrivers) {
+        const hasOngoingOrder = await Booking.findOne({
+          "product": {
+            $elemMatch: {
+              driverId: driver._id,
+              deliveryStatus: { $in: ["driverAssigned", "driverAccepted", "pickedOrder"] }
+            }
+          }
+        });
+      
+        if (!hasOngoingOrder) {
+          assignedDriver = driver;
+          break;
+        }
+      }      
+
+      if (assignedDriver) {
+        await Booking.findByIdAndUpdate(updatedBooking._id, {
+          driverId: assignedDriver._id,
+          deliveryStatus: "driverAssigned",
+        });
+      }
+    }
+
     if (deliveryStatus === "orderPacked") {
       const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
       const userDetails = await User.findOne({ _id: updatedBooking.userId });
@@ -601,7 +919,6 @@ bookingController.put("/mark-all", async (req, res) => {
         const productDetails = await Product.findOne({ _id: productId });
         const venderDetails = await Vender.findOne({ _id: productDetails.createdBy });
 
-        // Admin notification
         sendNotification({
           title: "Order Packed",
           subTitle: "Please assign a driver for this booking",
@@ -613,7 +930,6 @@ bookingController.put("/mark-all", async (req, res) => {
           fcmToken: superAdmin?.deviceId,
         });
 
-        // User notification
         sendNotification({
           title: "Order Packed",
           subTitle: "Your order has been packed by the vendor",
@@ -625,7 +941,6 @@ bookingController.put("/mark-all", async (req, res) => {
           fcmToken: userDetails?.androidDeviceId,
         });
 
-        // Vendor notification
         sendNotification({
           title: "Order Packed",
           subTitle: "Your order has been marked as packed, driver coming soon",
@@ -646,13 +961,12 @@ bookingController.put("/mark-all", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    sendResponse(res, 500, "Failed", {
+    return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error.",
       statusCode: 500,
     });
   }
 });
-
 
 
 module.exports = bookingController;

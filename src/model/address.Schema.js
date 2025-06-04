@@ -39,7 +39,7 @@ const addressSchema = mongoose.Schema({
     type: String,
     required: true,
   },
-  fullName:{
+  fullName: {
     type: String,
     required: true,
   },
@@ -47,6 +47,12 @@ const addressSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
+  },
+  lat: {
+    type: String,
+  },
+  long: {
+    type: String,
   },
 });
 
