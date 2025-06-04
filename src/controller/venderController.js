@@ -2,6 +2,7 @@ const express = require("express");
 const { sendResponse, generateOTP } = require("../utils/common");
 require("dotenv").config();
 const Vender = require("../model/vender.Schema");
+const Admin = require("../model/admin.Schema");
 const Product = require("../model/product.Schema");
 const Booking = require("../model/booking.Schema");
 const venderController = express.Router();
@@ -423,7 +424,7 @@ venderController.put(
   }
 );
 
-venderController.delete("/delete/:id", auth, async (req, res) => {
+venderController.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const vender = await Vender.findById(id);
