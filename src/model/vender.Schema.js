@@ -65,6 +65,29 @@ const venderSchema = mongoose.Schema({
       "reUploaded"
     ],
   },
+  wallet: {
+    type: Number,
+    default: 0,
+  },
+  transactionHistory: {
+    type: [
+      {
+        message: { type: String },
+        transactionType: { type: String, enum: ["credit", "debit", "hold"] },
+        amount: { type: Number },
+        date: { type: String },
+      },
+    ],
+    default: [],
+  },
+  totalEarnings: {
+    type: Number,
+    default: 0,
+  },  
+  venderCommision: {
+    type: Number,
+  },
+  
 
 
   // store details

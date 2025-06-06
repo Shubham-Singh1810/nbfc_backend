@@ -3,10 +3,14 @@ const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const orderVerificationController = express.Router();
 const OrderVerification = require("../model/orderVerification.Schema");
+const AdminFund = require("../model/adminFund.Schema");
+const Vender = require("../model/vender.Schema");
+const Driver = require("../model/driver.Schema");
 const Booking = require("../model/booking.Schema");
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
+const moment = require("moment");
 const { sendNotification } = require("../utils/sendNotification");
 const { generateOTP } = require("../utils/common");
 const axios = require("axios");
@@ -89,71 +93,340 @@ orderVerificationController.post("/create", upload.single("image"), async (req, 
 });
 
 
+// orderVerificationController.put("/verify-otp", async (req, res) => {
+//   try {
+//     const { productIdArr, orderId, otp } = req.body;
+//     // Parse and validate productIds
+//     let productIds =  (productIdArr);
+
+//     if (!orderId || !productIds || productIds.length === 0 || !otp) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "Missing order ID, product IDs array, or OTP.",
+//       });
+//     }
+
+//     // Track updated documents
+//     const updatedEntries = await Promise.all(
+//       productIds.map(async (productId) => {
+//         const order = await OrderVerification.findOne({
+//           otp,
+//           productId,
+//           orderId,
+//         });
+
+//         if (order) {
+//           await Booking.findOneAndUpdate(
+//                 {
+//                   _id: orderId,
+//                   "product.productId": productId,
+//                 },
+//                 {
+//                   $set: {
+//                     "product.$.deliveryStatus": "completed",
+//                   },
+//                 },
+//                 { new: true }
+//               );
+//           return await OrderVerification.findByIdAndUpdate(
+//             order._id,
+//             { isOtpVerified: true },
+//             { new: true }
+//           );
+//         }
+
+//         return null;
+//       })
+//     );
+
+//     const verifiedCount = updatedEntries.filter((entry) => entry !== null).length;
+
+//     if (verifiedCount > 0) {
+//       return sendResponse(res, 200, "Success", {
+//         message: `OTP verified successfully for ${verifiedCount} product(s).`,
+//         data: updatedEntries.filter(Boolean),
+//         statusCode: 200,
+//       });
+//     } else {
+//       return sendResponse(res, 404, "Failed", {
+//         message: "Invalid OTP or no matching product entries found.",
+//         statusCode: 404,
+//       });
+//     }
+//   } catch (error) {
+//     console.error("OTP verification failed:", error);
+//     return sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error",
+//       statusCode: 500,
+//     });
+//   }
+// });
+
+
+
+
+
+
+// orderVerificationController.put("/verify-otp", async (req, res) => {
+//   try {
+//     const { productIdArr, orderId, otp } = req.body;
+
+//     if (!orderId || !productIdArr || productIdArr.length === 0 || !otp) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "Missing order ID, product IDs array, or OTP.",
+//       });
+//     }
+
+//     const updatedEntries = await Promise.all(
+//       productIdArr.map(async (productId) => {
+//         const order = await OrderVerification.findOne({
+//           otp,
+//           productId,
+//           orderId,
+//         });
+
+//         if (!order) return null;
+
+//         // Step 1: Update Booking Product's delivery status
+//         await Booking.findOneAndUpdate(
+//           {
+//             _id: orderId,
+//             "product.productId": productId,
+//           },
+//           {
+//             $set: {
+//               "product.$.deliveryStatus": "completed",
+//             },
+//           },
+//           { new: true }
+//         );
+
+//         // Step 2: Mark OTP as verified
+//         await OrderVerification.findByIdAndUpdate(order._id, {
+//           isOtpVerified: true,
+//         });
+
+//         // Step 3: Fund Distribution Logic
+//         const booking = await Booking.findById(orderId).populate("product.productId");
+
+//         const matchedProduct = booking.product.find(
+//           (p) => String(p.productId._id) === String(productId)
+//         );
+
+//         if (!matchedProduct) return null;
+
+//         const productInfo = matchedProduct.productId;
+//         const price = parseFloat(matchedProduct.totalPrice || 0);
+
+//         const vendorId = productInfo.createdBy;
+//         const driverId = matchedProduct.driverId;
+
+//         // 🟡 Fetch commission settings from AdminFund
+//         const adminFund = await AdminFund.findOne();
+//         if (!adminFund) return null;
+
+//         const vendorPercentage = parseFloat(adminFund.venderCommision || 90); // default 90%
+//         const driverPercentageOfAdmin = parseFloat(adminFund.driverCommision || 5); // default 3%
+
+//         // 🧮 Calculate commission shares
+//         const adminPercentage = 100 - vendorPercentage;
+
+//         const vendorAmount = (price * vendorPercentage) / 100;
+//         const adminAmount = (price * adminPercentage) / 100;
+//         const driverAmount = (adminAmount * driverPercentageOfAdmin) / 100;
+//         const adminFinalAmount = adminAmount - driverAmount;
+
+//         // Update Admin Wallet
+//         adminFund.wallet = (
+//           parseFloat(adminFund.wallet || 0) + adminFinalAmount
+//         ).toFixed(2);
+//         adminFund.transactionHistory = adminFund.transactionHistory || [];
+//         adminFund.transactionHistory.push({
+//           message: `Admin received ₹${adminFinalAmount} after paying driver ₹${driverAmount} for product ${productId}`,
+//           transactionType: "credit",
+//           amount: adminFinalAmount,
+//           date: moment().format("YYYY-MM-DD HH:mm:ss"),
+//         });
+//         await adminFund.save();
+
+//         // Update Vendor Wallet
+//         if (vendorId) {
+//           const vendor = await Vender.findById(vendorId);
+//           if (vendor) {
+//             vendor.wallet = (
+//               parseFloat(vendor.wallet || 0) + vendorAmount
+//             ).toFixed(2);
+//             vendor.transactionHistory = vendor.transactionHistory || [];
+//             vendor.transactionHistory.push({
+//               message: `Amount credited for delivered product ${productId}`,
+//               transactionType: "credit",
+//               amount: vendorAmount,
+//               date: moment().format("YYYY-MM-DD HH:mm:ss"),
+//             });
+//             await vendor.save();
+//           }
+//         }
+
+//         // Update Driver Wallet
+//         if (driverId) {
+//           const driver = await Driver.findById(driverId);
+//           if (driver) {
+//             driver.wallet = (
+//               parseFloat(driver.wallet || 0) + driverAmount
+//             ).toFixed(2);
+//             driver.transactionHistory = driver.transactionHistory || [];
+//             driver.transactionHistory.push({
+//               message: `Amount credited from admin commission for delivery of product ${productId}`,
+//               transactionType: "credit",
+//               amount: driverAmount,
+//               date: moment().format("YYYY-MM-DD HH:mm:ss"),
+//             });
+//             await driver.save();
+//           }
+//         }
+
+//         return order;
+//       })
+//     );
+
+//     const verifiedCount = updatedEntries.filter(Boolean).length;
+
+//     if (verifiedCount > 0) {
+//       return sendResponse(res, 200, "Success", {
+//         message: `OTP verified and payment distributed for ${verifiedCount} product(s).`,
+//         data: updatedEntries.filter(Boolean),
+//         statusCode: 200,
+//       });
+//     } else {
+//       return sendResponse(res, 404, "Failed", {
+//         message: "Invalid OTP or no matching entries.",
+//         statusCode: 404,
+//       });
+//     }
+//   } catch (error) {
+//     console.error("OTP verification failed:", error);
+//     return sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error",
+//       statusCode: 500,
+//     });
+//   }
+// });
+
+
 orderVerificationController.put("/verify-otp", async (req, res) => {
   try {
     const { productIdArr, orderId, otp } = req.body;
-console.log(req.body)
-    // Parse and validate productIds
-    let productIds =  (productIdArr);
 
-    if (!orderId || !productIds || productIds.length === 0 || !otp) {
+    if (!orderId || !productIdArr || productIdArr.length === 0 || !otp) {
       return sendResponse(res, 400, "Failed", {
         message: "Missing order ID, product IDs array, or OTP.",
       });
     }
 
-    // Track updated documents
     const updatedEntries = await Promise.all(
-      productIds.map(async (productId) => {
-        const order = await OrderVerification.findOne({
-          otp,
-          productId,
-          orderId,
-        });
+      productIdArr.map(async (productId) => {
+        const order = await OrderVerification.findOne({ otp, productId, orderId });
+        if (!order) return null;
 
-        if (order) {
-          await Booking.findOneAndUpdate(
-                {
-                  _id: orderId,
-                  "product.productId": productId,
-                },
-                {
-                  $set: {
-                    "product.$.deliveryStatus": "completed",
-                  },
-                },
-                { new: true }
-              );
-          return await OrderVerification.findByIdAndUpdate(
-            order._id,
-            { isOtpVerified: true },
-            { new: true }
-          );
+        await Booking.findOneAndUpdate(
+          { _id: orderId, "product.productId": productId },
+          { $set: { "product.$.deliveryStatus": "completed" } },
+          { new: true }
+        );
+
+        await OrderVerification.findByIdAndUpdate(order._id, { isOtpVerified: true });
+
+        const booking = await Booking.findById(orderId).populate("product.productId");
+        const matchedProduct = booking.product.find(
+          (p) => String(p.productId._id) === String(productId)
+        );
+        if (!matchedProduct) return null;
+
+        const productInfo = matchedProduct.productId;
+        const price = parseFloat(matchedProduct.totalPrice || 0);
+
+        const vendorId = productInfo.createdBy;
+        const driverId = matchedProduct.driverId;
+
+        const adminFund = await AdminFund.findOne();
+        const venderDetails = await Vender.findOne({_id:vendorId});
+        if (!adminFund) return null;
+
+        const vendorPercentage = parseFloat(venderDetails.venderCommision || adminFund.venderCommision);
+        const driverCommision = parseFloat(adminFund.driverCommision || 5);
+        const adminPercentage = 100 - vendorPercentage;
+
+        const vendorAmount = (price * vendorPercentage) / 100;
+        const adminAmount = (price * adminPercentage) / 100;
+        const driverAmount = driverCommision * 10
+        const adminWalletAmount = adminFund.wallet - (vendorAmount + driverAmount);
+
+        // Admin Wallet Update
+        adminFund.wallet = adminWalletAmount
+        adminFund.totalEarnings = adminFund.totalEarnings - (vendorAmount + driverAmount);
+        adminFund.transactionHistory = adminFund.transactionHistory || [];
+        adminFund.transactionHistory.push({
+          message: `Admin shared ₹${vendorAmount.toFixed(2)} to vendor and  ₹${driverAmount.toFixed(2)} to driver for order ${orderId}`,
+          transactionType: "debit",
+          date: moment().format("YYYY-MM-DD HH:mm:ss"),
+        });
+        await adminFund.save();
+
+        // Vendor Wallet Update
+        if (vendorId) {
+          const vendor = await Vender.findById(vendorId);
+          if (vendor) {
+            vendor.wallet = (
+              parseFloat(vendor.wallet || 0) + vendorAmount
+            ).toFixed(2);
+            vendor.transactionHistory = vendor.transactionHistory || [];
+            vendor.transactionHistory.push({
+              message: `₹${vendorAmount.toFixed(2)} credited for delivered product ${productId}`,
+              transactionType: "credit",
+              amount: vendorAmount.toFixed(2),
+              date: moment().format("YYYY-MM-DD HH:mm:ss"),
+            });
+            await vendor.save();
+          }
         }
 
-        return null;
+        // Driver Wallet Update
+        if (driverId) {
+          const driver = await Driver.findById(driverId);
+          if (driver) {
+            driver.wallet = (
+              parseFloat(driver.wallet || 0) + driverAmount
+            ).toFixed(2);
+            driver.transactionHistory = driver.transactionHistory || [];
+            driver.transactionHistory.push({
+              message: `₹${driverAmount.toFixed(2)} credited for delivering product ${productId}`,
+              transactionType: "credit",
+              amount: driverAmount.toFixed(2),
+              date: moment().format("YYYY-MM-DD HH:mm:ss"),
+            });
+            await driver.save();
+          }
+        }
+
+        return order;
       })
     );
 
-    const verifiedCount = updatedEntries.filter((entry) => entry !== null).length;
+    const verifiedCount = updatedEntries.filter(Boolean).length;
 
     if (verifiedCount > 0) {
       return sendResponse(res, 200, "Success", {
-        message: `OTP verified successfully for ${verifiedCount} product(s).`,
+        message: `OTP verified and payment distributed for ${verifiedCount} product(s).`,
         data: updatedEntries.filter(Boolean),
-        statusCode: 200,
       });
     } else {
       return sendResponse(res, 404, "Failed", {
-        message: "Invalid OTP or no matching product entries found.",
-        statusCode: 404,
+        message: "Invalid OTP or no matching entries.",
       });
     }
   } catch (error) {
     console.error("OTP verification failed:", error);
     return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
-      statusCode: 500,
     });
   }
 });

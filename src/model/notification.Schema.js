@@ -26,7 +26,7 @@ const notificationSchema = mongoose.Schema({
     default: false,
   },
   notifyUser:{
-    type: String, enum: ["User", "Vender", "Driver", "Admin"],
+    type: String, enum: ["User", "Vender", "Driver", "Admin", "AdminFund"],
   },
 });
 

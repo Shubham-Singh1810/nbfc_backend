@@ -138,6 +138,25 @@ const driverSchema = mongoose.Schema({
   long: {
     type: String,
   },
+  wallet: {
+    type: Number,
+    default: 0,
+  },
+  transactionHistory: {
+    type: [
+      {
+        message: { type: String },
+        transactionType: { type: String, enum: ["credit", "debit", "hold"] },
+        amount: { type: Number },
+        date: { type: String },
+      },
+    ],
+    default: [],
+  },
+  totalEarnings: {
+    type: Number,
+    default: 0,
+  }, 
   androidDeviceId: {
     type: String,
   },
