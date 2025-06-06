@@ -16,6 +16,7 @@ const { generateOTP } = require("../utils/common");
 const axios = require("axios");
 const { json } = require("stream/consumers");
 
+
 orderVerificationController.post(
   "/create",
   upload.single("image"),
@@ -104,219 +105,6 @@ orderVerificationController.post(
   }
 );
 
-// orderVerificationController.put("/verify-otp", async (req, res) => {
-//   try {
-//     const { productIdArr, orderId, otp } = req.body;
-//     // Parse and validate productIds
-//     let productIds =  (productIdArr);
-
-//     if (!orderId || !productIds || productIds.length === 0 || !otp) {
-//       return sendResponse(res, 400, "Failed", {
-//         message: "Missing order ID, product IDs array, or OTP.",
-//       });
-//     }
-
-//     // Track updated documents
-//     const updatedEntries = await Promise.all(
-//       productIds.map(async (productId) => {
-//         const order = await OrderVerification.findOne({
-//           otp,
-//           productId,
-//           orderId,
-//         });
-
-//         if (order) {
-//           await Booking.findOneAndUpdate(
-//                 {
-//                   _id: orderId,
-//                   "product.productId": productId,
-//                 },
-//                 {
-//                   $set: {
-//                     "product.$.deliveryStatus": "completed",
-//                   },
-//                 },
-//                 { new: true }
-//               );
-//           return await OrderVerification.findByIdAndUpdate(
-//             order._id,
-//             { isOtpVerified: true },
-//             { new: true }
-//           );
-//         }
-
-//         return null;
-//       })
-//     );
-
-//     const verifiedCount = updatedEntries.filter((entry) => entry !== null).length;
-
-//     if (verifiedCount > 0) {
-//       return sendResponse(res, 200, "Success", {
-//         message: `OTP verified successfully for ${verifiedCount} product(s).`,
-//         data: updatedEntries.filter(Boolean),
-//         statusCode: 200,
-//       });
-//     } else {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "Invalid OTP or no matching product entries found.",
-//         statusCode: 404,
-//       });
-//     }
-//   } catch (error) {
-//     console.error("OTP verification failed:", error);
-//     return sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error",
-//       statusCode: 500,
-//     });
-//   }
-// });
-
-// orderVerificationController.put("/verify-otp", async (req, res) => {
-//   try {
-//     const { productIdArr, orderId, otp } = req.body;
-
-//     if (!orderId || !productIdArr || productIdArr.length === 0 || !otp) {
-//       return sendResponse(res, 400, "Failed", {
-//         message: "Missing order ID, product IDs array, or OTP.",
-//       });
-//     }
-
-//     const updatedEntries = await Promise.all(
-//       productIdArr.map(async (productId) => {
-//         const order = await OrderVerification.findOne({
-//           otp,
-//           productId,
-//           orderId,
-//         });
-
-//         if (!order) return null;
-
-//         // Step 1: Update Booking Product's delivery status
-//         await Booking.findOneAndUpdate(
-//           {
-//             _id: orderId,
-//             "product.productId": productId,
-//           },
-//           {
-//             $set: {
-//               "product.$.deliveryStatus": "completed",
-//             },
-//           },
-//           { new: true }
-//         );
-
-//         // Step 2: Mark OTP as verified
-//         await OrderVerification.findByIdAndUpdate(order._id, {
-//           isOtpVerified: true,
-//         });
-
-//         // Step 3: Fund Distribution Logic
-//         const booking = await Booking.findById(orderId).populate("product.productId");
-
-//         const matchedProduct = booking.product.find(
-//           (p) => String(p.productId._id) === String(productId)
-//         );
-
-//         if (!matchedProduct) return null;
-
-//         const productInfo = matchedProduct.productId;
-//         const price = parseFloat(matchedProduct.totalPrice || 0);
-
-//         const vendorId = productInfo.createdBy;
-//         const driverId = matchedProduct.driverId;
-
-//         // 🟡 Fetch commission settings from AdminFund
-//         const adminFund = await AdminFund.findOne();
-//         if (!adminFund) return null;
-
-//         const vendorPercentage = parseFloat(adminFund.venderCommision || 90); // default 90%
-//         const driverPercentageOfAdmin = parseFloat(adminFund.driverCommision || 5); // default 3%
-
-//         // 🧮 Calculate commission shares
-//         const adminPercentage = 100 - vendorPercentage;
-
-//         const vendorAmount = (price * vendorPercentage) / 100;
-//         const adminAmount = (price * adminPercentage) / 100;
-//         const driverAmount = (adminAmount * driverPercentageOfAdmin) / 100;
-//         const adminFinalAmount = adminAmount - driverAmount;
-
-//         // Update Admin Wallet
-//         adminFund.wallet = (
-//           parseFloat(adminFund.wallet || 0) + adminFinalAmount
-//         ).toFixed(2);
-//         adminFund.transactionHistory = adminFund.transactionHistory || [];
-//         adminFund.transactionHistory.push({
-//           message: `Admin received ₹${adminFinalAmount} after paying driver ₹${driverAmount} for product ${productId}`,
-//           transactionType: "credit",
-//           amount: adminFinalAmount,
-//           date: moment().format("YYYY-MM-DD HH:mm:ss"),
-//         });
-//         await adminFund.save();
-
-//         // Update Vendor Wallet
-//         if (vendorId) {
-//           const vendor = await Vender.findById(vendorId);
-//           if (vendor) {
-//             vendor.wallet = (
-//               parseFloat(vendor.wallet || 0) + vendorAmount
-//             ).toFixed(2);
-//             vendor.transactionHistory = vendor.transactionHistory || [];
-//             vendor.transactionHistory.push({
-//               message: `Amount credited for delivered product ${productId}`,
-//               transactionType: "credit",
-//               amount: vendorAmount,
-//               date: moment().format("YYYY-MM-DD HH:mm:ss"),
-//             });
-//             await vendor.save();
-//           }
-//         }
-
-//         // Update Driver Wallet
-//         if (driverId) {
-//           const driver = await Driver.findById(driverId);
-//           if (driver) {
-//             driver.wallet = (
-//               parseFloat(driver.wallet || 0) + driverAmount
-//             ).toFixed(2);
-//             driver.transactionHistory = driver.transactionHistory || [];
-//             driver.transactionHistory.push({
-//               message: `Amount credited from admin commission for delivery of product ${productId}`,
-//               transactionType: "credit",
-//               amount: driverAmount,
-//               date: moment().format("YYYY-MM-DD HH:mm:ss"),
-//             });
-//             await driver.save();
-//           }
-//         }
-
-//         return order;
-//       })
-//     );
-
-//     const verifiedCount = updatedEntries.filter(Boolean).length;
-
-//     if (verifiedCount > 0) {
-//       return sendResponse(res, 200, "Success", {
-//         message: `OTP verified and payment distributed for ${verifiedCount} product(s).`,
-//         data: updatedEntries.filter(Boolean),
-//         statusCode: 200,
-//       });
-//     } else {
-//       return sendResponse(res, 404, "Failed", {
-//         message: "Invalid OTP or no matching entries.",
-//         statusCode: 404,
-//       });
-//     }
-//   } catch (error) {
-//     console.error("OTP verification failed:", error);
-//     return sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error",
-//       statusCode: 500,
-//     });
-//   }
-// });
-
 orderVerificationController.put("/verify-otp", async (req, res) => {
   try {
     const { productIdArr, orderId, otp } = req.body;
@@ -326,14 +114,11 @@ orderVerificationController.put("/verify-otp", async (req, res) => {
         message: "Missing order ID, product IDs array, or OTP.",
       });
     }
-    let driverDetails ;
+
+    let driverDetails;
     const updatedEntries = await Promise.all(
       productIdArr.map(async (productId) => {
-        const order = await OrderVerification.findOne({
-          otp,
-          productId,
-          orderId,
-        });
+        const order = await OrderVerification.findOne({ otp, productId, orderId });
         if (!order) return null;
 
         await Booking.findOneAndUpdate(
@@ -342,13 +127,9 @@ orderVerificationController.put("/verify-otp", async (req, res) => {
           { new: true }
         );
 
-        await OrderVerification.findByIdAndUpdate(order._id, {
-          isOtpVerified: true,
-        });
+        await OrderVerification.findByIdAndUpdate(order._id, { isOtpVerified: true });
 
-        const booking = await Booking.findById(orderId).populate(
-          "product.productId"
-        );
+        const booking = await Booking.findById(orderId).populate("product.productId");
         const matchedProduct = booking.product.find(
           (p) => String(p.productId._id) === String(productId)
         );
@@ -356,94 +137,87 @@ orderVerificationController.put("/verify-otp", async (req, res) => {
 
         const productInfo = matchedProduct.productId;
         const price = parseFloat(matchedProduct.totalPrice || 0);
-
         const vendorId = productInfo.createdBy;
         const driverId = matchedProduct.driverId;
-        driverDetails = await Driver.findOne({_id:driverId})
 
+        driverDetails = await Driver.findById(driverId);
         const adminFund = await AdminFund.findOne();
-        const venderDetails = await Vender.findOne({ _id: vendorId });
+        const venderDetails = await Vender.findById(vendorId);
         if (!adminFund) return null;
 
-        const vendorPercentage = parseFloat(
-          venderDetails.venderCommision || adminFund.venderCommision
-        );
-        
+        const vendorPercentage = parseFloat(venderDetails?.venderCommision || adminFund.venderCommision || 0);
         const adminPercentage = 100 - vendorPercentage;
 
         const vendorAmount = (price * vendorPercentage) / 100;
         const adminAmount = (price * adminPercentage) / 100;
 
-        const adminWalletAmount = adminFund.wallet - vendorAmount;
-
-        // Admin Wallet Update
-        adminFund.wallet = adminWalletAmount;
-        adminFund.totalEarnings = adminFund.totalEarnings - vendorAmount;
+        // Admin Wallet Update (debit vendor share)
+        adminFund.wallet = parseFloat(adminFund.wallet || 0) - vendorAmount;
+        adminFund.totalEarnings = parseFloat(adminFund.totalEarnings || 0) - vendorAmount;
         adminFund.transactionHistory = adminFund.transactionHistory || [];
         adminFund.transactionHistory.push({
-          message: `Admin shared ₹${vendorAmount.toFixed(
-            2
-          )} to vendor for order ID ${orderId}`,
+          message: `Admin shared ₹${vendorAmount.toFixed(2)} to vendor for order ID ${orderId}`,
           transactionType: "debit",
           date: moment().format("YYYY-MM-DD HH:mm:ss"),
         });
         await adminFund.save();
 
         // Vendor Wallet Update
-        if (vendorId) {
-          if (venderDetails) {
-            venderDetails.wallet = (
-              parseFloat(vendorAmount.wallet || 0) + vendorAmount
-            ).toFixed(2);
-            venderDetails.transactionHistory =
-              vendorAmount.transactionHistory || [];
-            venderDetails.totalEarnings =
-              venderDetails.totalEarnings + vendorAmount;
-            venderDetails.transactionHistory.push({
-              message: `₹${vendorAmount.toFixed(
-                2
-              )} credited for delivered product ID ${productId}`,
-              transactionType: "credit",
-              amount: vendorAmount.toFixed(2),
-              date: moment().format("YYYY-MM-DD HH:mm:ss"),
-            });
-            await venderDetails.save();
-          }
+        if (venderDetails) {
+          venderDetails.wallet = (
+            parseFloat(venderDetails.wallet || 0) + vendorAmount
+          ).toFixed(2);
+          venderDetails.totalEarnings = (
+            parseFloat(venderDetails.totalEarnings || 0) + vendorAmount
+          ).toFixed(2);
+          venderDetails.transactionHistory = venderDetails.transactionHistory || [];
+          venderDetails.transactionHistory.push({
+            message: `₹${vendorAmount.toFixed(2)} credited for delivered product ID ${productId}`,
+            transactionType: "credit",
+            amount: vendorAmount.toFixed(2),
+            date: moment().format("YYYY-MM-DD HH:mm:ss"),
+          });
+          await venderDetails.save();
         }
 
         return order;
       })
     );
-    const adminFund = await AdminFund.findOne();
-    const driverAmount =  adminFund?.driverCommission * 10
 
-    driverDetails?.wallet = driverDetails?.wallet + driverAmount;
-    driverDetails?.totalEarnings = driverDetails?.totalEarnings + driverAmount;
-     driverDetails.transactionHistory.push({
-              message: `₹${driverAmount.toFixed(
-                2
-              )} has been credited for delivering the order ID ${orderId}`,
-              transactionType: "credit",
-              
-              date: moment().format("YYYY-MM-DD HH:mm:ss"),
-            });
-    await driverDetails.save();
-
-    // Admin Wallet Update
-        adminFund.wallet = adminFund?.wallet-driverAmount;
-        adminFund.totalEarnings = adminFund.totalEarnings - driverAmount;
-        adminFund.transactionHistory = adminFund.transactionHistory || [];
-        adminFund.transactionHistory.push({
-          message: `Admin shared ₹${driverAmount.toFixed(
-            2
-          )} to driver for order ID ${orderId}`,
-          transactionType: "debit",
-          date: moment().format("YYYY-MM-DD HH:mm:ss"),
-        });
-        await adminFund.save();
-   
     const verifiedCount = updatedEntries.filter(Boolean).length;
-    
+
+    if (driverDetails && verifiedCount > 0) {
+      const adminFund = await AdminFund.findOne();
+
+      
+      const driverAmount = adminFund.driverCommision * 10;
+
+      const currentWallet = parseFloat(driverDetails.wallet || 0);
+      const currentEarnings = parseFloat(driverDetails.totalEarnings || 0);
+
+      driverDetails.wallet = currentWallet + driverAmount;
+      driverDetails.totalEarnings = currentEarnings + driverAmount;
+
+      driverDetails.transactionHistory = driverDetails.transactionHistory || [];
+      driverDetails.transactionHistory.push({
+        message: `₹${driverAmount.toFixed(2)} has been credited for delivering order ID ${orderId}`,
+        transactionType: "credit",
+        date: moment().format("YYYY-MM-DD HH:mm:ss"),
+      });
+      await driverDetails.save();
+
+      // Admin Wallet Update (debit driver share)
+      adminFund.wallet = parseFloat(adminFund.wallet || 0) - driverAmount;
+      adminFund.totalEarnings = parseFloat(adminFund.totalEarnings || 0) - driverAmount;
+      adminFund.transactionHistory = adminFund.transactionHistory || [];
+      adminFund.transactionHistory.push({
+        message: `Admin shared ₹${driverAmount.toFixed(2)} to driver for order ID ${orderId}`,
+        transactionType: "debit",
+        date: moment().format("YYYY-MM-DD HH:mm:ss"),
+      });
+      await adminFund.save();
+    }
+
     if (verifiedCount > 0) {
       return sendResponse(res, 200, "Success", {
         message: `OTP verified and payment distributed for ${verifiedCount} product(s).`,
@@ -461,5 +235,6 @@ orderVerificationController.put("/verify-otp", async (req, res) => {
     });
   }
 });
+
 
 module.exports = orderVerificationController;
