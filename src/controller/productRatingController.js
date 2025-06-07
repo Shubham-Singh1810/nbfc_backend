@@ -50,8 +50,6 @@ productRatingController.post("/create", upload.single("image"), async (req, res)
   }
 });
 
-
-
 productRatingController.post("/list", async (req, res) => {
   try {
     const {

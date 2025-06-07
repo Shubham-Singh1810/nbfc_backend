@@ -24,6 +24,7 @@ supportController.post("/add-contact-query", async (req, res) => {
     });
   }
 });
+
 supportController.post("/list-contact-query", async (req, res) => {
   try {
     const {
@@ -62,6 +63,7 @@ supportController.post("/list-contact-query", async (req, res) => {
     });
   }
 });
+
 supportController.get("/details", async (req, res) => {
   try {
     const supportDetails = await Support.findOne({});
@@ -78,6 +80,7 @@ supportController.get("/details", async (req, res) => {
     });
   }
 });
+
 supportController.post("/add-details", async (req, res) => {
   try {
     const supportDetails = await Support.create(req.body);
@@ -94,6 +97,7 @@ supportController.post("/add-details", async (req, res) => {
     });
   }
 });
+
 supportController.put("/update-details", async (req, res) => {
   try {
     const id = req.body._id;
@@ -121,6 +125,7 @@ supportController.put("/update-details", async (req, res) => {
     });
   }
 });
+
 supportController.get("/privacy-policy", async (req, res) => {
   try {
     const supportDetails = await Support.findOne({});
@@ -151,6 +156,7 @@ supportController.post("/create-faq", async (req, res) => {
     });
   }
 });
+
 supportController.put("/update-faq", async (req, res) => {
   try {
     const id = req.body._id;
@@ -178,6 +184,7 @@ supportController.put("/update-faq", async (req, res) => {
     });
   }
 });
+
 supportController.post("/list-faq", async (req, res) => {
   try {
     const {
@@ -216,6 +223,7 @@ supportController.post("/list-faq", async (req, res) => {
     });
   }
 });
+
 supportController.delete("/delete-faq/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -256,4 +264,6 @@ supportController.post("/create", async (req, res) => {
     });
   }
 });
+
+
 module.exports = supportController;

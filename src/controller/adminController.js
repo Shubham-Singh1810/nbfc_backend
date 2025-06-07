@@ -23,6 +23,7 @@ adminController.post("/create", async (req, res) => {
     });
   }
 });
+
 adminController.put("/update", async (req, res) => {
   try {
     const AdminData = await Admin.findByIdAndUpdate(req?.body?._id, req.body, {
@@ -41,6 +42,7 @@ adminController.put("/update", async (req, res) => {
     });
   }
 });
+
 adminController.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -145,4 +147,6 @@ adminController.post("/list", async (req, res) => {
     });
   }
 });
+
+
 module.exports = adminController;

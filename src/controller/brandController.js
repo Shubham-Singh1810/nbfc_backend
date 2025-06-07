@@ -7,8 +7,6 @@ require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 
-
-
 brandController.post("/create", upload.single("image"), async (req, res) => {
   try {
     let obj;
@@ -36,7 +34,6 @@ brandController.post("/create", upload.single("image"), async (req, res) => {
     });
   }
 });
-
 
 brandController.post("/list", async (req, res) => {
   try {
@@ -74,7 +71,6 @@ brandController.post("/list", async (req, res) => {
     });
   }
 });
-
 
 brandController.put("/update", upload.single("image"), async (req, res) => {
   try {
@@ -118,7 +114,6 @@ brandController.put("/update", upload.single("image"), async (req, res) => {
   }
 });
 
-
 brandController.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -151,7 +146,6 @@ brandController.delete("/delete/:id", async (req, res) => {
     });
   }
 });
-
 
 brandController.get("/details/:id", async (req, res) => {
   try {

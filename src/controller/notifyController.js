@@ -33,7 +33,7 @@ notifyController.post("/create", upload.single("icon"), async (req, res) => {
         statusCode: 500
       });
     }
-  });
+});
 
 notifyController.post("/list", async (req, res) => {
   try {
