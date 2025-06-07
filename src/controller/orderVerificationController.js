@@ -191,7 +191,7 @@ orderVerificationController.put("/verify-otp", async (req, res) => {
       const adminFund = await AdminFund.findOne();
 
       
-      const driverAmount = adminFund.driverCommision * 10;
+      const driverAmount = adminFund.driverCommision * 1;
 
       const currentWallet = parseFloat(driverDetails.wallet || 0);
       const currentEarnings = parseFloat(driverDetails.totalEarnings || 0);
