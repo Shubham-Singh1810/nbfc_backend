@@ -31,6 +31,7 @@ const notifyController = require("./controller/notifyController");
 const productFaqController = require("./controller/productFaqController");
 const orderVerificationController = require("./controller/orderVerificationController");
 const variantController = require("./controller/variantController");
+const adminFundController = require("./controller/adminFundController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -63,6 +64,7 @@ router.use("/notify", notifyController);
 router.use("/productFaq", productFaqController);
 router.use("/order-verification", orderVerificationController);
 router.use("/variant", variantController);
+router.use("/admin-fund", adminFundController);
 
 
 module.exports = router;

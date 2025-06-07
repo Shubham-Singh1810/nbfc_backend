@@ -15,6 +15,7 @@ const adminFundSchema = mongoose.Schema({
   transactionHistory: [
     {
       message: { type: String },
+      amount : {type:Number},
       transactionType: { type: String },
       date: { type: String },
     }

@@ -159,6 +159,7 @@ orderVerificationController.put("/verify-otp", async (req, res) => {
           message: `Admin shared ₹${vendorAmount.toFixed(2)} to vendor for order ID ${orderId}`,
           transactionType: "debit",
           date: moment().format("YYYY-MM-DD HH:mm:ss"),
+          amount:vendorAmount
         });
         await adminFund.save();
 
@@ -174,7 +175,7 @@ orderVerificationController.put("/verify-otp", async (req, res) => {
           venderDetails.transactionHistory.push({
             message: `₹${vendorAmount.toFixed(2)} credited for delivered product ID ${productId}`,
             transactionType: "credit",
-            amount: vendorAmount.toFixed(2),
+            amount: vendorAmount,
             date: moment().format("YYYY-MM-DD HH:mm:ss"),
           });
           await venderDetails.save();
@@ -203,6 +204,7 @@ orderVerificationController.put("/verify-otp", async (req, res) => {
         message: `₹${driverAmount.toFixed(2)} has been credited for delivering order ID ${orderId}`,
         transactionType: "credit",
         date: moment().format("YYYY-MM-DD HH:mm:ss"),
+        amount:driverAmount
       });
       await driverDetails.save();
 
@@ -214,6 +216,7 @@ orderVerificationController.put("/verify-otp", async (req, res) => {
         message: `Admin shared ₹${driverAmount.toFixed(2)} to driver for order ID ${orderId}`,
         transactionType: "debit",
         date: moment().format("YYYY-MM-DD HH:mm:ss"),
+        amount:driverAmount
       });
       await adminFund.save();
     }

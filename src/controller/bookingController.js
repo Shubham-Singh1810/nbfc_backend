@@ -214,6 +214,7 @@ bookingController.post("/create", async (req, res) => {
       message: `Order amount ₹${totalAmount} credited to admin wallet for user ${updatedUser.firstName}`,
       transactionType: "credit",
       date: moment().format("YYYY-MM-DD HH:mm:ss"),
+      amount:totalAmount
     };
 
     adminFund.wallet = updatedWalletAmount;
