@@ -28,27 +28,19 @@ withdrawRequestController.post("/list", async (req, res) => {
   try {
     const {
       searchKey = "",
-      status,
       pageNo = 1,
       pageCount = 10,
-      sortByField,
-      sortByOrder,
     } = req.body;
     const query = {};
-    if (status) query.status = status;
     if (searchKey) query.name = { $regex: searchKey, $options: "i" };
-    const sortField = sortByField || "createdAt";
-    const sortOrder = sortByOrder === "asc" ? 1 : -1;
-    const sortOption = { [sortField]: sortOrder };
-    const zipcodeList = await Zipcode.find(query)
-      .sort(sortOption)
+    const withdrawRequestList = await WithdrawRequest.find(query)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
-    const totalCount = await Zipcode.countDocuments({});
-    const activeCount = await Zipcode.countDocuments({ status: true });
+    const totalCount = await WithdrawRequest.countDocuments({});
+    const activeCount = await WithdrawRequest.countDocuments({ status: true });
     sendResponse(res, 200, "Success", {
-      message: "Zipcode retrieved successfully!",
-      data: zipcodeList,
+      message: "Withdraw requests retrieved successfully!",
+      data: withdrawRequestList,
       documentCount: {
         totalCount,
         activeCount,
@@ -65,43 +57,55 @@ withdrawRequestController.post("/list", async (req, res) => {
   }
 });
 
-withdrawRequestController.put("/update", async (req, res) => {
-  try {
-    const id = req.body._id;
-    const zipcode = await Zipcode.findById(id);
-    if (!zipcode) {
-      return sendResponse(res, 404, "Failed", {
-        message: "Zipcode not found",
-        statusCode: 403,
+withdrawRequestController.put("/update", upload.single("image"), async (req, res) => {
+    try {
+      const id = req.body._id;
+      const withdrawRequest = await WithdrawRequest.findById(id);
+      if (!withdrawRequest) {
+        return sendResponse(res, 404, "Failed", {
+          message: "WithdrawRequest not found",
+          statusCode: 403
+        });
+      }
+      let updatedData = { ...req.body };
+      if (req.file) {
+        // Delete the old image from Cloudinary
+        if (withdrawRequest.image) {
+          const publicId = withdrawRequest.image.split("/").pop().split(".")[0];
+          await cloudinary.uploader.destroy(publicId, (error, result) => {
+            if (error) {
+              console.error("Error deleting old image from Cloudinary:", error);
+            } else {
+              console.log("Old image deleted from Cloudinary:", result);
+            }
+          });
+        }
+        const image = await cloudinary.uploader.upload(req.file.path);
+        updatedData.image = image.url;
+      }
+      const updatedwithdrawRequest = await WithdrawRequest.findByIdAndUpdate(id, updatedData, {
+        new: true, // Return the updated document
+      });
+      sendResponse(res, 200, "Success", {
+        message: "WithdrawRequest updated successfully!",
+        data: updatedwithdrawRequest,
+        statusCode: 200
+      });
+    } catch (error) {
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+        statusCode: 500
       });
     }
-    const updatedZipcode = await Zipcode.findByIdAndUpdate(
-      id,
-      req.body,
-      {
-        new: true, // Return the updated document
-      }
-    );
-    sendResponse(res, 200, "Success", {
-      message: "Zipcode updated successfully!",
-      data: updatedZipcode,
-      statusCode: 200,
-    });
-  } catch (error) {
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-      statusCode: 500,
-    });
-  }
-});
+  });
 
 withdrawRequestController.get("/details/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const zipcodeDetails = await Zipcode.findOne({ _id: id });
+    const withdrawRequestDetails = await WithdrawRequest.findOne({ _id: id });
     sendResponse(res, 200, "Success", {
-      message: "Zipcode retrived successfully!",
-      data: { zipcodeDetails },
+      message: "WithdrawRequest retrived successfully!",
+      data: { withdrawRequestDetails },
       statusCode: 200,
     });
   } catch (error) {
