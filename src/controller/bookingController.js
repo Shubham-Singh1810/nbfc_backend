@@ -1028,44 +1028,44 @@ bookingController.put("/mark-all", async (req, res) => {
     );
 
     if (isAllProductsMarkedPacked) {
-      const approvedDrivers = await Driver.find({ profileStatus: "approved" }).lean();
+      const userAddress = await Address.findOne({ _id: updatedBooking.addressId }).lean();
+      const userCoordinates = [userAddress?.lat, userAddress.long];
 
-      const vendorIds = updatedBooking.product.map((p) => p.createdBy);
-      const vendors = await Vender.find({ _id: { $in: vendorIds } }).lean();
-      const vendorPincodes = vendors.map((v) => v.pincode).filter(Boolean);
-
-      const userAddress = await Address.findOne({ userId: updatedBooking.addressId }).lean();
-      const userPincode = userAddress?.pincode;
-
-      if (!userPincode) {
+      if (!userCoordinates || userCoordinates.length !== 2) {
         return sendResponse(res, 400, "Failed", {
-          message: "User delivery pincode is missing or invalid.",
+          message: "User delivery location (lat/lng) is missing or invalid.",
         });
       }
 
-      const relevantPincodes = [...new Set([...vendorPincodes, userPincode])];
-
-      const availableDrivers = await Driver.find({
+      const nearbyDrivers = await Driver.find({
         profileStatus: "approved",
-        pincode: { $in: relevantPincodes },
+        location: {
+          $near: {
+            $geometry: {
+              type: "Point",
+              coordinates: userCoordinates,
+            },
+            $maxDistance: 10000, // 10 km radius
+          },
+        },
       }).lean();
 
       let assignedDriver = null;
-      for (const driver of availableDrivers) {
+      for (const driver of nearbyDrivers) {
         const hasOngoingOrder = await Booking.findOne({
           "product": {
             $elemMatch: {
               driverId: driver._id,
-              deliveryStatus: { $in: ["driverAssigned", "driverAccepted", "pickedOrder"] }
-            }
-          }
+              deliveryStatus: { $in: ["driverAssigned", "driverAccepted", "pickedOrder"] },
+            },
+          },
         });
-      
+
         if (!hasOngoingOrder) {
           assignedDriver = driver;
           break;
         }
-      }      
+      }
 
       if (assignedDriver) {
         await Booking.findByIdAndUpdate(updatedBooking._id, {
@@ -1131,6 +1131,7 @@ bookingController.put("/mark-all", async (req, res) => {
     });
   }
 });
+
 
 
 module.exports = bookingController;
