@@ -71,10 +71,24 @@ withdrawRequestController.post("/list", async (req, res) => {
         userDetails: userDetails || null,
       });
     }
-
+    const totalDriverRequestCount = await WithdrawRequest.countDocuments({userType:"Driver"});
+    const completedDriverRequestCount = await WithdrawRequest.countDocuments({userType:"Driver", status:"completed"});
+    const cancelledDriverRequestCount = await WithdrawRequest.countDocuments({userType:"Driver", status:"cancelled"});
+    const totalVendorRequestCount = await WithdrawRequest.countDocuments({userType:"Vender"});
+    const completedVendorRequestCount = await WithdrawRequest.countDocuments({userType:"Vender", status:"completed"});
+    const cancelledVendorRequestCount = await WithdrawRequest.countDocuments({userType:"Vender", status:"cancelled"});
+    
     sendResponse(res, 200, "Success", {
       message: "Withdraw requests retrieved successfully!",
       data: finalList,
+      documentCount:{
+        totalDriverRequestCount,
+        completedDriverRequestCount,
+        cancelledDriverRequestCount,
+        totalVendorRequestCount,
+        completedVendorRequestCount,
+        cancelledVendorRequestCount
+      },
       statusCode: 200,
     });
 
