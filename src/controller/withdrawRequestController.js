@@ -32,24 +32,19 @@ withdrawRequestController.post("/list", async (req, res) => {
       pageCount = 10,
       userId,
       status,
+      userType,
     } = req.body;
     const query = {};
     if (searchKey) query.message = { $regex: searchKey, $options: "i" };
-    if (userId) query.userId = { userId};
-    if (status) query.status = { status};
+    if (userId) query.userId = userId;
+    if (status) query.status = status;
+    if (userType) query.userType = userType;    
     const withdrawRequestList = await WithdrawRequest.find(query)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
-    const totalCount = await WithdrawRequest.countDocuments({});
-    const activeCount = await WithdrawRequest.countDocuments({ status: true });
     sendResponse(res, 200, "Success", {
       message: "Withdraw requests retrieved successfully!",
       data: withdrawRequestList,
-      documentCount: {
-        totalCount,
-        activeCount,
-        inactiveCount: totalCount - activeCount,
-      },
       statusCode: 200,
     });
   } catch (error) {
