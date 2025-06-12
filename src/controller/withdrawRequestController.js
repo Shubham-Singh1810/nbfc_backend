@@ -2,6 +2,8 @@ const express = require("express");
 const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const WithdrawRequest = require("../model/withdrawRequest.Schema");
+const Driver = require("../model/driver.Schema");
+const Vender = require("../model/vender.Schema");
 const withdrawRequestController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
@@ -34,19 +36,48 @@ withdrawRequestController.post("/list", async (req, res) => {
       status,
       userType,
     } = req.body;
+
     const query = {};
     if (searchKey) query.message = { $regex: searchKey, $options: "i" };
     if (userId) query.userId = userId;
     if (status) query.status = status;
-    if (userType) query.userType = userType;    
-    const withdrawRequestList = await WithdrawRequest.find(query)
+    if (userType) query.userType = userType;
+
+    const withdrawRequests = await WithdrawRequest.find(query)
+      .sort({ createdAt: -1 })
       .limit(parseInt(pageCount))
-      .skip(parseInt(pageNo - 1) * parseInt(pageCount));
+      .skip((parseInt(pageNo) - 1) * parseInt(pageCount));
+
+    // ab har withdrawRequest ka user detail fetch karenge
+    const finalList = [];
+
+    for (const withdraw of withdrawRequests) {
+      let userDetails = null;
+
+      if (withdraw.userType === "Driver") {
+        userDetails = await Driver.findOne(
+          { _id: withdraw.userId },
+          { firstName: 1,lastName:1, phone: 1, profilePic: 1 }
+        );
+      } else if (withdraw.userType === "Vender") {
+        userDetails = await Vender.findOne(
+          { _id: withdraw.userId },
+          { firstName: 1,lastName:1, phone: 1, profilePic: 1 }
+        );
+      }
+
+      finalList.push({
+        ...withdraw.toObject(),
+        userDetails: userDetails || null,
+      });
+    }
+
     sendResponse(res, 200, "Success", {
       message: "Withdraw requests retrieved successfully!",
-      data: withdrawRequestList,
+      data: finalList,
       statusCode: 200,
     });
+
   } catch (error) {
     console.error(error);
     sendResponse(res, 500, "Failed", {
@@ -56,14 +87,18 @@ withdrawRequestController.post("/list", async (req, res) => {
   }
 });
 
-withdrawRequestController.put("/update", upload.single("image"), async (req, res) => {
+
+withdrawRequestController.put(
+  "/update",
+  upload.single("image"),
+  async (req, res) => {
     try {
       const id = req.body._id;
       const withdrawRequest = await WithdrawRequest.findById(id);
       if (!withdrawRequest) {
         return sendResponse(res, 404, "Failed", {
           message: "WithdrawRequest not found",
-          statusCode: 403
+          statusCode: 403,
         });
       }
       let updatedData = { ...req.body };
@@ -82,21 +117,26 @@ withdrawRequestController.put("/update", upload.single("image"), async (req, res
         const image = await cloudinary.uploader.upload(req.file.path);
         updatedData.image = image.url;
       }
-      const updatedwithdrawRequest = await WithdrawRequest.findByIdAndUpdate(id, updatedData, {
-        new: true, // Return the updated document
-      });
+      const updatedwithdrawRequest = await WithdrawRequest.findByIdAndUpdate(
+        id,
+        updatedData,
+        {
+          new: true, // Return the updated document
+        }
+      );
       sendResponse(res, 200, "Success", {
         message: "WithdrawRequest updated successfully!",
         data: updatedwithdrawRequest,
-        statusCode: 200
+        statusCode: 200,
       });
     } catch (error) {
       sendResponse(res, 500, "Failed", {
         message: error.message || "Internal server error",
-        statusCode: 500
+        statusCode: 500,
       });
     }
-  });
+  }
+);
 
 withdrawRequestController.get("/details/:id", async (req, res) => {
   try {
