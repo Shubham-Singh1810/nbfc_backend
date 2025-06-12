@@ -31,10 +31,12 @@ withdrawRequestController.post("/list", async (req, res) => {
       pageNo = 1,
       pageCount = 10,
       userId,
+      status,
     } = req.body;
     const query = {};
     if (searchKey) query.message = { $regex: searchKey, $options: "i" };
     if (userId) query.userId = { userId};
+    if (status) query.status = { status};
     const withdrawRequestList = await WithdrawRequest.find(query)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
