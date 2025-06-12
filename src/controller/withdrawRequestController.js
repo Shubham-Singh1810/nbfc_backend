@@ -30,9 +30,11 @@ withdrawRequestController.post("/list", async (req, res) => {
       searchKey = "",
       pageNo = 1,
       pageCount = 10,
+      userId,
     } = req.body;
     const query = {};
-    if (searchKey) query.name = { $regex: searchKey, $options: "i" };
+    if (searchKey) query.message = { $regex: searchKey, $options: "i" };
+    if (userId) query.userId = { userId};
     const withdrawRequestList = await WithdrawRequest.find(query)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
