@@ -3,6 +3,7 @@ const { sendResponse, generateOTP } = require("../utils/common");
 require("dotenv").config();
 const Driver = require("../model/driver.Schema");
 const Booking = require("../model/booking.Schema");
+const Admin = require("../model/admin.Schema");
 const driverController = express.Router();
 const axios = require("axios");
 const moment = require("moment");
