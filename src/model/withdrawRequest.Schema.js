@@ -28,6 +28,9 @@ const withdrawRequestSchema = mongoose.Schema({
     default: "pending",
       enum: ["pending", "completed", "cancelled"],
   },
+  rejectReason:{
+    type:String
+  },
   image: {
     type: String,
   }
