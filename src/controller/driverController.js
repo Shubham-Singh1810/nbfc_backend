@@ -260,7 +260,7 @@ driverController.post("/resend-otp", async (req, res) => {
   }
 });
 
-driverController.get("/details/:id", auth, async (req, res) => {
+driverController.get("/details/:id", async (req, res) => {
   try {
     const id = req.params.id;
     const driver = await Driver.findOne({ _id: id }).lean();
