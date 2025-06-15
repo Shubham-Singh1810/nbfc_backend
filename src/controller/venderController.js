@@ -86,6 +86,8 @@ venderController.post("/sign-up", upload.single("profilePic"), async (req, res) 
         process.env.AUTHKEY_SENDER_ID
       }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
     );
+    const io = req.io;
+      io.emit("new-vendor-registered", updatedVender);
 
     if (otpResponse?.status == "200") {
       return sendResponse(res, 200, "Success", {
@@ -128,6 +130,8 @@ venderController.post("/otp-verification", async (req, res) => {
               notifyUser:"Admin",
               fcmToken: superAdmin.deviceId,
             })
+            const io = req.io;
+      io.emit("vendor-updated", updatedVender);
       return sendResponse(res, 200, "Success", {
         message: "Otp verified successfully",
         data: updatedVender,
@@ -384,6 +388,8 @@ venderController.put(
           fcmToken: superAdmin.deviceId,
         })
       }
+       const io = req.io;
+      io.emit("vendor-updated", updatedUserData);
       sendResponse(res, 200, "Success", {
         message: "Vendor updated successfully!",
         data: updatedUserData,

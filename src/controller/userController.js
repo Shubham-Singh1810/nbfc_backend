@@ -2,6 +2,7 @@ const express = require("express");
 const { sendResponse, generateOTP } = require("../utils/common");
 require("dotenv").config();
 const User = require("../model/user.Schema");
+const Admin = require("../model/admin.Schema");
 const Product = require("../model/product.Schema");
 const Category = require("../model/category.Schema");
 const SubCategory = require("../model/subCategory.Schema");
@@ -12,7 +13,7 @@ const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const auth = require("../utils/auth");
-const {sendNotification} = require("../utils/sendNotification")
+const { sendNotification } = require("../utils/sendNotification");
 
 userController.post("/send-otp", async (req, res) => {
   try {
@@ -45,19 +46,23 @@ userController.post("/send-otp", async (req, res) => {
       );
       // Store the token in the user object or return it in the response
       user.token = token;
-       const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
+      const superAdmin = await Admin.findOne({
+        role: "680e3c4dd3f86cb24e34f6a6",
+      });
 
       user = await User.findByIdAndUpdate(user.id, { token }, { new: true });
-             sendNotification({
-              title: "User registered",
-              subTitle: "A new user registered to the portal.",
-              icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
-              notifyUserId: "admin",
-              category: "User",
-              subCategory: "Register",
-              notifyUser: "Admin",
-              fcmToken: superAdmin.deviceId,
-            });
+      sendNotification({
+        title: "User registered",
+        subTitle: "A new user registered to the portal.",
+        icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
+        notifyUserId: "admin",
+        category: "User",
+        subCategory: "Register",
+        notifyUser: "Admin",
+        fcmToken: superAdmin.deviceId,
+      });
+      const io = req.io;
+      io.emit("new-user-registered", user);
     } else {
       // Update the existing user's OTP
       user = await User.findByIdAndUpdate(user.id, { phoneOtp }, { new: true });
@@ -306,7 +311,7 @@ userController.get("/details/:id", auth, async (req, res) => {
   }
 });
 
-userController.post("/list", auth, async (req, res) => {
+userController.post("/list", async (req, res) => {
   try {
     const {
       searchKey = "",
@@ -319,7 +324,12 @@ userController.post("/list", auth, async (req, res) => {
 
     const query = {};
     if (status) query.status = status;
-    if (searchKey) query.name = { $regex: searchKey, $options: "i" };
+    if (searchKey) {
+      query.$or = [
+        { firstName: { $regex: searchKey, $options: "i" } },
+        { lastName: { $regex: searchKey, $options: "i" } },
+      ];
+    }
 
     // Construct sorting object
     const sortField = sortByField || "createdAt";
@@ -331,14 +341,6 @@ userController.post("/list", auth, async (req, res) => {
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
-    // .populate({
-    //   path: "product",
-    //   select: "name description",
-    // })
-    // .populate({
-    //   path: "createdBy",
-    //   select: "name",
-    // });
     const totalCount = await User.countDocuments({});
     const activeCount = await User.countDocuments({ status: true });
     sendResponse(res, 200, "Success", {
@@ -656,48 +658,49 @@ userController.get("/wishlist/:userId", auth, async (req, res) => {
   }
 });
 
-userController.put("/update", auth, upload.single("profilePic"), async (req, res) => {
-  try {
-    const id = req.body.id;
-    const userData = await User.findOne({_id: id});
-    if (!userData) {
-      return sendResponse(res, 404, "Failed", {
-        message: "User not found",
+userController.put(
+  "/update",
+  auth,
+  upload.single("profilePic"),
+  async (req, res) => {
+    try {
+      const id = req.body.id;
+      const userData = await User.findOne({ _id: id });
+      if (!userData) {
+        return sendResponse(res, 404, "Failed", {
+          message: "User not found",
+        });
+      }
+
+      let updatedData = { ...req.body };
+
+      if (req.file) {
+        const profilePic = await cloudinary.uploader.upload(req.file.path);
+        updatedData.profilePic = profilePic.url;
+      }
+      updatedData.profileStatus = "completed";
+      const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
+        new: true, // Return the updated document
+      });
+
+      const io = req.io;
+      io.emit("user-updated", updatedUser);
+
+      sendResponse(res, 200, "Success", {
+        message: "User updated successfully!",
+        data: updatedUser,
+        statusCode: 200,
+      });
+    } catch (error) {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
       });
     }
-
-    let updatedData = { ...req.body };
-
-    if (req.file) {
-      const profilePic = await cloudinary.uploader.upload(req.file.path);
-      updatedData.profilePic = profilePic.url;
-    }
-    updatedData.profileStatus = "completed";
-    const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
-      new: true, // Return the updated document
-    });
-
-    // ✅ Emit the event after updating
-    req.io.emit("userUpdated", {
-      message: "User profile updated",
-      userId: updatedUser._id,
-      updatedData: updatedUser,
-    });
-
-    sendResponse(res, 200, "Success", {
-      message: "User updated successfully!",
-      data: updatedUser,
-      statusCode: 200,
-    });
-  } catch (error) {
-    console.error(error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-    });
   }
-});
+);
 
-userController.post("/home-details",  async (req, res) => {
+userController.post("/home-details", async (req, res) => {
   try {
     const homeCategory = await Category.find({});
     const bestSellerSubCategory = await SubCategory.find({});
@@ -752,7 +755,9 @@ userController.post("/remove-all-from-cart/:id", auth, async (req, res) => {
       $pull: { cartItems: { productId } },
     });
 
-    return sendResponse(res, 200, "Success", { message: "Product removed from cart" });
+    return sendResponse(res, 200, "Success", {
+      message: "Product removed from cart",
+    });
   } catch (error) {
     console.error(error);
     return sendResponse(res, 500, "Failed", {
@@ -761,5 +766,27 @@ userController.post("/remove-all-from-cart/:id", auth, async (req, res) => {
   }
 });
 
+userController.delete("/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) {
+      return sendResponse(res, 404, "Failed", {
+        message: "User not found",
+        statusCode:400
+      });
+    }
+    await User.findByIdAndDelete(id);
+    sendResponse(res, 200, "Success", {
+      message: "User deleted successfully!",
+      statusCode:200
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
 
 module.exports = userController;

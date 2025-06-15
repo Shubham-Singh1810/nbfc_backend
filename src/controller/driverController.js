@@ -75,17 +75,19 @@ driverController.post(
         vehicleImage,
         profilePic,
       });
-      const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
+      const superAdmin = await Admin.findOne({
+        role: "680e3c4dd3f86cb24e34f6a6",
+      });
       sendNotification({
-        icon:newDriver.profilePic,
-        title:"Driver registered",
-        subTitle:`${newDriver.firstName} has registered to the portal`,
-        notifyUserId:"Admin",
-        category:"Driver",
-        subCategory:"Registration",
-        notifyUser:"Admin",
+        icon: newDriver.profilePic,
+        title: "Driver registered",
+        subTitle: `${newDriver.firstName} has registered to the portal`,
+        notifyUserId: "Admin",
+        category: "Driver",
+        subCategory: "Registration",
+        notifyUser: "Admin",
         fcmToken: superAdmin.deviceId,
-      })
+      });
 
       // Generate JWT token
       const token = jwt.sign(
@@ -112,7 +114,8 @@ driverController.post(
           process.env.AUTHKEY_SENDER_ID
         }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
       );
-
+      const io = req.io;
+      io.emit("new-driver-registered", updatedDriver);
       if (otpResponse?.status == "200") {
         return sendResponse(res, 200, "Success", {
           message: "OTP sent successfully",
@@ -153,7 +156,9 @@ driverController.post("/otp-verification", async (req, res) => {
         updatedFields,
         { new: true }
       );
-      const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
+      const superAdmin = await Admin.findOne({
+        role: "680e3c4dd3f86cb24e34f6a6",
+      });
       sendNotification({
         icon: updatedDriver.profilePic,
         title: "OTP verified",
@@ -164,7 +169,8 @@ driverController.post("/otp-verification", async (req, res) => {
         notifyUser: "Admin",
         fcmToken: superAdmin.deviceId,
       });
-
+      const io = req.io;
+      io.emit("driver-updated", updatedDriver);
       return sendResponse(res, 200, "Success", {
         message: "Otp verified successfully",
         data: updatedDriver,
@@ -272,7 +278,10 @@ driverController.get("/details/:id", async (req, res) => {
       });
     }
     const nonApprovedFields = Object.keys(driver).filter(
-      (key) => key.startsWith("is") && key.endsWith("Approved") && driver[key] === false
+      (key) =>
+        key.startsWith("is") &&
+        key.endsWith("Approved") &&
+        driver[key] === false
     );
 
     driver.nonApprovedFields = nonApprovedFields;
@@ -290,7 +299,7 @@ driverController.get("/details/:id", async (req, res) => {
   }
 });
 
-driverController.post("/list",  async (req, res) => {
+driverController.post("/list", async (req, res) => {
   try {
     const {
       searchKey = "",
@@ -377,7 +386,10 @@ driverController.delete("/delete/:id", auth, async (req, res) => {
   }
 });
 
-driverController.put("/update", auth, upload.fields([
+driverController.put(
+  "/update",
+  
+  upload.fields([
     { name: "dlFrontImage", maxCount: 1 },
     { name: "dlBackImage", maxCount: 1 },
     { name: "profilePic", maxCount: 1 },
@@ -392,94 +404,94 @@ driverController.put("/update", auth, upload.fields([
           message: "Driver not found",
         });
       }
-      let updateData = {...req.body}
-      if(req.file || req.files){
-      
+      let updateData = { ...req.body };
+      if (req.file || req.files) {
         if (req.files["dlFrontImage"]) {
           let image = await cloudinary.uploader.upload(
             req.files["dlFrontImage"][0].path
           );
-          updateData = {...req.body, dlFrontImage: image.url};
+          updateData = { ...req.body, dlFrontImage: image.url };
         }
-  
+
         if (req.files["dlBackImage"]) {
           let image = await cloudinary.uploader.upload(
             req.files["dlBackImage"][0].path
           );
-          updateData = {...req.body, dlBackImage: image.url};
+          updateData = { ...req.body, dlBackImage: image.url };
         }
         if (req.files["profilePic"]) {
           let image = await cloudinary.uploader.upload(
             req.files["profilePic"][0].path
           );
-          updateData = {...req.body, profilePic: image.url};
+          updateData = { ...req.body, profilePic: image.url };
         }
         if (req.files["vehicleImage"]) {
           let image = await cloudinary.uploader.upload(
             req.files["vehicleImage"][0].path
           );
-          updateData = {...req.body, vehicleImage: image.url};
+          updateData = { ...req.body, vehicleImage: image.url };
         }
-        
+
         const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
-          new: true, 
+          new: true,
         });
-        const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
-        if(req.body.profileStatus=="reUploaded"){
+        const superAdmin = await Admin.findOne({
+          role: "680e3c4dd3f86cb24e34f6a6",
+        });
+        if (req.body.profileStatus == "reUploaded") {
           sendNotification({
-            icon:updatedUserData.profilePic,
+            icon: updatedUserData.profilePic,
             title: "Re Uploaded",
-            subTitle:`${updatedUserData.firstName} has re-uploaded the details.`,
-            notifyUserId:"Admin",
-            category:"Driver",
-            subCategory:"Profile update",
-            notifyUser:"Admin",
+            subTitle: `${updatedUserData.firstName} has re-uploaded the details.`,
+            notifyUserId: "Admin",
+            category: "Driver",
+            subCategory: "Profile update",
+            notifyUser: "Admin",
             fcmToken: superAdmin.deviceId,
-          })
+          });
         }
-        if(req.body.profileStatus=="rejected"){
+        if (req.body.profileStatus == "rejected") {
           sendNotification({
-            icon:updatedUserData.profilePic,
-            title:"Details rejected",
-            subTitle:`${updatedUserData.firstName} please go through the detail once more.`,
-            notifyUserId:updatedUserData._id,
-            category:"Driver",
-            subCategory:"Profile update",
-            notifyUser:"Driver",
+            icon: updatedUserData.profilePic,
+            title: "Details rejected",
+            subTitle: `${updatedUserData.firstName} please go through the detail once more.`,
+            notifyUserId: updatedUserData._id,
+            category: "Driver",
+            subCategory: "Profile update",
+            notifyUser: "Driver",
             fcmToken: superAdmin.deviceId,
-          })
+          });
         }
-        if(req.body.profileStatus=="approved"){
+        if (req.body.profileStatus == "approved") {
           sendNotification({
-            icon:updatedUserData.profilePic,
-            title:"Profile Approved",
-            subTitle:`${updatedUserData.firstName} congratulations!! your profile has been approved.`,
-            notifyUserId:updatedUserData._id,
-            category:"Driver",
-            subCategory:"Profile update",
-            notifyUser:"Driver",
+            icon: updatedUserData.profilePic,
+            title: "Profile Approved",
+            subTitle: `${updatedUserData.firstName} congratulations!! your profile has been approved.`,
+            notifyUserId: updatedUserData._id,
+            category: "Driver",
+            subCategory: "Profile update",
+            notifyUser: "Driver",
             fcmToken: superAdmin.deviceId,
-          })
+          });
         }
+        const io = req.io;
+        io.emit("driver-updated", updatedUserData);
         sendResponse(res, 200, "Success", {
           message: "Driver updated successfully!",
           data: updatedUserData,
           statusCode: 200,
         });
-      }
-      else{
+      } else {
         const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
-          new: true, 
-        });
-  
-        sendResponse(res, 200, "Success", {
-          message: "Driver updated successfully!",
-          data: updatedUserData,
-          statusCode: 200,
+          new: true,
         });
 
+        sendResponse(res, 200, "Success", {
+          message: "Driver updated successfully!",
+          data: updatedUserData,
+          statusCode: 200,
+        });
       }
-      
     } catch (error) {
       console.error(error);
       sendResponse(res, 500, "Failed", {
@@ -488,18 +500,25 @@ driverController.put("/update", auth, upload.fields([
     }
   }
 );
- 
+
 driverController.put("/assign-products", async (req, res) => {
   try {
-    const { id, productIds, deliveryStatus, driverId, expectedDeliveryDate } = req.body;
+    const { id, productIds, deliveryStatus, driverId, expectedDeliveryDate } =
+      req.body;
 
     // Validate input
     if (
-      !id || !productIds || !Array.isArray(productIds) || productIds.length === 0 ||
-      !deliveryStatus || !driverId || !expectedDeliveryDate
+      !id ||
+      !productIds ||
+      !Array.isArray(productIds) ||
+      productIds.length === 0 ||
+      !deliveryStatus ||
+      !driverId ||
+      !expectedDeliveryDate
     ) {
       return sendResponse(res, 400, "Failed", {
-        message: "Missing booking ID, product IDs array, delivery status, driver ID, or expected delivery date.",
+        message:
+          "Missing booking ID, product IDs array, delivery status, driver ID, or expected delivery date.",
       });
     }
 
@@ -510,8 +529,13 @@ driverController.put("/assign-products", async (req, res) => {
     }
 
     const allowedStatuses = [
-      "orderPlaced", "orderPacked", "driverAssigned", "driverAccepted",
-      "pickedOrder", "completed", "cancelled"
+      "orderPlaced",
+      "orderPacked",
+      "driverAssigned",
+      "driverAccepted",
+      "pickedOrder",
+      "completed",
+      "cancelled",
     ];
 
     if (!allowedStatuses.includes(deliveryStatus)) {
@@ -530,7 +554,9 @@ driverController.put("/assign-products", async (req, res) => {
         },
       },
       {
-        arrayFilters: [{ "elem.productId": { $in: productIds.map(id => id.toString()) } }],
+        arrayFilters: [
+          { "elem.productId": { $in: productIds.map((id) => id.toString()) } },
+        ],
         new: true,
       }
     );
@@ -542,7 +568,8 @@ driverController.put("/assign-products", async (req, res) => {
     }
 
     return sendResponse(res, 200, "Success", {
-      message: "Driver assigned, expected delivery date, and delivery status updated successfully.",
+      message:
+        "Driver assigned, expected delivery date, and delivery status updated successfully.",
       data: updatedBooking,
       statusCode: 200,
     });
@@ -648,95 +675,99 @@ driverController.get("/assigned-products/:driverId", async (req, res) => {
   }
 });
 
-driverController.get("/assigned-products-user-wise/:driverId", async (req, res) => {
-  try {
-    const { driverId } = req.params;
+driverController.get(
+  "/assigned-products-user-wise/:driverId",
+  async (req, res) => {
+    try {
+      const { driverId } = req.params;
 
-    const orders = await Booking.find({
-      "product.driverId": driverId,
-      "product.deliveryStatus": "driverAssigned"
-    })
-      .populate({
-        path: "product.productId",
-        populate: {
-          path: "createdBy",
-          model: "Vender",
-        },
+      const orders = await Booking.find({
+        "product.driverId": driverId,
+        "product.deliveryStatus": "driverAssigned",
       })
-      .populate("product.driverId")
-      .populate({
-        path: "userId",
-        select: "-cartItems",
-      })
-      .populate("addressId");
+        .populate({
+          path: "product.productId",
+          populate: {
+            path: "createdBy",
+            model: "Vender",
+          },
+        })
+        .populate("product.driverId")
+        .populate({
+          path: "userId",
+          select: "-cartItems",
+        })
+        .populate("addressId");
 
-    const result = orders.map(order => {
-      // vendor wise grouping inside each booking
-      const vendorMap = new Map();
+      const result = orders
+        .map((order) => {
+          // vendor wise grouping inside each booking
+          const vendorMap = new Map();
 
-      // order.product.forEach(prod => {
-      //   if (
-      //     prod.driverId &&
-      //     prod.driverId._id.toString() === driverId &&
-      //     prod.deliveryStatus === "driverAssigned"
-      //   ) {
-      //     const vendorId = prod.productId.createdBy._id.toString();
+          // order.product.forEach(prod => {
+          //   if (
+          //     prod.driverId &&
+          //     prod.driverId._id.toString() === driverId &&
+          //     prod.deliveryStatus === "driverAssigned"
+          //   ) {
+          //     const vendorId = prod.productId.createdBy._id.toString();
 
-      //     if (!vendorMap.has(vendorId)) {
-      //       vendorMap.set(vendorId, {
-      //         vendorDetails: prod.productId.createdBy,
-      //         products: [],
-      //       });
-      //     }
+          //     if (!vendorMap.has(vendorId)) {
+          //       vendorMap.set(vendorId, {
+          //         vendorDetails: prod.productId.createdBy,
+          //         products: [],
+          //       });
+          //     }
 
-      //     vendorMap.get(vendorId).products.push(prod);
-      //   }
-      // });
+          //     vendorMap.get(vendorId).products.push(prod);
+          //   }
+          // });
 
-      order.product.forEach(prod => {
-        if (
-          prod.driverId &&
-          prod.driverId._id.toString() === driverId &&
-          prod.deliveryStatus === "driverAssigned"
-        ) {
-          const vendorId = prod.productId?.createdBy?._id?.toString();
-      
-          if (!vendorId) return; // skip if product or vendor is missing
-      
-          if (!vendorMap.has(vendorId)) {
-            vendorMap.set(vendorId, {
-              vendorDetails: prod.productId.createdBy,
-              products: [],
-            });
-          }
-      
-          vendorMap.get(vendorId).products.push(prod);
-        }
-      });      
+          order.product.forEach((prod) => {
+            if (
+              prod.driverId &&
+              prod.driverId._id.toString() === driverId &&
+              prod.deliveryStatus === "driverAssigned"
+            ) {
+              const vendorId = prod.productId?.createdBy?._id?.toString();
 
-      return {
-        _id: order._id,
-        userId: order.userId,
-        addressId: order.addressId,
-        vendorProducts: Array.from(vendorMap.values()),
-        assignedAt: order.updatedAt
-      };
-    }).filter(order => order.vendorProducts.length > 0); // only orders with assigned products
+              if (!vendorId) return; // skip if product or vendor is missing
 
-    return sendResponse(res, 200, "Success", {
-      message: "Assigned products fetched vendor-wise successfully",
-      data: result,
-      statusCode: 200,
-    });
+              if (!vendorMap.has(vendorId)) {
+                vendorMap.set(vendorId, {
+                  vendorDetails: prod.productId.createdBy,
+                  products: [],
+                });
+              }
 
-  } catch (error) {
-    console.log(error);
-    return sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-      statusCode: 500,
-    });
+              vendorMap.get(vendorId).products.push(prod);
+            }
+          });
+
+          return {
+            _id: order._id,
+            userId: order.userId,
+            addressId: order.addressId,
+            vendorProducts: Array.from(vendorMap.values()),
+            assignedAt: order.updatedAt,
+          };
+        })
+        .filter((order) => order.vendorProducts.length > 0); // only orders with assigned products
+
+      return sendResponse(res, 200, "Success", {
+        message: "Assigned products fetched vendor-wise successfully",
+        data: result,
+        statusCode: 200,
+      });
+    } catch (error) {
+      console.log(error);
+      return sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+        statusCode: 500,
+      });
+    }
   }
-});
+);
 
 driverController.post("/my-orders", async (req, res) => {
   try {
@@ -785,19 +816,26 @@ driverController.post("/my-orders", async (req, res) => {
     const bookings = await Booking.find(query)
       .populate({
         path: "product.productId",
-        populate: { path: "createdBy", model: "Vender", select: "firstName lastName address storeName profilePic" },
+        populate: {
+          path: "createdBy",
+          model: "Vender",
+          select: "firstName lastName address storeName profilePic",
+        },
       })
       .populate("product.driverId")
-      .populate({ path: "userId", select: "firstName lastName phone cartItems " })
+      .populate({
+        path: "userId",
+        select: "firstName lastName phone cartItems ",
+      })
       .populate("addressId")
       .sort(sortOption)
       .skip((pageNo - 1) * pageCount)
       .limit(pageCount);
 
-    const result = bookings.map(order => {
+    const result = bookings.map((order) => {
       const vendorMap = new Map();
 
-      order.product?.forEach(prod => {
+      order.product?.forEach((prod) => {
         const prodDriverId = prod.driverId?._id?.toString();
         const prodVendorId = prod.productId?.createdBy?._id?.toString();
 
@@ -831,13 +869,13 @@ driverController.post("/my-orders", async (req, res) => {
       };
     });
 
-    const filteredResult = result.filter(order => {
+    const filteredResult = result.filter((order) => {
       if (!order.vendorProducts.length) return false;
 
       // Flatten products
-      const products = order.vendorProducts.flatMap(v => v.products);
+      const products = order.vendorProducts.flatMap((v) => v.products);
 
-      const match = products.some(prod => {
+      const match = products.some((prod) => {
         const expectedDate = moment(prod.expectedDeliveryDate, "DD-MM-YYYY");
 
         if (expectedDeliveryDateFilter === "today") {
@@ -860,12 +898,14 @@ driverController.post("/my-orders", async (req, res) => {
     // });
 
     // Sort by assignedAt (descending = latest first)
-filteredResult.sort((a, b) => new Date(b.assignedAt) - new Date(a.assignedAt));
+    filteredResult.sort(
+      (a, b) => new Date(b.assignedAt) - new Date(a.assignedAt)
+    );
 
-return sendResponse(res, 200, "Success", {
-  data: filteredResult,
-  statusCode: 200,
-});
+    return sendResponse(res, 200, "Success", {
+      data: filteredResult,
+      statusCode: 200,
+    });
   } catch (error) {
     console.error(error);
     return sendResponse(res, 500, "Failed", {
@@ -912,7 +952,11 @@ driverController.post("/my-ongoing-orders", async (req, res) => {
     const bookings = await Booking.find(query)
       .populate({
         path: "product.productId",
-        populate: { path: "createdBy", model: "Vender", select: "firstName lastName" },
+        populate: {
+          path: "createdBy",
+          model: "Vender",
+          select: "firstName lastName",
+        },
       })
       .populate("product.driverId")
       .populate({ path: "userId", select: "-cartItems -wishListItems" })
@@ -921,11 +965,11 @@ driverController.post("/my-ongoing-orders", async (req, res) => {
       .skip((pageNo - 1) * pageCount)
       .limit(pageCount);
 
-    const result = bookings.map(order => {
+    const result = bookings.map((order) => {
       const vendorMap = new Map();
       let includeBooking = false;
 
-      order.product?.forEach(prod => {
+      order.product?.forEach((prod) => {
         const prodDriverId = prod.driverId?._id?.toString();
         const prodVendorId = prod.productId?.createdBy?._id?.toString();
 
@@ -963,7 +1007,10 @@ driverController.post("/my-ongoing-orders", async (req, res) => {
     });
 
     const filteredResult = result
-      .filter(({ includeBooking, orderData }) => includeBooking && orderData.vendorProducts.length)
+      .filter(
+        ({ includeBooking, orderData }) =>
+          includeBooking && orderData.vendorProducts.length
+      )
       .map(({ orderData }) => orderData);
 
     // return sendResponse(res, 200, "Success", {
@@ -971,15 +1018,15 @@ driverController.post("/my-ongoing-orders", async (req, res) => {
     //   statusCode: 200,
     // });
 
-
     // Sort by assignedAt (latest first)
-filteredResult.sort((a, b) => new Date(b.assignedAt) - new Date(a.assignedAt));
+    filteredResult.sort(
+      (a, b) => new Date(b.assignedAt) - new Date(a.assignedAt)
+    );
 
-return sendResponse(res, 200, "Success", {
-  data: filteredResult,
-  statusCode: 200,
-});
-
+    return sendResponse(res, 200, "Success", {
+      data: filteredResult,
+      statusCode: 200,
+    });
   } catch (error) {
     console.error(error);
     return sendResponse(res, 500, "Failed", {
@@ -988,6 +1035,5 @@ return sendResponse(res, 200, "Success", {
     });
   }
 });
-
 
 module.exports = driverController;
