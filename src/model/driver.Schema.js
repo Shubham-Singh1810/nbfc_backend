@@ -201,6 +201,41 @@ const driverSchema = mongoose.Schema({
     type: String,
     default: "waiting for approval",
   },
+
+
+    // account details
+  
+    accountNumber: {
+      type: String,
+    },
+    ifscCode: {
+      type: String,
+    },
+    panNumber: {
+      type: String,
+    },
+    upiId: {
+      type: String,
+    },
+    accountHolderName: {
+      type: String,
+    },
+    bankName: {
+      type: String,
+    },
+    bankBranchCode: {
+      type: String,
+    },
+    signature: {
+      type: String,
+    },
+    adharCard: {
+      type: String,
+    }
+
+
+
+
 });
 
 driverSchema.plugin(timestamps);
