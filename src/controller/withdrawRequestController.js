@@ -101,7 +101,6 @@ withdrawRequestController.post("/list", async (req, res) => {
   }
 });
 
-
 withdrawRequestController.put(
   "/update",
   upload.single("image"),

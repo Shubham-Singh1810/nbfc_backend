@@ -62,133 +62,6 @@ function getOptimizedRoute(startLocation, vendorLocations, endLocation) {
   return route;
 }
 
-// bookingController.post("/create", async (req, res) => {
-//   try {
-//     const {
-//       userId,
-//       totalAmount,
-//       status,
-//       product,
-//       bookingQuantity,
-//       bookingPrice,
-//       modeOfPayment,
-//       paymentId,
-//       signature,
-//       orderId,
-//       addressId,
-//     } = req.body;
-
-//     if (!userId || !status) {
-//       return sendResponse(res, 400, "Failed", {
-//         message: !userId ? "userId is required" : "status is required",
-//         statusCode: 400,
-//       });
-//     }
-
-//     // Add expectedDeliveryDate to each product
-//     const updatedProducts = product.map((item) => ({
-//       ...item,
-//       expectedDeliveryDate: moment().add(7, "days").format("DD-MM-YYYY"),
-//     }));
-
-//     const bookingData = {
-//       userId,
-//       totalAmount,
-//       status,
-//       product: updatedProducts,
-//       bookingQuantity,
-//       bookingPrice,
-//       modeOfPayment,
-//       paymentId,
-//       signature,
-//       orderId,
-//       addressId,
-//     };
-
-//     // Create booking
-//     const bookingCreated = await Booking.create(bookingData);
-
-//     // Clear user cart
-//     const updatedUser = await User.findByIdAndUpdate(
-//       userId,
-//       { $set: { cartItems: [] } },
-//       { new: true }
-//     );
-
-//     // Notify Admin
-//     const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
-//     if (superAdmin?.deviceId) {
-//       await sendNotification({
-//         title: "New Order",
-//         subTitle: `${updatedUser?.firstName} has placed a new order.`,
-//         icon: updatedUser?.profilePic,
-//         notifyUserId: "admin",
-//         category: "Booking",
-//         subCategory: "New Order",
-//         notifyUser: "Admin",
-//         fcmToken: superAdmin.deviceId,
-//       });
-//     }
-
-//     // Notify User
-//     if (updatedUser?.androidDeviceId) {
-//       await sendNotification({
-//         title: "Order Placed",
-//         subTitle: `Your order has been placed successfully.`,
-//         icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
-//         notifyUserId: userId,
-//         category: "Booking",
-//         subCategory: "New Order",
-//         notifyUser: "User",
-//         fcmToken: updatedUser.androidDeviceId,
-//       });
-//     }
-
-//     // Populate productId to access createdBy (vendor ID)
-//     const populatedBooking = await Booking.findById(bookingCreated._id).populate("product.productId");
-
-//     for (const item of populatedBooking.product) {
-//       const createdById = item.productId?.createdBy;
-
-//       if (!createdById) {
-//         console.warn("Product createdBy missing, skipping vendor notification.");
-//         continue;
-//       }
-
-//       const vendor = await Vender.findById(createdById);
-//       if (!vendor || !vendor.androidDeviceId) {
-//         console.warn(`Vendor or FCM token missing for vendor ID: ${createdById}`);
-//         continue;
-//       }
-
-//       await sendNotification({
-//         title: "New Order",
-//         subTitle: `${updatedUser?.firstName} has placed a new order.`,
-//         icon: updatedUser?.profilePic,
-//         notifyUserId: vendor._id,
-//         category: "Booking",
-//         subCategory: "New Order",
-//         notifyUser: "Vender",
-//         fcmToken: vendor.androidDeviceId,
-//       });
-
-//       console.log(`Notification sent to vendor ID: ${vendor._id}`);
-//     }
-
-//     sendResponse(res, 200, "Success", {
-//       message: "Booking created successfully!",
-//       data: bookingCreated,
-//       statusCode: 200,
-//     });
-//   } catch (error) {
-//     console.error("Booking error:", error);
-//     sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error",
-//       statusCode: 500,
-//     });
-//   }
-// });
-
 bookingController.post("/create", async (req, res) => {
   try {
     const {
@@ -331,16 +204,16 @@ bookingController.post("/create", async (req, res) => {
         continue;
       }
 
-      // await sendNotification({
-      //   title: "New Order",
-      //   subTitle: `${updatedUser?.firstName} has placed a new order.`,
-      //   icon: updatedUser?.profilePic,
-      //   notifyUserId: vendor._id,
-      //   category: "Booking",
-      //   subCategory: "New Order",
-      //   notifyUser: "Vender",
-      //   fcmToken: vendor.androidDeviceId,
-      // });
+      await sendNotification({
+        title: "New Order",
+        subTitle: `${updatedUser?.firstName} has placed a new order.`,
+        icon: updatedUser?.profilePic,
+        notifyUserId: vendor._id,
+        category: "Booking",
+        subCategory: "New Order",
+        notifyUser: "Vender",
+        fcmToken: vendor.androidDeviceId,
+      });
 
       console.log(`Notification sent to vendor ID: ${vendor._id}`);
     }
