@@ -105,6 +105,39 @@ categoryController.post("/list", async (req, res) => {
   }
 });
 
+categoryController.post("/list-with-subcategory", async (req, res) => {
+  try {
+    // Fetch all categories
+    const categoryList = await Category.find();
+
+    // Map through categories and attach subcategories to each
+    const categoryWithSubCategories = await Promise.all(
+      categoryList.map(async (category) => {
+        const subCategories = await SubCategory.find({ categoryId: category._id });
+        return {
+          ...category.toObject(),
+          subCategories
+        };
+      })
+    );
+
+    sendResponse(res, 200, "Success", {
+      message: "Category list with subcategories retrieved successfully!",
+      data: categoryWithSubCategories,
+      statusCode: 200
+    });
+
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500
+    });
+  }
+});
+
+
+
 categoryController.get("/product-list/:id", async (req, res) => {
   try {
     const {id} = req.params
