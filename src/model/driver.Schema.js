@@ -231,9 +231,86 @@ const driverSchema = mongoose.Schema({
     },
     adharCard: {
       type: String,
-    }
+    },
 
 
+// account details isApproved fields
+
+    isAccountNumberApproved: {
+      type: Boolean,
+      default: false,
+    },
+    isIfscCodeApproved: {
+      type: Boolean,
+      default: false,
+    },
+    isPanNumberApproved: {
+      type: Boolean,
+      default: false,
+    },
+    isUpiIdApproved: {
+      type: Boolean,
+      default: false,
+    },
+    isAccountHolderNameApproved: {
+      type: Boolean,
+      default: false,
+    },
+    isBankNameApproved: {
+      type: Boolean,
+      default: false,
+    },
+    isBankBranchCodeApproved: {
+      type: Boolean,
+      default: false,
+    },
+    isSignatureApproved: {
+      type: Boolean,
+      default: false,
+    },
+    isAdharCardApproved: {
+      type: Boolean,
+      default: false,
+    },
+
+    // account details reject reason
+
+    accountNumberRejectReason: {
+      type: String,
+      default: "waiting for approval", 
+    },
+    ifscCodeRejectReason: {
+      type: String,
+      default: "waiting for approval", 
+    },
+    panNumberRejectReason: {
+      type: String,
+      default: "waiting for approval", 
+    },
+    upiIdRejectReason: {
+      type: String,
+      default: "waiting for approval", 
+    },
+    accountHolderNameRejectReason: {
+      type: String,
+      default: "waiting for approval", 
+    },
+    bankNameRejectReason: {
+      type: String,
+      default: "waiting for approval", 
+    },
+    bankBranchCodeRejectReason: {
+      type: String,
+      default: "waiting for approval", 
+    },
+    signatureRejectReason: {
+      type: String,
+      default: "waiting for approval", 
+    },
+    adharCardRejectReason: {
+      type: String,
+      default: "waiting for approval", 
+    },
 
 
 });
