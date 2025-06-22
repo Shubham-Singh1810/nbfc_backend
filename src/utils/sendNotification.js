@@ -9,8 +9,12 @@ if (!admin.apps.length) {
 }
 
 exports.sendNotification = async (data) => {
+  console.log(data.fcmToken)
   try {
-    const notificationCreated = await Notification.create(data);
+    let notificationCreated
+    if(!data?.onlyPushNotification){
+       notificationCreated = await Notification.create(data);
+    }
     // io.emit("notificationCreated", {
     //   message: "A New Notification Added",
     // });
@@ -31,12 +35,19 @@ exports.sendNotification = async (data) => {
     // Send notification via Firebase
     const response = await admin.messaging().send(message);
     console.log("Notification sent successfully:", response);
+
     return {
-      notification: notificationCreated,
+      notification: notificationCreated || "Notify",
       fcmResponse: response,
     };
   } catch (error) {
-    console.error("Error creating notification:", error);
-    throw error;
+    
+    // If token invalid or unregistered — handle & remove token from DB if you store it
+    if (error.errorInfo?.code === "messaging/registration-token-not-registered") {
+      console.warn("❌ Invalid/expired FCM token — should delete from DB if stored.");
+      // Example: await User.updateOne({ fcmToken: data.fcmToken }, { $unset: { fcmToken: "" } });
+    } else {
+      console.error("❌ Error sending notification:", error);
+    }
   }
 };

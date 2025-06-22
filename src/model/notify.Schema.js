@@ -12,15 +12,9 @@ const notifySchema = mongoose.Schema({
   subTitle: {
     type: String,
   },
-  notifyUserIds: {
+  notifyUserIds: [{
     type: String
-  },
-  category: {
-    type: String,
-  },
-  subCategory: {
-    type: String,
-  },
+  }],
   isRead: {
     type: Boolean,
     default: false,
