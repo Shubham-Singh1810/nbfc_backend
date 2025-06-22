@@ -2,6 +2,8 @@ const express = require("express");
 const { sendResponse, generateOTP } = require("../utils/common");
 require("dotenv").config();
 const User = require("../model/user.Schema");
+const Vendor = require("../model/vender.Schema");
+const Fund = require("../model/adminFund.Schema")
 const Admin = require("../model/admin.Schema");
 const Product = require("../model/product.Schema");
 const Category = require("../model/category.Schema");
@@ -9,11 +11,14 @@ const SubCategory = require("../model/subCategory.Schema");
 const userController = express.Router();
 const axios = require("axios");
 require("dotenv").config();
+const Booking = require("../model/booking.Schema");
 const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const auth = require("../utils/auth");
 const { sendNotification } = require("../utils/sendNotification");
+const Driver = require("../model/driver.Schema");
+const moment = require("moment");
 
 userController.post("/send-otp", async (req, res) => {
   try {
@@ -785,6 +790,111 @@ userController.delete("/delete/:id", async (req, res) => {
     console.error(error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
+    });
+  }
+});
+
+userController.get("/dashboard-details", async (req, res) => {
+  try {
+    // Parallel data fetching
+    const [
+      totalUser,
+      activeUser,
+      inactiveUser,
+      totalBooking,
+      activeBooking,
+      bookingCompleted,
+      totalProduct,
+      activeProduct,
+      inactiveProduct,
+      totalDriver,
+      activeDriver,
+      inactiveDriver,
+      totalVendor,
+      activeVendor,
+      inactiveVendor,
+    ] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ profileStatus: "completed" }),
+      User.countDocuments({ profileStatus: "incompleted" }),
+      Booking.countDocuments(),
+      Booking.countDocuments({
+        status: { $in: ["orderPlaced", "orderPacked", "outForDelivery"] },
+      }),
+      Booking.countDocuments({ status: "completed" }),
+      Product.countDocuments(),
+      Product.countDocuments({ status: true }),
+      Product.countDocuments({ status: false }),
+      Driver.countDocuments(),
+      Driver.countDocuments({ profileStatus: "completed" }),
+      Driver.countDocuments({ profileStatus: "incompleted" }),
+      Vendor.countDocuments(),
+      Vendor.countDocuments({ profileStatus: "completed" }),
+      Vendor.countDocuments({ profileStatus: "incompleted" }),
+    ]);
+
+    // Fund data
+    const fundData = await Fund.findOne();
+    const totalEarning = fundData ? fundData.totalEarning : 0;
+    const currentWallet = fundData ? fundData.wallet : 0;
+
+    // Last 15 days booking stats
+    const last15Days = await Booking.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: moment().subtract(15, "days").startOf("day").toDate(),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          noOfBookings: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Construct array for chart display
+    const bookingsLast15Days = [];
+    for (let i = 14; i >= 0; i--) {
+      const dateObj = moment().subtract(i, "days");
+      const formattedDate = dateObj.format("Do MMM");
+      const mongoDate = dateObj.format("YYYY-MM-DD");
+
+      const bookingData = last15Days.find((b) => b._id === mongoDate);
+
+      bookingsLast15Days.push({
+        date: formattedDate,
+        noOfBookings: bookingData ? bookingData.noOfBookings : 0,
+        mongoDate,
+      });
+    }
+
+    // Final response
+    sendResponse(res, 200, "Success", {
+      message: "Dashboard details retrieved successfully",
+      data: {
+        users: { totalUser, activeUser, inactiveUser },
+        bookings: { totalBooking, activeBooking, bookingCompleted },
+        products: {
+          totalProduct,
+          activeProduct,
+          inactiveProduct,
+        },
+        drivers: { totalDriver, activeDriver, inactiveDriver },
+        vendors: { totalVendor, activeVendor, inactiveVendor },
+        earnings: { totalEarning, currentWallet },
+        last15DaysBookings: bookingsLast15Days,
+      },
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
     });
   }
 });
