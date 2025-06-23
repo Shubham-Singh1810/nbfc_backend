@@ -142,16 +142,6 @@ const driverSchema = mongoose.Schema({
     type: Number,
     default: 0,
   },
-  transactionHistory: {
-    type: [
-      {
-        message: { type: String },
-        transactionType: { type: String, enum: ["credit", "debit", "hold"] },
-        date: { type: String },
-      },
-    ],
-    default: [],
-  },
   totalEarnings: {
     type: Number,
     default: 0,
