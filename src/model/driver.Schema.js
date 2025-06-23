@@ -82,7 +82,7 @@ const driverSchema = mongoose.Schema({
     type: String,
     default: "incompleted",
     required: true,
-    enum: ["incompleted", "completed", "approved", "rejected", "reUploaded"],
+    enum: ["incompleted", "completed","accountDetailsCompleted", "approved", "rejected", "reUploaded"],
   },
   dlFrontImage: {
     type: String,
