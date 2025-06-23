@@ -9,6 +9,7 @@ const Product = require("../model/product.Schema");
 const Address = require("../model/address.Schema");
 const Driver = require("../model/driver.Schema");
 const Admin = require("../model/admin.Schema");
+const TransactionHistory = require("../model/transactionHistory.Schema");
 const bookingController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");

@@ -386,14 +386,13 @@ driverController.delete("/delete/:id", auth, async (req, res) => {
   }
 });
 
-driverController.put(
-  "/update",
-  
-  upload.fields([
+driverController.put("/update", upload.fields([
     { name: "dlFrontImage", maxCount: 1 },
     { name: "dlBackImage", maxCount: 1 },
     { name: "profilePic", maxCount: 1 },
     { name: "vehicleImage", maxCount: 1 },
+    { name: "signature", maxCount: 1 },
+    { name: "adharCard", maxCount: 1 },
   ]),
   async (req, res) => {
     try {
@@ -430,6 +429,18 @@ driverController.put(
             req.files["vehicleImage"][0].path
           );
           updateData = { ...req.body, vehicleImage: image.url };
+        }
+        if (req.files["signature"]) {
+          let image = await cloudinary.uploader.upload(
+            req.files["signature"][0].path
+          );
+          updateData = { ...req.body, signature: image.url };
+        }
+        if (req.files["adharCard"]) {
+          let image = await cloudinary.uploader.upload(
+            req.files["adharCard"][0].path
+          );
+          updateData = { ...req.body, adharCard: image.url };
         }
 
         const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
