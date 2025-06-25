@@ -8,6 +8,13 @@ const couponSchema = mongoose.Schema({
     required: true,
     unique: true,
   },
+  image: {
+    type: String,
+  },
+  message: {
+    type: String,
+    required: true,
+  },
   discountType: {
     type: String,
     enum: ["percentage", "flat"],
@@ -32,11 +39,6 @@ const couponSchema = mongoose.Schema({
   usedCount: {
     type: Number,
     default: 0,
-  },
-  applicableTo: {
-    type: String,
-    enum: ["all", "specificProducts", "specificCategories"],
-    default: "all",
   },
   minimumOrderAmount: {
     type: Number,

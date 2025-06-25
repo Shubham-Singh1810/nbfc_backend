@@ -7,22 +7,39 @@ require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 
-couponController.post("/create", async (req, res) => {
-  try {
-    const couponCreated = await Coupon.create(req.body);
-    sendResponse(res, 200, "Success", {
-      message: "coupon created successfully!",
-      data: couponCreated,
-      statusCode: 200,
-    });
-  } catch (error) {
-    console.error(error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-      statusCode: 500,
-    });
+couponController.post(
+  "/create",
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      let obj;
+      if (req.file) {
+        let image = await cloudinary.uploader.upload(
+          req.file.path,
+          function (err, result) {
+            if (err) {
+              return err;
+            } else {
+              return result;
+            }
+          }
+        );
+        obj = { ...req.body, image: image.url };
+      }
+      const couponCreated = await Coupon.create(obj);
+      sendResponse(res, 200, "Success", {
+        message: "Coupon created successfully!",
+        data: couponCreated,
+        statusCode: 200,
+      });
+    } catch (error) {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+      });
+    }
   }
-});
+);
 
 couponController.post("/list", async (req, res) => {
   try {
