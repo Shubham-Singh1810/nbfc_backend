@@ -18,7 +18,11 @@ const zipcodeSchema = mongoose.Schema({
   deliveryCharges: {
     type: String,
     required: true,
-  }
+  },
+  status: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 zipcodeSchema.plugin(timestamps);

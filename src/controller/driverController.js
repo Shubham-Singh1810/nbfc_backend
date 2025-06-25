@@ -364,7 +364,7 @@ driverController.post("/create", auth, async (req, res) => {
   }
 });
 
-driverController.delete("/delete/:id", auth, async (req, res) => {
+driverController.delete("/delete/:id",  async (req, res) => {
   try {
     const { id } = req.params;
     const driver = await Driver.findById(id);
@@ -386,7 +386,9 @@ driverController.delete("/delete/:id", auth, async (req, res) => {
   }
 });
 
-driverController.put("/update", upload.fields([
+driverController.put(
+  "/update",
+  upload.fields([
     { name: "dlFrontImage", maxCount: 1 },
     { name: "dlBackImage", maxCount: 1 },
     { name: "profilePic", maxCount: 1 },
@@ -406,34 +408,46 @@ driverController.put("/update", upload.fields([
       let updateData = { ...req.body };
       if (req.file || req.files) {
         if (req.files["dlFrontImage"]) {
-  let image = await cloudinary.uploader.upload(req.files["dlFrontImage"][0].path);
-  updateData.dlFrontImage = image.url;
-}
+          let image = await cloudinary.uploader.upload(
+            req.files["dlFrontImage"][0].path
+          );
+          updateData.dlFrontImage = image.url;
+        }
 
-if (req.files["dlBackImage"]) {
-  let image = await cloudinary.uploader.upload(req.files["dlBackImage"][0].path);
-  updateData.dlBackImage = image.url;
-}
+        if (req.files["dlBackImage"]) {
+          let image = await cloudinary.uploader.upload(
+            req.files["dlBackImage"][0].path
+          );
+          updateData.dlBackImage = image.url;
+        }
 
-if (req.files["profilePic"]) {
-  let image = await cloudinary.uploader.upload(req.files["profilePic"][0].path);
-  updateData.profilePic = image.url;
-}
+        if (req.files["profilePic"]) {
+          let image = await cloudinary.uploader.upload(
+            req.files["profilePic"][0].path
+          );
+          updateData.profilePic = image.url;
+        }
 
-if (req.files["vehicleImage"]) {
-  let image = await cloudinary.uploader.upload(req.files["vehicleImage"][0].path);
-  updateData.vehicleImage = image.url;
-}
+        if (req.files["vehicleImage"]) {
+          let image = await cloudinary.uploader.upload(
+            req.files["vehicleImage"][0].path
+          );
+          updateData.vehicleImage = image.url;
+        }
 
-if (req.files["adharCard"]) {
-  let image = await cloudinary.uploader.upload(req.files["adharCard"][0].path);
-  updateData.adharCard = image.url;
-}
+        if (req.files["adharCard"]) {
+          let image = await cloudinary.uploader.upload(
+            req.files["adharCard"][0].path
+          );
+          updateData.adharCard = image.url;
+        }
 
-if (req.files["signature"]) {
-  let image = await cloudinary.uploader.upload(req.files["signature"][0].path);
-  updateData.signature = image.url;
-}
+        if (req.files["signature"]) {
+          let image = await cloudinary.uploader.upload(
+            req.files["signature"][0].path
+          );
+          updateData.signature = image.url;
+        }
 
         const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
           new: true,
@@ -453,7 +467,7 @@ if (req.files["signature"]) {
             fcmToken: superAdmin.deviceId,
           });
         }
-       if (req.body.profileStatus == "accountDetailsCompleted") {
+        if (req.body.profileStatus == "accountDetailsCompleted") {
           sendNotification({
             icon: updatedUserData.profilePic,
             title: "Account Details Stored",
@@ -464,7 +478,7 @@ if (req.files["signature"]) {
             notifyUser: "Admin",
             fcmToken: superAdmin.deviceId,
           });
-        } 
+        }
         if (req.body.profileStatus == "rejected") {
           sendNotification({
             icon: updatedUserData.profilePic,

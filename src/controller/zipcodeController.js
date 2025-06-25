@@ -36,7 +36,12 @@ zipcodeController.post("/list", async (req, res) => {
     } = req.body;
     const query = {};
     if (status) query.status = status;
-    if (searchKey) query.name = { $regex: searchKey, $options: "i" };
+    if (searchKey) {
+      query.$or = [
+        { city: { $regex: searchKey, $options: "i" } },
+        { zipcode: { $regex: searchKey, $options: "i" } },
+      ];
+    }
     const sortField = sortByField || "createdAt";
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };
@@ -75,13 +80,9 @@ zipcodeController.put("/update", async (req, res) => {
         statusCode: 403,
       });
     }
-    const updatedZipcode = await Zipcode.findByIdAndUpdate(
-      id,
-      req.body,
-      {
-        new: true, // Return the updated document
-      }
-    );
+    const updatedZipcode = await Zipcode.findByIdAndUpdate(id, req.body, {
+      new: true, // Return the updated document
+    });
     sendResponse(res, 200, "Success", {
       message: "Zipcode updated successfully!",
       data: updatedZipcode,
@@ -108,13 +109,13 @@ zipcodeController.delete("/delete/:id", async (req, res) => {
     await Zipcode.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
       message: "Zipcode deleted successfully!",
-      statusCode:200
+      statusCode: 200,
     });
   } catch (error) {
     console.error(error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
-      statusCode: 500,   
+      statusCode: 500,
     });
   }
 });
