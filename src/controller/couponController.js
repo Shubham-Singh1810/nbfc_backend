@@ -51,8 +51,12 @@ couponController.post("/list", async (req, res) => {
     const couponList = await Coupon.find(query)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
+      const totalCount = await Coupon.countDocuments({});
+          const activeCount = await Coupon.countDocuments({ status: "active" });
+          const inactiveCount = await Coupon.countDocuments({ status: "inactive" });
     sendResponse(res, 200, "Success", {
-      message: "coupon list retrieved successfully!",
+      message: "Coupon list retrieved successfully!",
+       documentCount: { totalCount, activeCount, inactiveCount: inactiveCount, expiredCount : totalCount -(activeCount+inactiveCount)  },
       data: couponList,
       statusCode: 200,
     });
