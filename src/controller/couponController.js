@@ -2,6 +2,7 @@ const express = require("express");
 const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const Coupon = require("../model/coupon.Schema");
+const Booking = require("../model/booking.Schema");
 const couponController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
@@ -130,6 +131,37 @@ couponController.get("/details/:id", async (req, res) => {
     sendResponse(res, 200, "Success", {
       message: "Coupon retrived successfully!",
       data: { couponDetails },
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
+
+couponController.post("/validity", async (req, res) => {
+  try {
+    const { userId, code } = req.body;
+    const couponDetails = await Coupon.findOne({ code });
+    if(!couponDetails){
+      sendResponse(res, 404, "Failed", {
+        message: "Coupon not found!",
+        statusCode: 404,
+      });
+    }
+    const isUsedCoupon = await Booking.findOne({userId, couponId:couponDetails._id})
+    if(isUsedCoupon){
+      sendResponse(res, 422, "Failed", {
+        message: "Coupon is already used by the user",
+        statusCode: 422,
+      });
+    }
+    sendResponse(res, 200, "Success", {
+      message: "Coupon retrived successfully!",
+      data: couponDetails ,
       statusCode: 200,
     });
   } catch (error) {

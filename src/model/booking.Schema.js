@@ -73,6 +73,20 @@ const bookingSchema = mongoose.Schema({
     ref: "User",
     required: true,
   },
+  couponId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Coupon",
+    required: true,
+  },
+  finalAmount: {
+    type: String,
+  },
+  deliveryCharges: {
+    type: String,
+  },
+  couponDiscountValue: {
+    type: Number,
+  },
   addressId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Address",
