@@ -146,23 +146,25 @@ zipcodeController.get("/delivery/:pincode", async (req, res) => {
       status: true,
     });
     if (!zipcodeDetails) {
-      sendResponse(res, 404, "Failed", {
-        message: "Delivery is not available at this location in this moment",
+      return sendResponse(res, 404, "Failed", {
+        message: "Apologies, we are not delivering to this location at the moment.",
         statusCode: 404,
       });
     }
-    sendResponse(res, 200, "Success", {
-      message: "Zipcode retrived successfully!",
+
+    return sendResponse(res, 200, "Success", {
+      message: "Zipcode retrieved successfully!",
       data: { zipcodeDetails },
       statusCode: 200,
     });
   } catch (error) {
     console.error(error);
-    sendResponse(res, 500, "Failed", {
+    return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
       statusCode: 500,
     });
   }
 });
+
 
 module.exports = zipcodeController;
