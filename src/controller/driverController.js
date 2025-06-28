@@ -364,7 +364,7 @@ driverController.post("/create", auth, async (req, res) => {
   }
 });
 
-driverController.delete("/delete/:id",  async (req, res) => {
+driverController.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const driver = await Driver.findById(id);
@@ -503,8 +503,7 @@ driverController.put(
             fcmToken: superAdmin.deviceId,
           });
         }
-        const io = req.io;
-        io.emit("driver-updated", updatedUserData);
+
         sendResponse(res, 200, "Success", {
           message: "Driver updated successfully!",
           data: updatedUserData,
@@ -514,7 +513,8 @@ driverController.put(
         const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
           new: true,
         });
-
+        const io = req.io;
+        io.emit("driver-updated", updatedUserData);
         sendResponse(res, 200, "Success", {
           message: "Driver updated successfully!",
           data: updatedUserData,
