@@ -138,7 +138,7 @@ zipcodeController.get("/details/:id", async (req, res) => {
   }
 });
 
-zipcodeController.get("/delivery/:pincode", async (req, res) => {
+zipcodeController.get("/delivery/:zipcode", async (req, res) => {
   try {
     const { zipcode } = req.params;
     const zipcodeDetails = await Zipcode.findOne({
@@ -154,7 +154,7 @@ zipcodeController.get("/delivery/:pincode", async (req, res) => {
 
     return sendResponse(res, 200, "Success", {
       message: "Zipcode retrieved successfully!",
-      data: { zipcodeDetails },
+      data: zipcodeDetails ,
       statusCode: 200,
     });
   } catch (error) {
