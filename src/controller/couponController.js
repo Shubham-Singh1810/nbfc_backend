@@ -8,56 +8,54 @@ require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 
-couponController.post(
-  "/create",
-  upload.single("image"),
-  async (req, res) => {
-    try {
-      let obj;
-      if (req.file) {
-        let image = await cloudinary.uploader.upload(
-          req.file.path,
-          function (err, result) {
-            if (err) {
-              return err;
-            } else {
-              return result;
-            }
+couponController.post("/create", upload.single("image"), async (req, res) => {
+  try {
+    let obj;
+    if (req.file) {
+      let image = await cloudinary.uploader.upload(
+        req.file.path,
+        function (err, result) {
+          if (err) {
+            return err;
+          } else {
+            return result;
           }
-        );
-        obj = { ...req.body, image: image.url };
-      }
-      const couponCreated = await Coupon.create(obj);
-      sendResponse(res, 200, "Success", {
-        message: "Coupon created successfully!",
-        data: couponCreated,
-        statusCode: 200,
-      });
-    } catch (error) {
-      console.error(error);
-      sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error",
-      });
+        }
+      );
+      obj = { ...req.body, image: image.url };
     }
+    const couponCreated = await Coupon.create(obj);
+    sendResponse(res, 200, "Success", {
+      message: "Coupon created successfully!",
+      data: couponCreated,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
   }
-);
+});
 
 couponController.post("/list", async (req, res) => {
   try {
-    const {
-      pageNo = 1,
-      pageCount = 10,
-    } = req.body;
+    const { pageNo = 1, pageCount = 10 } = req.body;
     const query = {};
     const couponList = await Coupon.find(query)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
-      const totalCount = await Coupon.countDocuments({});
-          const activeCount = await Coupon.countDocuments({ status: "active" });
-          const inactiveCount = await Coupon.countDocuments({ status: "inactive" });
+    const totalCount = await Coupon.countDocuments({});
+    const activeCount = await Coupon.countDocuments({ status: "active" });
+    const inactiveCount = await Coupon.countDocuments({ status: "inactive" });
     sendResponse(res, 200, "Success", {
       message: "Coupon list retrieved successfully!",
-       documentCount: { totalCount, activeCount, inactiveCount: inactiveCount, expiredCount : totalCount -(activeCount+inactiveCount)  },
+      documentCount: {
+        totalCount,
+        activeCount,
+        inactiveCount: inactiveCount,
+        expiredCount: totalCount - (activeCount + inactiveCount),
+      },
       data: couponList,
       statusCode: 200,
     });
@@ -80,13 +78,9 @@ couponController.put("/update", async (req, res) => {
         statusCode: 403,
       });
     }
-    const updatedCoupon = await Coupon.findByIdAndUpdate(
-      id,
-      req.body,
-      {
-        new: true, // Return the updated document
-      }
-    );
+    const updatedCoupon = await Coupon.findByIdAndUpdate(id, req.body, {
+      new: true, // Return the updated document
+    });
     sendResponse(res, 200, "Success", {
       message: "Coupon updated successfully!",
       data: updatedCoupon,
@@ -113,13 +107,13 @@ couponController.delete("/delete/:id", async (req, res) => {
     await Coupon.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
       message: "coupon deleted successfully!",
-      statusCode:200
+      statusCode: 200,
     });
   } catch (error) {
     console.error(error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
-      statusCode: 500,   
+      statusCode: 500,
     });
   }
 });
@@ -144,26 +138,59 @@ couponController.get("/details/:id", async (req, res) => {
 
 couponController.post("/validity", async (req, res) => {
   try {
-    const { userId, code } = req.body;
+    const { userId, code, orderAmount } = req.body;
 
-    const couponDetails = await Coupon.findOne({ code });
+    // 1️⃣ Coupon Exist Check
+    const couponDetails = await Coupon.findOne({ code, status: "active" });
     if (!couponDetails) {
       return sendResponse(res, 404, "Failed", {
-        message: "Coupon not found!",
+        message: "Coupon not found or inactive!",
         statusCode: 404,
       });
     }
 
-    const isUsedCoupon = await Booking.findOne({ userId, couponId: couponDetails._id });
-    if (isUsedCoupon) {
+    const currentDate = new Date();
+
+    // 2️⃣ Date Validity Check
+    if (currentDate < couponDetails.validFrom || currentDate > couponDetails.validTo) {
       return sendResponse(res, 422, "Failed", {
-        message: "Coupon is already used by the user",
+        message: "Coupon is not within the valid date range.",
         statusCode: 422,
       });
     }
 
+    // 3️⃣ Order Amount Validity
+    if (orderAmount < couponDetails.minimumOrderAmount) {
+      return sendResponse(res, 422, "Failed", {
+        message: `Coupon cannot be applied for orders below ₹${couponDetails.minimumOrderAmount}.`,
+        statusCode: 422,
+      });
+    }
+
+    // 4️⃣ Usage Limit Validation
+    if (couponDetails.usageLimit > 0 && couponDetails.usedCount >= couponDetails.usageLimit) {
+      return sendResponse(res, 422, "Failed", {
+        message: "This coupon has reached its usage limit.",
+        statusCode: 422,
+      });
+    }
+
+    // 5️⃣ User Has Already Used This Coupon Validation
+    const isUsedCoupon = await Booking.findOne({
+      userId,
+      couponId: couponDetails._id,
+    });
+
+    if (isUsedCoupon) {
+      return sendResponse(res, 422, "Failed", {
+        message: "You have already used this coupon.",
+        statusCode: 422,
+      });
+    }
+
+    // ✅ If all checks passed — coupon valid
     return sendResponse(res, 200, "Success", {
-      message: "Coupon retrieved successfully!",
+      message: "Coupon is valid and can be applied!",
       data: couponDetails,
       statusCode: 200,
     });
