@@ -152,7 +152,10 @@ couponController.post("/validity", async (req, res) => {
     const currentDate = new Date();
 
     // 2️⃣ Date Validity Check
-    if (currentDate < couponDetails.validFrom || currentDate > couponDetails.validTo) {
+    if (
+      currentDate < couponDetails.validFrom ||
+      currentDate > couponDetails.validTo
+    ) {
       return sendResponse(res, 422, "Failed", {
         message: "Coupon is not within the valid date range.",
         statusCode: 422,
@@ -168,7 +171,10 @@ couponController.post("/validity", async (req, res) => {
     }
 
     // 4️⃣ Usage Limit Validation
-    if (couponDetails.usageLimit > 0 && couponDetails.usedCount >= couponDetails.usageLimit) {
+    if (
+      couponDetails.usageLimit > 0 &&
+      couponDetails.usedCount >= couponDetails.usageLimit
+    ) {
       return sendResponse(res, 422, "Failed", {
         message: "This coupon has reached its usage limit.",
         statusCode: 422,
@@ -187,14 +193,23 @@ couponController.post("/validity", async (req, res) => {
         statusCode: 422,
       });
     }
+    let appliedDiscount = 0;
+
+    if (couponDetails.discountType === "percentage") {
+      appliedDiscount = (orderAmount * couponDetails.discountValue) / 100;
+    } else if (couponDetails.discountType === "flat") {
+      appliedDiscount = couponDetails.discountValue;
+    }
 
     // ✅ If all checks passed — coupon valid
     return sendResponse(res, 200, "Success", {
       message: "Coupon is valid and can be applied!",
-      data: couponDetails,
+      data: {
+        ...couponDetails.toObject(),
+        couponDiscountValue: appliedDiscount,
+      },
       statusCode: 200,
     });
-
   } catch (error) {
     console.error(error);
     return sendResponse(res, 500, "Failed", {
@@ -203,6 +218,5 @@ couponController.post("/validity", async (req, res) => {
     });
   }
 });
-
 
 module.exports = couponController;
