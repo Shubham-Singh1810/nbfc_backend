@@ -81,6 +81,7 @@ const bookingSchema = mongoose.Schema({
   },
   finalAmount: {
     type: String,
+    required: true,
   },
   deliveryCharges: {
     type: String,

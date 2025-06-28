@@ -145,32 +145,37 @@ couponController.get("/details/:id", async (req, res) => {
 couponController.post("/validity", async (req, res) => {
   try {
     const { userId, code } = req.body;
+
     const couponDetails = await Coupon.findOne({ code });
-    if(!couponDetails){
-      sendResponse(res, 404, "Failed", {
+    if (!couponDetails) {
+      return sendResponse(res, 404, "Failed", {
         message: "Coupon not found!",
         statusCode: 404,
       });
     }
-    const isUsedCoupon = await Booking.findOne({userId, couponId:couponDetails._id})
-    if(isUsedCoupon){
-      sendResponse(res, 422, "Failed", {
+
+    const isUsedCoupon = await Booking.findOne({ userId, couponId: couponDetails._id });
+    if (isUsedCoupon) {
+      return sendResponse(res, 422, "Failed", {
         message: "Coupon is already used by the user",
         statusCode: 422,
       });
     }
-    sendResponse(res, 200, "Success", {
-      message: "Coupon retrived successfully!",
-      data: couponDetails ,
+
+    return sendResponse(res, 200, "Success", {
+      message: "Coupon retrieved successfully!",
+      data: couponDetails,
       statusCode: 200,
     });
+
   } catch (error) {
     console.error(error);
-    sendResponse(res, 500, "Failed", {
+    return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
       statusCode: 500,
     });
   }
 });
+
 
 module.exports = couponController;
