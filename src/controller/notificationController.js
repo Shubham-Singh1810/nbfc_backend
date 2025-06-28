@@ -14,9 +14,10 @@ notificationController.post("/list", async (req, res) => {
     const {
       category,
       notifyUser,
+      notifyUserId,
       isRead,
       pageNo = 1,
-      pageCount = 10,
+      pageCount = 100,
     } = req.body;
     const query = {};
     if(category){
@@ -25,11 +26,14 @@ notificationController.post("/list", async (req, res) => {
     if(notifyUser){
       query.notifyUser = notifyUser
     }
+    if(notifyUserId){
+      query.notifyUserId = notifyUserId
+    }
     if(isRead){
       query.isRead = isRead
     }
     const notificationList = await Notification.find(query)
-      
+      .sort({ createdAt: -1 })
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
    

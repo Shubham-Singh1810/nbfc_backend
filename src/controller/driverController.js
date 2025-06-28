@@ -364,7 +364,7 @@ driverController.post("/create", auth, async (req, res) => {
   }
 });
 
-driverController.delete("/delete/:id",  async (req, res) => {
+driverController.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const driver = await Driver.findById(id);
@@ -514,7 +514,59 @@ driverController.put(
         const updatedUserData = await Driver.findByIdAndUpdate(id, updateData, {
           new: true,
         });
-
+        const superAdmin = await Admin.findOne({
+          role: "680e3c4dd3f86cb24e34f6a6",
+        });
+        if (req.body.profileStatus == "reUploaded") {
+          sendNotification({
+            icon: updatedUserData.profilePic,
+            title: "Re Uploaded",
+            subTitle: `${updatedUserData.firstName} has re-uploaded the details.`,
+            notifyUserId: "Admin",
+            category: "Driver",
+            subCategory: "Profile update",
+            notifyUser: "Admin",
+            fcmToken: superAdmin.deviceId,
+          });
+        }
+        if (req.body.profileStatus == "accountDetailsCompleted") {
+          sendNotification({
+            icon: updatedUserData.profilePic,
+            title: "Account Details Stored",
+            subTitle: `${updatedUserData.firstName} has uploaded the account details.`,
+            notifyUserId: "Admin",
+            category: "Driver",
+            subCategory: "Profile update",
+            notifyUser: "Admin",
+            fcmToken: superAdmin.deviceId,
+          });
+        }
+        if (req.body.profileStatus == "rejected") {
+          sendNotification({
+            icon: updatedUserData.profilePic,
+            title: "Details rejected",
+            subTitle: `${updatedUserData.firstName} please go through the detail once more.`,
+            notifyUserId: updatedUserData._id,
+            category: "Driver",
+            subCategory: "Profile update",
+            notifyUser: "Driver",
+            fcmToken: superAdmin.deviceId,
+          });
+        }
+        if (req.body.profileStatus == "approved") {
+          sendNotification({
+            icon: updatedUserData.profilePic,
+            title: "Profile Approved",
+            subTitle: `${updatedUserData.firstName} congratulations!! your profile has been approved.`,
+            notifyUserId: updatedUserData._id,
+            category: "Driver",
+            subCategory: "Profile update",
+            notifyUser: "Driver",
+            fcmToken: superAdmin.deviceId,
+          });
+        }
+        const io = req.io;
+        io.emit("driver-updated", updatedUserData);
         sendResponse(res, 200, "Success", {
           message: "Driver updated successfully!",
           data: updatedUserData,

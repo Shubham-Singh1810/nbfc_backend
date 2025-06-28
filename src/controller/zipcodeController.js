@@ -138,4 +138,33 @@ zipcodeController.get("/details/:id", async (req, res) => {
   }
 });
 
+zipcodeController.get("/delivery/:zipcode", async (req, res) => {
+  try {
+    const { zipcode } = req.params;
+    const zipcodeDetails = await Zipcode.findOne({
+      zipcode: zipcode,
+      status: true,
+    });
+    if (!zipcodeDetails) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Apologies, we are not delivering to this location at the moment.",
+        statusCode: 404,
+      });
+    }
+
+    return sendResponse(res, 200, "Success", {
+      message: "Zipcode retrieved successfully!",
+      data: zipcodeDetails ,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
+
+
 module.exports = zipcodeController;
