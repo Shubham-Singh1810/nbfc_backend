@@ -7,15 +7,16 @@ const bookingSchema = mongoose.Schema({
   },
   status: {
     type: String,
+    default :"orderPlaced",
     enum: ["orderPlaced", "partiallyDelivered", "completed", "cancelled"],
   },
   signature: {
     type: String,
-    required: true,
+  
   },
   orderId: {
     type: String,
-    required: true,
+    
   },
   modeOfPayment: {
     type: String,
