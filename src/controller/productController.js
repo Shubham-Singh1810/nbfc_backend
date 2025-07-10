@@ -508,6 +508,73 @@ productController.put("/update-variant", async (req, res) => {
   }
 });
 
+productController.put("/update-variant-image", upload.array("variantImage"), async (req, res) => {
+  try {
+    const {
+      productId,
+      variantKey,
+      variantValue,
+      variantSecondaryKey,
+      variantSecondaryValue
+    } = req.body;
+
+    if (!req.files || req.files.length === 0) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Please upload at least one image",
+        statusCode: 400
+      });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Product not found",
+        statusCode: 404
+      });
+    }
+
+    // Upload new images to Cloudinary
+    const uploadedUrls = [];
+    for (const file of req.files) {
+      const uploadedImage = await cloudinary.uploader.upload(file.path);
+      uploadedUrls.push(uploadedImage.secure_url);
+    }
+
+    // Find and update the variant
+    const variantToUpdate = product.productVariants.find(
+      (variant) =>
+        variant.variantKey === variantKey &&
+        variant.variantValue === variantValue &&
+        variant.variantSecondaryKey === variantSecondaryKey &&
+        variant.variantSecondaryValue === variantSecondaryValue
+    );
+
+    if (!variantToUpdate) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Variant not found",
+        statusCode: 404
+      });
+    }
+
+    variantToUpdate.variantImage = uploadedUrls;
+
+    await product.save();
+
+    sendResponse(res, 200, "Success", {
+      message: "Variant image updated successfully",
+      data: variantToUpdate,
+      statusCode: 200
+    });
+
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500
+    });
+  }
+});
+
 productController.put("/delete-variant", async (req, res) => {
   try {
     const { productId, variantIndex } = req.body;
