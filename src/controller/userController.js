@@ -710,9 +710,8 @@ userController.post("/home-details", async (req, res) => {
     const homeCategory = await Category.find({});
     const bestSellerSubCategory = await SubCategory.find({});
     const homeSubCategory = await SubCategory.find({});
-    const trendingProducts = await Product.find({});
-    const bestSellerProducts = await Product.find({});
-    const specialApperence = await Product.find({});
+    const trendingProducts = await Product.find({specialApperence:"Trending"});
+    const bestSellerProducts = await Product.find({specialApperence:"Best Seller"});
     sendResponse(res, 200, "Success", {
       message: "Home page data fetched successfully!",
       data: {
@@ -721,7 +720,6 @@ userController.post("/home-details", async (req, res) => {
         homeSubCategory,
         trendingProducts,
         bestSellerProducts,
-        specialApperence,
       },
       statusCode: 200,
     });
