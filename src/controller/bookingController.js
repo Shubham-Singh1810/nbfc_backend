@@ -785,9 +785,49 @@ bookingController.put("/mark-all", async (req, res) => {
 
 // new api for assigning driver auto and making product as packed
 
+// bookingController.put("/mark-product-as-packed", async (req, res) => {
+//   try {
+//     const { id, productIds, deliveryStatus } = req.body;
+//     if (
+//       !id ||
+//       !productIds ||
+//       !Array.isArray(productIds) ||
+//       productIds.length === 0 ||
+//       !deliveryStatus
+//     ) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "Missing booking ID, product IDs array, or delivery status.",
+//       });
+//     }
+//     const allowedStatuses = [
+//       "orderPacked", 
+//     ];
+//     if (!allowedStatuses.includes(deliveryStatus)) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "Invalid delivery status provided.",
+//       });
+//     }
+//     // check if the vendor location and user location is in the same city or not
+    
+//     return sendResponse(res, 200, "Success", {
+//       message: "Delivery status updated successfully for selected products.",
+//       // data: updatedBooking,
+//       statusCode: 200,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error.",
+//       statusCode: 500,
+//     });
+//   }
+// });
+
+
 bookingController.put("/mark-product-as-packed", async (req, res) => {
   try {
     const { id, productIds, deliveryStatus } = req.body;
+
     if (
       !id ||
       !productIds ||
@@ -799,21 +839,64 @@ bookingController.put("/mark-product-as-packed", async (req, res) => {
         message: "Missing booking ID, product IDs array, or delivery status.",
       });
     }
-    const allowedStatuses = [
-      "orderPacked", 
-    ];
+
+    const allowedStatuses = ["orderPacked"];
     if (!allowedStatuses.includes(deliveryStatus)) {
       return sendResponse(res, 400, "Failed", {
         message: "Invalid delivery status provided.",
       });
     }
-    // check if the vendor location and user location is in the same city or not
-    
+
+    // 🔍 Get the booking details
+    const booking = await Booking.findById(id).lean();
+    if (!booking) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Booking not found",
+      });
+    }
+
+    const allProductsInBooking = booking.product || [];
+
+    // 1️⃣ Total products in the booking
+    const totalProductsCount = allProductsInBooking.length;
+
+    // 2️⃣ Get vendor IDs of the selected products
+    const selectedProductDetails = await Product.find({
+      _id: { $in: productIds },
+    });
+
+    const vendorIds = selectedProductDetails.map((p) => p.createdBy?.toString());
+    const uniqueVendorIds = [...new Set(vendorIds)];
+
+    const isSameVendor = uniqueVendorIds.length === 1;
+
+    // 3️⃣ Get all products in the booking by that vendor
+    const vendorId = uniqueVendorIds[0];
+
+    const allVendorProducts = await Product.find({
+      _id: {
+        $in: allProductsInBooking.map((p) => p.productId),
+      },
+      createdBy: vendorId,
+    });
+
+    const allVendorProductIds = allVendorProducts.map((p) => p._id.toString());
+
+    // 4️⃣ Check if all vendor's products in the order are marked as "orderPacked"
+    const packedStatusCheck = allProductsInBooking
+      .filter((p) => allVendorProductIds.includes(p.productId.toString()))
+      .every((p) => p.deliveryStatus === "orderPacked");
+
+    // 👉 You can now use this logic as needed
     return sendResponse(res, 200, "Success", {
-      message: "Delivery status updated successfully for selected products.",
-      // data: updatedBooking,
+      message: "Status check complete",
+      totalProductsInOrder: totalProductsCount,
+      sameVendor: isSameVendor,
+      vendorId: vendorId || null,
+      allVendorProductsPacked: packedStatusCheck,
       statusCode: 200,
     });
+
   } catch (error) {
     console.error(error);
     return sendResponse(res, 500, "Failed", {
@@ -822,5 +905,6 @@ bookingController.put("/mark-product-as-packed", async (req, res) => {
     });
   }
 });
+
 
 module.exports = bookingController;
