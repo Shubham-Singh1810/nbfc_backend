@@ -68,31 +68,62 @@ couponController.post("/list", async (req, res) => {
   }
 });
 
-couponController.put("/update", async (req, res) => {
-  try {
-    const id = req.body._id;
-    const coupon = await Coupon.findById(id);
-    if (!coupon) {
-      return sendResponse(res, 404, "Failed", {
-        message: "Coupon not found",
-        statusCode: 403,
+couponController.put(
+  "/update",
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      const id = req.body._id;
+
+      // Find coupon by ID
+      const coupon = await Coupon.findById(id);
+      if (!coupon) {
+        return sendResponse(res, 404, "Failed", {
+          message: "Coupon not found",
+          statusCode: 404,
+        });
+      }
+
+      let updatedData = { ...req.body };
+
+      // If new image uploaded
+      if (req.file) {
+        // Delete old image from Cloudinary (if exists)
+        if (coupon.image) {
+          const publicId = coupon.image.split("/").pop().split(".")[0];
+          await cloudinary.uploader.destroy(publicId, (error, result) => {
+            if (error) {
+              console.error("Error deleting old image from Cloudinary:", error);
+            } else {
+              console.log("Old image deleted from Cloudinary:", result);
+            }
+          });
+        }
+
+        // Upload new image to Cloudinary
+        const imageUpload = await cloudinary.uploader.upload(req.file.path);
+        updatedData.image = imageUpload.url;
+      }
+
+      // Update coupon in DB
+      const updatedCoupon = await Coupon.findByIdAndUpdate(id, updatedData, {
+        new: true,
+      });
+
+      sendResponse(res, 200, "Success", {
+        message: "Coupon updated successfully!",
+        data: updatedCoupon,
+        statusCode: 200,
+      });
+    } catch (error) {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+        statusCode: 500,
       });
     }
-    const updatedCoupon = await Coupon.findByIdAndUpdate(id, req.body, {
-      new: true, // Return the updated document
-    });
-    sendResponse(res, 200, "Success", {
-      message: "Coupon updated successfully!",
-      data: updatedCoupon,
-      statusCode: 200,
-    });
-  } catch (error) {
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-      statusCode: 500,
-    });
   }
-});
+);
 
 couponController.delete("/delete/:id", async (req, res) => {
   try {
