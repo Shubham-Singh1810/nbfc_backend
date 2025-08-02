@@ -9,7 +9,6 @@ if (!admin.apps.length) {
 }
 
 exports.sendNotification = async (data) => {
-  console.log(data.fcmToken)
   try {
     let notificationCreated
     if(!data?.onlyPushNotification){

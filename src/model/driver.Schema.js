@@ -84,6 +84,9 @@ const driverSchema = mongoose.Schema({
     required: true,
     enum: ["incompleted", "completed","accountDetailsCompleted", "approved", "rejected", "reUploaded"],
   },
+  operationalCity:{
+    type:String
+  },
   dlFrontImage: {
     type: String,
     required: true,

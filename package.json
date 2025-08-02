@@ -23,7 +23,7 @@
     "geolib": "^3.3.4",
     "google-auth-library": "^9.14.1",
     "googleapis": "^144.0.0",
-    "haversine-distance": "^1.2.3",
+    "haversine-distance": "^1.2.4",
     "http": "^0.0.1-security",
     "imap": "^0.8.19",
     "jsonwebtoken": "^9.0.2",

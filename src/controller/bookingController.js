@@ -9,6 +9,7 @@ const Vender = require("../model/vender.Schema");
 const Product = require("../model/product.Schema");
 const Address = require("../model/address.Schema");
 const Driver = require("../model/driver.Schema");
+const Vendor = require("../model/vender.Schema");
 const Admin = require("../model/admin.Schema");
 const TransactionHistory = require("../model/transactionHistory.Schema");
 const bookingController = express.Router();
@@ -21,6 +22,7 @@ const geolib = require("geolib");
 const fs = require("fs");
 const path = require("path");
 const { sendNotification } = require("../utils/sendNotification");
+const DeliveryAssignment = require("../model/deliveryAssignment");
 
 function haversine(coord1, coord2) {
   const toRad = (angle) => (Math.PI / 180) * angle;
@@ -84,7 +86,7 @@ bookingController.post("/create", async (req, res) => {
 
     if (!userId) {
       return sendResponse(res, 400, "Failed", {
-        message:  "User Id is required",
+        message: "User Id is required",
         statusCode: 400,
       });
     }
@@ -95,7 +97,7 @@ bookingController.post("/create", async (req, res) => {
     }));
 
     if (couponId) {
-      const coupon = await Coupon.findOne({  _id:couponId });
+      const coupon = await Coupon.findOne({ _id: couponId });
 
       if (!coupon) {
         return sendResponse(res, 400, "Failed", {
@@ -105,7 +107,7 @@ bookingController.post("/create", async (req, res) => {
       }
 
       const now = new Date();
- 
+
       const isValid =
         coupon.status === "active" &&
         now >= new Date(coupon.validFrom) &&
@@ -114,7 +116,8 @@ bookingController.post("/create", async (req, res) => {
 
       if (!isValid) {
         return sendResponse(res, 400, "Failed", {
-          message: "Coupon is not valid at this time or order amount is too low.",
+          message:
+            "Coupon is not valid at this time or order amount is too low.",
           statusCode: 400,
         });
       }
@@ -124,8 +127,11 @@ bookingController.post("/create", async (req, res) => {
           statusCode: 400,
         });
       }
-      await Coupon.findByIdAndUpdate(couponId, { $set: { usedCount:coupon.usedCount + 1  } },
-        { new: true })
+      await Coupon.findByIdAndUpdate(
+        couponId,
+        { $set: { usedCount: coupon.usedCount + 1 } },
+        { new: true }
+      );
     }
 
     const bookingData = {
@@ -177,7 +183,7 @@ bookingController.post("/create", async (req, res) => {
       if (superAdmin?.deviceId) {
         await sendNotification({
           title: "Wallet",
-          subTitle: `You received ₹${totalAmount} for a new booking` ,
+          subTitle: `You received ₹${totalAmount} for a new booking`,
           icon: "https://cdn-icons-png.flaticon.com/128/6020/6020135.png",
           notifyUserId: "admin",
           category: "Wallet",
@@ -214,7 +220,9 @@ bookingController.post("/create", async (req, res) => {
       });
     }
 
-    const populatedBooking = await Booking.findById(bookingCreated._id).populate("product.productId");
+    const populatedBooking = await Booking.findById(
+      bookingCreated._id
+    ).populate("product.productId");
 
     for (const item of populatedBooking.product) {
       const createdById = item.productId?.createdBy;
@@ -720,7 +728,9 @@ bookingController.put("/mark-all", async (req, res) => {
         const updatedStock = currentStock - orderedQty;
 
         if (updatedStock < 0) {
-          console.warn(`Warning: Negative stock for product ${productDetails.name}`);
+          console.warn(
+            `Warning: Negative stock for product ${productDetails.name}`
+          );
         }
 
         await Product.updateOne(
@@ -782,7 +792,6 @@ bookingController.put("/mark-all", async (req, res) => {
   }
 });
 
-
 // new api for assigning driver auto and making product as packed
 
 // bookingController.put("/mark-product-as-packed", async (req, res) => {
@@ -800,7 +809,7 @@ bookingController.put("/mark-all", async (req, res) => {
 //       });
 //     }
 //     const allowedStatuses = [
-//       "orderPacked", 
+//       "orderPacked",
 //     ];
 //     if (!allowedStatuses.includes(deliveryStatus)) {
 //       return sendResponse(res, 400, "Failed", {
@@ -808,7 +817,7 @@ bookingController.put("/mark-all", async (req, res) => {
 //       });
 //     }
 //     // check if the vendor location and user location is in the same city or not
-    
+
 //     return sendResponse(res, 200, "Success", {
 //       message: "Delivery status updated successfully for selected products.",
 //       // data: updatedBooking,
@@ -823,80 +832,254 @@ bookingController.put("/mark-all", async (req, res) => {
 //   }
 // });
 
+// bookingController.put("/mark-product-as-packed", async (req, res) => {
+//   try {
+//     const { id, productIds, deliveryStatus } = req.body;
+
+//     if (
+//       !id ||
+//       !productIds ||
+//       !Array.isArray(productIds) ||
+//       productIds.length === 0 ||
+//       !deliveryStatus
+//     ) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "Missing booking ID, product IDs array, or delivery status.",
+//       });
+//     }
+
+//     const allowedStatuses = ["orderPacked"];
+//     if (!allowedStatuses.includes(deliveryStatus)) {
+//       return sendResponse(res, 400, "Failed", {
+//         message: "Invalid delivery status provided.",
+//       });
+//     }
+
+//     // 🔍 Get the booking details
+//     const booking = await Booking.findById(id).lean();
+//     if (!booking) {
+//       return sendResponse(res, 404, "Failed", {
+//         message: "Booking not found",
+//       });
+//     }
+
+//     const allProductsInBooking = booking.product || [];
+
+//     // 1️⃣ Total products in the booking
+//     const totalProductsCount = allProductsInBooking.length;
+
+//     // 2️⃣ Get vendor IDs of the selected products
+//     const selectedProductDetails = await Product.find({
+//       _id: { $in: productIds },
+//     });
+
+//     const vendorIds = selectedProductDetails.map((p) => p.createdBy?.toString());
+//     const uniqueVendorIds = [...new Set(vendorIds)];
+
+//     const isSameVendor = uniqueVendorIds.length === 1;
+
+//     // 3️⃣ Get all products in the booking by that vendor
+//     const vendorId = uniqueVendorIds[0];
+
+//     const allVendorProducts = await Product.find({
+//       _id: {
+//         $in: allProductsInBooking.map((p) => p.productId),
+//       },
+//       createdBy: vendorId,
+//     });
+
+//     const allVendorProductIds = allVendorProducts.map((p) => p._id.toString());
+
+//     // 4️⃣ Check if all vendor's products in the order are marked as "orderPacked"
+//     const packedStatusCheck = allProductsInBooking
+//       .filter((p) => allVendorProductIds.includes(p.productId.toString()))
+//       .every((p) => p.deliveryStatus === "orderPacked");
+
+//     // 👉 You can now use this logic as needed
+//     return sendResponse(res, 200, "Success", {
+//       message: "Status check complete",
+//       totalProductsInOrder: totalProductsCount,
+//       sameVendor: isSameVendor,
+//       vendorId: vendorId || null,
+//       allVendorProductsPacked: packedStatusCheck,
+//       statusCode: 200,
+//     });
+
+//   } catch (error) {
+//     console.error(error);
+//     return sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error.",
+//       statusCode: 500,
+//     });
+//   }
+// });
 
 bookingController.put("/mark-product-as-packed", async (req, res) => {
   try {
-    const { id, productIds, deliveryStatus } = req.body;
-
+    const { orderId, productIds, vendorId } = req.body;
     if (
-      !id ||
+      !orderId ||
       !productIds ||
       !Array.isArray(productIds) ||
       productIds.length === 0 ||
-      !deliveryStatus
+      !vendorId
     ) {
       return sendResponse(res, 400, "Failed", {
-        message: "Missing booking ID, product IDs array, or delivery status.",
+        message: "Missing booking ID, vendorId, or product IDs array",
       });
     }
 
-    const allowedStatuses = ["orderPacked"];
-    if (!allowedStatuses.includes(deliveryStatus)) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Invalid delivery status provided.",
-      });
-    }
+    const booking = await Booking.findById(orderId)
+      .populate("product.productId")
+      .populate("userId")
+      .populate("addressId");
 
-    // 🔍 Get the booking details
-    const booking = await Booking.findById(id).lean();
     if (!booking) {
       return sendResponse(res, 404, "Failed", {
         message: "Booking not found",
       });
     }
 
-    const allProductsInBooking = booking.product || [];
+    const vendorDetails = await Vendor.findById(vendorId);
+    if (!vendorDetails) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Vendor not found",
+      });
+    }
 
-    // 1️⃣ Total products in the booking
-    const totalProductsCount = allProductsInBooking.length;
+    // Step 1: Mark requested products as packed
 
-    // 2️⃣ Get vendor IDs of the selected products
-    const selectedProductDetails = await Product.find({
-      _id: { $in: productIds },
+    for (let item of booking.product) {
+      if (
+        item.productId?.createdBy?.toString() === vendorId &&
+        productIds.includes(item.productId._id.toString())
+      ) {
+        item.deliveryStatus = "orderPacked";
+      }
+    }
+
+    await booking.save();
+
+    // Step 2: Check if all same-vendor products are packed
+    const sameVendorProductsPending = booking.product.some(
+      (item) =>
+        item.productId?.createdBy?.toString() === vendorId &&
+        item.deliveryStatus !== "orderPacked"
+    );
+    console.log(sameVendorProductsPending)
+    if (sameVendorProductsPending) {
+      return sendResponse(res, 200, "Success", {
+        message:
+          "Products marked as packed. Driver not assigned due to pending same-vendor products.",
+        driverAssigned: false,
+      });
+    }
+
+    // Step 3: Check if vendor city and delivery district match
+    const vendorCity = vendorDetails.district?.trim();
+    const deliveryDistrict = booking.addressId?.city?.trim();
+    if (vendorCity !== deliveryDistrict) {
+      return sendResponse(res, 200, "Success", {
+        message:
+          "Products packed. Driver not assigned because vendor district and delivery city do not match.",
+        driverAssigned: false,
+      });
+    }
+
+    // Step 4: Try auto-assign driver — Prefer one who already has same vendor's delivery
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const drivers = await Driver.find({
+      profileStatus: "approved",
+      operationalCity: deliveryDistrict,
     });
 
-    const vendorIds = selectedProductDetails.map((p) => p.createdBy?.toString());
-    const uniqueVendorIds = [...new Set(vendorIds)];
+    let assignedDriver = null;
+    let assignedDate = null;
 
-    const isSameVendor = uniqueVendorIds.length === 1;
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+      const dateToCheck = new Date(today);
+      dateToCheck.setDate(today.getDate() + dayOffset);
 
-    // 3️⃣ Get all products in the booking by that vendor
-    const vendorId = uniqueVendorIds[0];
+      for (let driver of drivers) {
+        const deliveryDateStr = dateToCheck.toISOString().split("T")[0];
 
-    const allVendorProducts = await Product.find({
-      _id: {
-        $in: allProductsInBooking.map((p) => p.productId),
-      },
-      createdBy: vendorId,
-    });
+        const assignmentCount = await DeliveryAssignment.countDocuments({
+          driverId: driver._id,
+          deliveryDate: deliveryDateStr,
+        });
 
-    const allVendorProductIds = allVendorProducts.map((p) => p._id.toString());
+        if (assignmentCount < 5) {
+          const existingSameVendorAssignment = await DeliveryAssignment.findOne(
+            {
+              vendorId,
+              driverId: driver._id,
+              deliveryDate: deliveryDateStr,
+            }
+          );
 
-    // 4️⃣ Check if all vendor's products in the order are marked as "orderPacked"
-    const packedStatusCheck = allProductsInBooking
-      .filter((p) => allVendorProductIds.includes(p.productId.toString()))
-      .every((p) => p.deliveryStatus === "orderPacked");
+          if (existingSameVendorAssignment || assignmentCount === 0) {
+            assignedDriver = driver;
+            assignedDate = deliveryDateStr;
+            break;
+          }
+        }
+      }
 
-    // 👉 You can now use this logic as needed
-    return sendResponse(res, 200, "Success", {
-      message: "Status check complete",
-      totalProductsInOrder: totalProductsCount,
-      sameVendor: isSameVendor,
-      vendorId: vendorId || null,
-      allVendorProductsPacked: packedStatusCheck,
-      statusCode: 200,
-    });
+      if (assignedDriver) break;
+    }
 
+    if (assignedDriver) {
+      for (let item of booking.product) {
+        item.driverId = assignedDriver?._id.toString();
+      }
+      await booking.save();
+      let deliveryAssignmentObj = {
+        orderId: orderId,
+        products: booking?.product?.filter((v) => {
+          return productIds.includes(v?.productId?._id?.toString());
+        }),
+        driverId: assignedDriver?._id.toString(),
+        deliveryDate: assignedDate,
+        vendorId: vendorId,
+        userId: booking?.userId?._id.toString(),
+        addressId: booking?.addressId?._id.toString(),
+        pickUpPoint: {
+          lat: vendorDetails?.lat,
+          long: vendorDetails?.long,
+        },
+        dropOffPoint: {
+          lat: booking?.addressId?.lat,
+          long: booking?.addressId?.long,
+        },
+      };
+      await DeliveryAssignment.create(deliveryAssignmentObj);
+      console.log(assignedDriver)
+      // send push notification to the driver 
+         await sendNotification({
+          title: "Delivery Assignment",
+          subTitle: `You get a new assignment for the date ${assignedDate}`,
+          icon: "https://cdn-icons-png.flaticon.com/128/6020/6020135.png",
+          notifyUserId: assignedDriver?._id.toString(),
+          category: "Delivery Assignment",
+          subCategory: "New Assignment",
+          notifyUser: "Driver",
+          fcmToken: assignedDriver?.androidDeviceId,
+        });
+
+      return sendResponse(res, 200, "Success", {
+        message: "Products packed and driver assigned.",
+        driverAssigned: true,
+        driverId: assignedDriver._id,
+      });
+    } else {
+      return sendResponse(res, 200, "Success", {
+        message:
+          "Products packed. No available driver found within 7 days, manual assignment required.",
+        driverAssigned: false,
+      });
+    }
   } catch (error) {
     console.error(error);
     return sendResponse(res, 500, "Failed", {
@@ -905,6 +1088,5 @@ bookingController.put("/mark-product-as-packed", async (req, res) => {
     });
   }
 });
-
 
 module.exports = bookingController;

@@ -34,6 +34,7 @@ const variantController = require("./controller/variantController");
 const adminFundController = require("./controller/adminFundController");
 const withdrawRequest = require("./controller/withdrawRequestController");
 const couponController = require("./controller/couponController");
+const assignmentController = require("./controller/assignmentController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -69,6 +70,7 @@ router.use("/variant", variantController);
 router.use("/admin-fund", adminFundController);
 router.use("/withdraw-request", withdrawRequest);
 router.use("/coupon", couponController);
+router.use("/assignment", assignmentController);
 
 
 module.exports = router;
