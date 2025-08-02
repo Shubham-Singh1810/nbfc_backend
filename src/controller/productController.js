@@ -512,10 +512,7 @@ productController.put("/update-variant-image", upload.array("variantImage"), asy
   try {
     const {
       productId,
-      variantKey,
-      variantValue,
-      variantSecondaryKey,
-      variantSecondaryValue
+      variantIndex
     } = req.body;
 
     if (!req.files || req.files.length === 0) {
@@ -525,6 +522,7 @@ productController.put("/update-variant-image", upload.array("variantImage"), asy
       });
     }
 
+    // Fetch the product
     const product = await Product.findById(productId);
     if (!product) {
       return sendResponse(res, 404, "Failed", {
@@ -533,34 +531,29 @@ productController.put("/update-variant-image", upload.array("variantImage"), asy
       });
     }
 
-    // Upload new images to Cloudinary
+    // Validate variant index
+    const index = parseInt(variantIndex);
+    if (isNaN(index) || index < 0 || index >= product.productVariants.length) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Invalid variant index",
+        statusCode: 400
+      });
+    }
+
+    // Upload images to Cloudinary
     const uploadedUrls = [];
     for (const file of req.files) {
       const uploadedImage = await cloudinary.uploader.upload(file.path);
       uploadedUrls.push(uploadedImage.secure_url);
     }
 
-    // Find and update the variant
-    const variantToUpdate = product.productVariants.find(
-      (variant) =>
-        variant.variantKey === variantKey &&
-        variant.variantValue === variantValue &&
-        variant.variantSecondaryKey === variantSecondaryKey &&
-        variant.variantSecondaryValue === variantSecondaryValue
-    );
-
-    if (!variantToUpdate) {
-      return sendResponse(res, 404, "Failed", {
-        message: "Variant not found",
-        statusCode: 404
-      });
-    }
-
+    // Update the variant image
+    const variantToUpdate = product.productVariants[index];
     variantToUpdate.variantImage = uploadedUrls;
 
     await product.save();
 
-    sendResponse(res, 200, "Success", {
+    return sendResponse(res, 200, "Success", {
       message: "Variant image updated successfully",
       data: variantToUpdate,
       statusCode: 200
@@ -568,12 +561,13 @@ productController.put("/update-variant-image", upload.array("variantImage"), asy
 
   } catch (error) {
     console.error(error);
-    sendResponse(res, 500, "Failed", {
+    return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
       statusCode: 500
     });
   }
 });
+
 
 productController.put("/delete-variant", async (req, res) => {
   try {
