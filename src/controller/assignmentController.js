@@ -4,7 +4,7 @@ require("dotenv").config();
 const assignmentController = express.Router();
 require("dotenv").config();
 const DeliveryAssignment = require("../model/deliveryAssignment");
-const haversine = require("haversine-distance");
+
 assignmentController.post("/list", async (req, res) => {
   try {
     const {
@@ -70,6 +70,10 @@ assignmentController.post("/list", async (req, res) => {
 });
 
 
+const axios = require("axios");
+const dotenv = require("dotenv");
+dotenv.config(); // make sure .env is loaded
+
 assignmentController.post("/optimise-route", async (req, res) => {
   try {
     const {
@@ -96,15 +100,11 @@ assignmentController.post("/optimise-route", async (req, res) => {
 
     const assignments = await DeliveryAssignment.find(query)
       .populate("driverId")
-      .populate({
-        path: "orderId",
-        populate: [
-        //   { path: "venderId" },
-          { path: "userId" },
-        //   { path: "addressId" },
-        //   { path: "products.productId" },
-        ],
-      })
+      .populate("vendorId")
+      .populate("userId")
+      .populate("addressId")
+      .populate("products.productId")
+      .populate("orderId")
       .sort(sortOption)
       .skip((pageNo - 1) * pageCount)
       .limit(pageCount);
@@ -124,16 +124,16 @@ assignmentController.post("/optimise-route", async (req, res) => {
     }
 
     // Assuming same vendor for all assignments
-    const vendor = assignments[0].orderId.venderId;
+    const vendor = assignments[0].vendorId;
     const vendorLocation = {
-      latitude: vendor.lat,
-      longitude: vendor.long,
+      latitude: parseFloat(vendor.lat),
+      longitude: parseFloat(vendor.long),
     };
 
     const dropOffs = assignments.map((assign) => {
-      const user = assign.orderId.userId;
-    //   const address = assign.orderId.addressId;
-      const products = assign.orderId.products.map((p) => ({
+      const user = assign.userId;
+      const address = assign.addressId;
+      const products = assign.products.map((p) => ({
         productId: p.productId._id,
         name: p.productId.name,
         quantity: p.quantity,
@@ -143,17 +143,34 @@ assignmentController.post("/optimise-route", async (req, res) => {
         userDetails: {
           fullName: user.fullName,
           phone: user.phone,
-        //   address: address,
+          address: address,
           location: {
-            latitude: address.latitude,
-            longitude: address.longitude,
+            latitude: parseFloat(address.lat),
+            longitude: parseFloat(address.long),
           },
         },
         product: products,
       };
     });
 
-    // Optimize route using greedy nearest neighbor
+    // 🔧 Function to get Google Maps driving distance in meters
+    async function getDrivingDistance(origin, destination) {
+      const key = "AIzaSyD6KJOHKQLUWMAh9Yl5NQrEAI9bxrvYCqQ";
+      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&mode=driving&key=${key}`;
+
+      const response = await axios.get(url);
+      const data = response.data;
+
+      if (data.status === "OK") {
+        const distanceInMeters = data.routes[0].legs[0].distance.value;
+        return distanceInMeters;
+      } else {
+        console.error("Google API error:", data.status, data.error_message);
+        throw new Error(`Google API error: ${data.status}`);
+      }
+    }
+
+    // 🚗 Optimize route using greedy nearest neighbor with Google driving distance
     const visited = new Array(dropOffs.length).fill(false);
     const optimizedDropOffs = [];
     let currentLoc = vendorLocation;
@@ -165,7 +182,10 @@ assignmentController.post("/optimise-route", async (req, res) => {
 
       for (let j = 0; j < dropOffs.length; j++) {
         if (!visited[j]) {
-          const dist = haversine(currentLoc, dropOffs[j].userDetails.location);
+          const dist = await getDrivingDistance(
+            currentLoc,
+            dropOffs[j].userDetails.location
+          );
           if (dist < minDistance) {
             minDistance = dist;
             nearestIndex = j;
@@ -190,15 +210,24 @@ assignmentController.post("/optimise-route", async (req, res) => {
       vendorDetails: {
         fullName: vendor.fullName,
         phone: vendor.phone,
-        // address: vendor.address,
+        vendorLocation,
       },
       dropOffLocation: optimizedDropOffs,
     };
 
     const totalCount = await DeliveryAssignment.countDocuments(query);
-    const pendingCount = await DeliveryAssignment.countDocuments({ ...query, status: "pending" });
-    const completedCount = await DeliveryAssignment.countDocuments({ ...query, status: "completed" });
-    const notDeliveredCount = await DeliveryAssignment.countDocuments({ ...query, status: "notDelivered" });
+    const pendingCount = await DeliveryAssignment.countDocuments({
+      ...query,
+      status: "pending",
+    });
+    const completedCount = await DeliveryAssignment.countDocuments({
+      ...query,
+      status: "completed",
+    });
+    const notDeliveredCount = await DeliveryAssignment.countDocuments({
+      ...query,
+      status: "notDelivered",
+    });
 
     sendResponse(res, 200, "Success", {
       message: "Optimized delivery assignment list!",
@@ -218,6 +247,7 @@ assignmentController.post("/optimise-route", async (req, res) => {
     });
   }
 });
+
 
 
 
