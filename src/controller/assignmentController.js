@@ -131,6 +131,7 @@ assignmentController.post("/optimise-route", async (req, res) => {
     };
 
     const dropOffs = assignments.map((assign) => {
+      console.log( "line 134", assign.userId)
       const user = assign.userId;
       const address = assign.addressId;
       const products = assign.products.map((p) => ({
@@ -141,7 +142,8 @@ assignmentController.post("/optimise-route", async (req, res) => {
 
       return {
         userDetails: {
-          fullName: user.fullName,
+          firstName: user.firstName,
+          lastName: user.lastName,
           phone: user.phone,
           address: address,
           location: {
@@ -208,7 +210,8 @@ assignmentController.post("/optimise-route", async (req, res) => {
       distanceTravelled: totalDistanceKm,
       totalEarning,
       vendorDetails: {
-        fullName: vendor.fullName,
+        firstName: vendor.firstName,
+        lastName: vendor.lastName,
         phone: vendor.phone,
         vendorLocation,
       },

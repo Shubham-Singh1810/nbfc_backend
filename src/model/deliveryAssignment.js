@@ -68,7 +68,7 @@ const deliveryAssignmentSchema = new mongoose.Schema({
   status:{
     type:String,
     default: "pending",
-    enum: ["pending", "completed","notDelivered"],
+    enum: ["pending","recived", "completed","notDelivered"],
   },
   reasonForNotDelivered:{
     type:String,
