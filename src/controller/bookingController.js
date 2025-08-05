@@ -926,6 +926,7 @@ bookingController.put("/mark-product-as-packed", async (req, res) => {
     ) {
       return sendResponse(res, 400, "Failed", {
         message: "Missing booking ID, vendorId, or product IDs array",
+        statusCode:400
       });
     }
 
@@ -937,6 +938,7 @@ bookingController.put("/mark-product-as-packed", async (req, res) => {
     if (!booking) {
       return sendResponse(res, 404, "Failed", {
         message: "Booking not found",
+        statusCode:404
       });
     }
 
@@ -944,6 +946,7 @@ bookingController.put("/mark-product-as-packed", async (req, res) => {
     if (!vendorDetails) {
       return sendResponse(res, 404, "Failed", {
         message: "Vendor not found",
+        statusCode:404
       });
     }
 
@@ -972,6 +975,7 @@ bookingController.put("/mark-product-as-packed", async (req, res) => {
         message:
           "Products marked as packed. Driver not assigned due to pending same-vendor products.",
         driverAssigned: false,
+        statusCode:200
       });
     }
 
@@ -983,6 +987,7 @@ bookingController.put("/mark-product-as-packed", async (req, res) => {
         message:
           "Products packed. Driver not assigned because vendor district and delivery city do not match.",
         driverAssigned: false,
+        statusCode:200
       });
     }
 
@@ -1055,7 +1060,6 @@ bookingController.put("/mark-product-as-packed", async (req, res) => {
         },
       };
       await DeliveryAssignment.create(deliveryAssignmentObj);
-      console.log(assignedDriver)
       // send push notification to the driver 
          await sendNotification({
           title: "Delivery Assignment",
@@ -1072,9 +1076,11 @@ bookingController.put("/mark-product-as-packed", async (req, res) => {
         message: "Products packed and driver assigned.",
         driverAssigned: true,
         driverId: assignedDriver._id,
+        statusCode:200
       });
     } else {
       return sendResponse(res, 200, "Success", {
+        statusCode:200,
         message:
           "Products packed. No available driver found within 7 days, manual assignment required.",
         driverAssigned: false,

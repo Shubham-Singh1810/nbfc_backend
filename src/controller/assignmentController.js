@@ -131,7 +131,6 @@ assignmentController.post("/optimise-route", async (req, res) => {
     };
 
     const dropOffs = assignments.map((assign) => {
-      console.log( "line 134", assign.userId)
       const user = assign.userId;
       const address = assign.addressId;
       const products = assign.products.map((p) => ({
@@ -235,6 +234,7 @@ assignmentController.post("/optimise-route", async (req, res) => {
     sendResponse(res, 200, "Success", {
       message: "Optimized delivery assignment list!",
       data: responseData,
+      statusCode:200,
       documentCount: {
         totalCount,
         pendingCount,
