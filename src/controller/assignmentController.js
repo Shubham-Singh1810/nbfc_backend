@@ -4,6 +4,7 @@ require("dotenv").config();
 const assignmentController = express.Router();
 require("dotenv").config();
 const DeliveryAssignment = require("../model/deliveryAssignment");
+const DeliveryAssignmentGroup = require("../model/deliveryAssignmentGroup");
 
 assignmentController.post("/list", async (req, res) => {
   try {
@@ -131,6 +132,7 @@ assignmentController.post("/optimise-route", async (req, res) => {
     };
 
     const dropOffs = assignments.map((assign) => {
+      const assignmentId = assign._id
       const user = assign.userId;
       const address = assign.addressId;
       const products = assign.products.map((p) => ({
@@ -140,6 +142,7 @@ assignmentController.post("/optimise-route", async (req, res) => {
       }));
 
       return {
+        assignmentId,
         userDetails: {
           firstName: user.firstName,
           lastName: user.lastName,
@@ -251,6 +254,120 @@ assignmentController.post("/optimise-route", async (req, res) => {
   }
 });
 
+assignmentController.post("/create-group", async (req, res) => {
+  try {
+    const assignmentGroup = await DeliveryAssignmentGroup.create(req.body);
+    sendResponse(res, 200, "Success", {
+      message: "Assignment group created successfully!",
+      data: assignmentGroup,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
+
+assignmentController.post("/get-delivery-assignment-details", async (req, res) => {
+  try {
+    const { driverId, deliveryDate } = req.body;
+
+    const query = {};
+    if (driverId) query.driverId = driverId;
+    if (deliveryDate) {
+      const start = new Date(deliveryDate);
+      const end = new Date(deliveryDate);
+      end.setDate(end.getDate() + 1);
+      query.deliveryDate = { $gte: start, $lt: end };
+    }
+
+    const assignmentGroup = await DeliveryAssignmentGroup.findOne(query)
+      .populate("driverId")
+      .populate("vendorId")
+      .populate({
+        path: "assignmentIds",
+        populate: [
+          { path: "driverId" },
+          { path: "vendorId" },
+          { path: "userId" },
+          { path: "addressId" },
+          { path: "products.productId" },
+          { path: "orderId" },
+        ],
+      });
+
+    if (!assignmentGroup) {
+      return sendResponse(res, 200, "Success", {
+        message: "No delivery assignment group found.",
+        data: null,
+        statusCode: 200,
+      });
+    }
+
+    const assignments = assignmentGroup.assignmentIds;
+    const vendor = assignmentGroup.vendorId;
+    const vendorLocation = {
+      latitude: parseFloat(vendor?.lat || 0),
+      longitude: parseFloat(vendor?.long || 0),
+    };
+
+    const detailedAssignments = assignments.map((assign) => {
+      const user = assign.userId;
+      const address = assign.addressId;
+      const products = assign.products.map((p) => ({
+        productId: p.productId?._id,
+        name: p.productId?.name,
+        quantity: p.quantity,
+      }));
+
+      return {
+        assignmentId: assign._id,
+        orderId: assign.orderId?._id,
+        status: assign.status,
+        reasonForNotDelivered: assign.reasonForNotDelivered || null,
+        pickUpPoint: assign.pickUpPoint,
+        dropOffPoint: assign.dropOffPoint,
+        userDetails: {
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+          phone: user?.phone,
+          address,
+          location: {
+            latitude: parseFloat(address?.lat || 0),
+            longitude: parseFloat(address?.long || 0),
+          },
+        },
+        product: products,
+      };
+    });
+
+    const responseData = {
+      vendorDetails: {
+        firstName: vendor?.firstName,
+        lastName: vendor?.lastName,
+        phone: vendor?.phone,
+        vendorLocation,
+      },
+      distanceTravelled: assignmentGroup.distanceTravelled || 0,
+      totalEarning: assignmentGroup.totalEarning || 0,
+      dropOffLocation: detailedAssignments,
+    };
+
+    sendResponse(res, 200, "Success", {
+      message: "Delivery assignment group retrieved successfully!",
+      data: responseData,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
 
 
 
