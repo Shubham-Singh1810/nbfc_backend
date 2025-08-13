@@ -3,6 +3,7 @@ const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const assignmentController = express.Router();
 require("dotenv").config();
+const axios = require("axios");
 const DeliveryAssignment = require("../model/deliveryAssignment");
 const DeliveryAssignmentGroup = require("../model/deliveryAssignmentGroup");
 
@@ -69,11 +70,6 @@ assignmentController.post("/list", async (req, res) => {
     });
   }
 });
-
-
-const axios = require("axios");
-const dotenv = require("dotenv");
-dotenv.config(); // make sure .env is loaded
 
 assignmentController.post("/optimise-route", async (req, res) => {
   try {

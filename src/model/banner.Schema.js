@@ -15,10 +15,6 @@ const bannerSchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  name:{
-    type: String,
-    require: true,
-  },
   link:{
     type: String,
   }

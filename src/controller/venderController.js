@@ -14,100 +14,106 @@ const upload = require("../utils/multer");
 const { sendNotification } = require("../utils/sendNotification");
 const auth = require("../utils/auth");
 
-venderController.post("/sign-up", upload.single("profilePic"), async (req, res) => {
-  try {
-    // Check if the phone number is unique
-    const user = await Vender.findOne({ phone: req.body.phone });
-    if (user) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Vendor is already registered.",
-        statusCode: 400,
-      });
-    }
+venderController.post(
+  "/sign-up",
+  upload.single("profilePic"),
+  async (req, res) => {
+    try {
+      // Check if the phone number is unique
+      const user = await Vender.findOne({ phone: req.body.phone });
+      if (user) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Vendor is already registered.",
+          statusCode: 400,
+        });
+      }
 
-    // Generate OTP
-    const otp = generateOTP();
+      // Generate OTP
+      const otp = generateOTP();
 
-    let profilePic;
+      let profilePic;
 
-    if (req.file) {
-      let profilePicData = await cloudinary.uploader.upload(
-        req.file.path,
-        function (err, result) {
-          if (err) {
-            return err;
-          } else {
-            return result;
+      if (req.file) {
+        let profilePicData = await cloudinary.uploader.upload(
+          req.file.path,
+          function (err, result) {
+            if (err) {
+              return err;
+            } else {
+              return result;
+            }
           }
-        }
+        );
+        profilePic = profilePicData.url;
+      }
+
+      // Create a new user with provided details
+      let newVender = await Vender.create({
+        ...req.body,
+        phoneOtp: otp,
+        profilePic: profilePic,
+      });
+      const superAdmin = await Admin.findOne({
+        role: "680e3c4dd3f86cb24e34f6a6",
+      });
+      sendNotification({
+        icon: newVender.profilePic,
+        title: "Vendor Registered",
+        subTitle: `${newVender.firstName} has registered to the portal`,
+        notifyUserId: "Admin",
+        category: "Vender",
+        subCategory: "Registration",
+        notifyUser: "Admin",
+        fcmToken: superAdmin.deviceId,
+      });
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: newVender._id, phone: newVender.phone },
+        process.env.JWT_KEY
       );
-      profilePic =  profilePicData.url ;
-    }
 
-    // Create a new user with provided details
-    let newVender = await Vender.create({
-      ...req.body,
-      phoneOtp: otp,
-      profilePic :profilePic
-    });
-    const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
-    sendNotification({
-      icon:newVender.profilePic,
-      title:"Vendor Registered",
-      subTitle:`${newVender.firstName} has registered to the portal`,
-      notifyUserId:"Admin",
-      category:"Vender",
-      subCategory:"Registration",
-      notifyUser:"Admin",
-      fcmToken: superAdmin.deviceId,
-    })
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: newVender._id, phone: newVender.phone },
-      process.env.JWT_KEY
-    );
+      // Store the token in the user object or return it in the response
+      newVender.token = token;
+      const updatedVender = await Vender.findByIdAndUpdate(
+        newVender._id,
+        { token },
+        { new: true }
+      );
 
-    // Store the token in the user object or return it in the response
-    newVender.token = token;
-    const updatedVender = await Vender.findByIdAndUpdate(
-      newVender._id,
-      { token },
-      { new: true }
-    );
+      // OTP message for autofill
+      const appHash = "ems/3nG2V1H"; // Replace with your actual hash
+      const otpMessage = `<#> ${otp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
 
-    // OTP message for autofill
-    const appHash = "ems/3nG2V1H"; // Replace with your actual hash
-    const otpMessage = `<#> ${otp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
-
-    let otpResponse = await axios.post(
-      `https://api.authkey.io/request?authkey=${
-        process.env.AUTHKEY_API_KEY
-      }&mobile=${req.body.phone}&country_code=91&sid=${
-        process.env.AUTHKEY_SENDER_ID
-      }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
-    );
-    const io = req.io;
+      let otpResponse = await axios.post(
+        `https://api.authkey.io/request?authkey=${
+          process.env.AUTHKEY_API_KEY
+        }&mobile=${req.body.phone}&country_code=91&sid=${
+          process.env.AUTHKEY_SENDER_ID
+        }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
+      );
+      const io = req.io;
       io.emit("new-vendor-registered", updatedVender);
 
-    if (otpResponse?.status == "200") {
-      return sendResponse(res, 200, "Success", {
-        message: "OTP sent successfully",
-        data: updatedVender,
-        statusCode: 200,
-      });
-    } else {
-      return sendResponse(res, 422, "Failed", {
-        message: "Unable to send OTP",
-        statusCode: 200,
+      if (otpResponse?.status == "200") {
+        return sendResponse(res, 200, "Success", {
+          message: "OTP sent successfully",
+          data: updatedVender,
+          statusCode: 200,
+        });
+      } else {
+        return sendResponse(res, 422, "Failed", {
+          message: "Unable to send OTP",
+          statusCode: 200,
+        });
+      }
+    } catch (error) {
+      console.error("Error in /sign-up:", error.message);
+      return sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error.",
       });
     }
-  } catch (error) {
-    console.error("Error in /sign-up:", error.message);
-    return sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error.",
-    });
   }
-});
+);
 
 venderController.post("/otp-verification", async (req, res) => {
   try {
@@ -116,21 +122,28 @@ venderController.post("/otp-verification", async (req, res) => {
     if (user) {
       const updatedVender = await Vender.findByIdAndUpdate(
         user._id,
-        { isPhoneVerified: true,  profileStatus: req?.body?.isforgetPassword ? user?.profileStatus:  "otpVerified" },
+        {
+          isPhoneVerified: true,
+          profileStatus: req?.body?.isforgetPassword
+            ? user?.profileStatus
+            : "otpVerified",
+        },
         { new: true }
       );
-      const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
-          sendNotification({
-              icon:updatedVender.profilePic,
-              title:"Verified Phone Number",
-              subTitle:`${updatedVender.firstName} has verified thier phone number.`,
-              notifyUserId:"Admin",
-              category:"Vender",
-              subCategory:"Verification",
-              notifyUser:"Admin",
-              fcmToken: superAdmin.deviceId,
-            })
-            const io = req.io;
+      const superAdmin = await Admin.findOne({
+        role: "680e3c4dd3f86cb24e34f6a6",
+      });
+      sendNotification({
+        icon: updatedVender.profilePic,
+        title: "Verified Phone Number",
+        subTitle: `${updatedVender.firstName} has verified thier phone number.`,
+        notifyUserId: "Admin",
+        category: "Vender",
+        subCategory: "Verification",
+        notifyUser: "Admin",
+        fcmToken: superAdmin.deviceId,
+      });
+      const io = req.io;
       io.emit("vendor-updated", updatedVender);
       return sendResponse(res, 200, "Success", {
         message: "Otp verified successfully",
@@ -239,7 +252,10 @@ venderController.get("/details/:id", async (req, res) => {
 
     // Extract non-approved field names
     const nonApprovedFields = Object.keys(vender).filter(
-      (key) => key.startsWith("is") && key.endsWith("Approved") && vender[key] === false
+      (key) =>
+        key.startsWith("is") &&
+        key.endsWith("Approved") &&
+        vender[key] === false
     );
 
     return sendResponse(res, 200, "Success", {
@@ -327,68 +343,70 @@ venderController.put(
       const updatedUserData = await Vender.findByIdAndUpdate(id, updateData, {
         new: true,
       });
-      const superAdmin = await Admin.findOne({ role: "680e3c4dd3f86cb24e34f6a6" });
-      if(req.body.profileStatus=="reUploaded"){
+      const superAdmin = await Admin.findOne({
+        role: "680e3c4dd3f86cb24e34f6a6",
+      });
+      if (req.body.profileStatus == "reUploaded") {
         sendNotification({
-          icon:updatedUserData.profilePic,
-          title:"Re Uploaded",
-          subTitle:`${updatedUserData.firstName} has re-uploaded the details.`,
-          notifyUserId:"Admin",
-          category:"Vender",
-          subCategory:"Profile update",
-          notifyUser:"Admin",
+          icon: updatedUserData.profilePic,
+          title: "Re Uploaded",
+          subTitle: `${updatedUserData.firstName} has re-uploaded the details.`,
+          notifyUserId: "Admin",
+          category: "Vender",
+          subCategory: "Profile update",
+          notifyUser: "Admin",
           fcmToken: superAdmin.deviceId,
-        })
+        });
       }
-         if(req.body.profileStatus=="rejected"){
-                sendNotification({
-                  icon:updatedUserData.profilePic,
-                  title:"Details Rejected",
-                  subTitle:`${updatedUserData.firstName} please go through the details once more.`,
-                  notifyUserId:updatedUserData._id,
-                  category:"Vender",
-                  subCategory:"Profile update",
-                  notifyUser:"Vender",
-                  fcmToken: updatedUserData.androidDeviceId,
-                })
-              }
-      if(req.body.profileStatus=="approved"){
+      if (req.body.profileStatus == "rejected") {
         sendNotification({
-          icon:updatedUserData.profilePic,
-          title:"Profile Approved",
-          subTitle:`${updatedUserData.firstName} congratulations!! your profile has been approved.`,
-          notifyUserId:updatedUserData._id,
-          category:"Vender",
-          subCategory:"Profile update",
-          notifyUser:"Vender",
+          icon: updatedUserData.profilePic,
+          title: "Details Rejected",
+          subTitle: `${updatedUserData.firstName} please go through the details once more.`,
+          notifyUserId: updatedUserData._id,
+          category: "Vender",
+          subCategory: "Profile update",
+          notifyUser: "Vender",
           fcmToken: updatedUserData.androidDeviceId,
-        })
+        });
       }
-      if(req.body.profileStatus=="storeDetailsCompleted"){
+      if (req.body.profileStatus == "approved") {
         sendNotification({
-          icon:updatedUserData.profilePic,
-          title:"Store Details Completed",
-          subTitle:`${updatedUserData.firstName} congratulations!! your storeDetails has been Completed.`,
-          notifyUserId:updatedUserData._id,
-          category:"Vender",
-          subCategory:"Profile update",
-          notifyUser:"Vender",
+          icon: updatedUserData.profilePic,
+          title: "Profile Approved",
+          subTitle: `${updatedUserData.firstName} congratulations!! your profile has been approved.`,
+          notifyUserId: updatedUserData._id,
+          category: "Vender",
+          subCategory: "Profile update",
+          notifyUser: "Vender",
           fcmToken: updatedUserData.androidDeviceId,
-        })
+        });
       }
-      if(req.body.profileStatus=="completed"){
+      if (req.body.profileStatus == "storeDetailsCompleted") {
         sendNotification({
-          icon:updatedUserData.profilePic,
-          title:"Profile Completed",
-          subTitle:`${updatedUserData.firstName} has completed thier profile.`,
-          notifyUserId:"Admin",
-          category:"Vender",
-          subCategory:"Profile update",
-          notifyUser:"Admin",
+          icon: updatedUserData.profilePic,
+          title: "Store Details Completed",
+          subTitle: `${updatedUserData.firstName} congratulations!! your storeDetails has been Completed.`,
+          notifyUserId: updatedUserData._id,
+          category: "Vender",
+          subCategory: "Profile update",
+          notifyUser: "Vender",
+          fcmToken: updatedUserData.androidDeviceId,
+        });
+      }
+      if (req.body.profileStatus == "completed") {
+        sendNotification({
+          icon: updatedUserData.profilePic,
+          title: "Profile Completed",
+          subTitle: `${updatedUserData.firstName} has completed thier profile.`,
+          notifyUserId: "Admin",
+          category: "Vender",
+          subCategory: "Profile update",
+          notifyUser: "Admin",
           fcmToken: superAdmin.deviceId,
-        })
+        });
       }
-       const io = req.io;
+      const io = req.io;
       io.emit("vendor-updated", updatedUserData);
       sendResponse(res, 200, "Success", {
         message: "Vendor updated successfully!",
@@ -411,13 +429,13 @@ venderController.delete("/delete/:id", async (req, res) => {
     if (!vender) {
       return sendResponse(res, 404, "Failed", {
         message: "Vender not found",
-        statusCode:400
+        statusCode: 400,
       });
     }
     await Vender.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
       message: "Vender deleted successfully!",
-      statusCode:200
+      statusCode: 200,
     });
   } catch (error) {
     console.error(error);
@@ -436,10 +454,10 @@ venderController.post("/product-list", auth, async (req, res) => {
       pageCount = 10,
       sortByField,
       sortByOrder,
-      venderId
+      venderId,
     } = req.body;
 
-    const query = {createdBy: venderId};
+    const query = { createdBy: venderId };
     if (status) query.status = status;
     if (searchKey) query.name = { $regex: searchKey, $options: "i" };
 
@@ -477,7 +495,7 @@ venderController.post("/product-list", auth, async (req, res) => {
   }
 });
 
-venderController.post("/list",  async (req, res) => {
+venderController.post("/list", async (req, res) => {
   try {
     const {
       searchKey = "",
@@ -507,10 +525,12 @@ venderController.post("/list",  async (req, res) => {
     const venderList = await Vender.find(query)
       .sort(sortOption)
       .limit(parseInt(pageCount))
-      .skip(parseInt(pageNo - 1) * parseInt(pageCount))
-      
+      .skip(parseInt(pageNo - 1) * parseInt(pageCount));
+
     const totalCount = await Vender.countDocuments({});
-    const activeCount = await Vender.countDocuments({ profileStatus: "approved" });
+    const activeCount = await Vender.countDocuments({
+      profileStatus: "approved",
+    });
     sendResponse(res, 200, "Success", {
       message: "Vender list retrieved successfully!",
       data: venderList,
@@ -539,9 +559,9 @@ venderController.get("/orders/:venderId", auth, async (req, res) => {
       .populate("addressId");
 
     const vendorOrders = allOrders
-      .map(order => {
+      .map((order) => {
         const filteredProducts = order.product.filter(
-          p => p.productId?.createdBy?.toString() === venderId
+          (p) => p.productId?.createdBy?.toString() === venderId
         );
 
         if (filteredProducts.length > 0) {
@@ -553,7 +573,7 @@ venderController.get("/orders/:venderId", auth, async (req, res) => {
 
         return null;
       })
-      .filter(order => order !== null)
+      .filter((order) => order !== null)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     return sendResponse(res, 200, "Success", {
@@ -639,5 +659,62 @@ venderController.post("/order-details", auth, async (req, res) => {
   }
 });
 
+venderController.post("/dashboard", async (req, res) => {
+  try {
+    const id = req.body.venderId;
+    const vender = await Vender.findOne({ _id: id }).lean();
 
+    if (!vender) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Vender not found",
+        statusCode: 404,
+      });
+    }
+     const allOrders = await Booking.find()
+      .populate({ path: "product.productId", select: "createdBy name" })
+      .populate({ path: "userId", select: "firstName lastName email phone" })
+      
+
+    const vendorOrders = allOrders
+      .map((order) => {
+        const filteredProducts = order.product.filter(
+          (p) => p.productId?.createdBy?.toString() === id
+        );
+
+        if (filteredProducts.length > 0) {
+          return {
+            ...order.toObject(),
+            product: filteredProducts,
+          };
+        }
+
+        return null;
+      })
+      .filter((order) => order !== null)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      let products = await Product.countDocuments({createdBy:id})
+    let data = {
+      totalEarning:vender?.totalEarning,
+      todayEarning:100,
+      weekEarning:200,
+      monthEarning:200,
+      wallet:vender?.wallet,
+      totalProduct:products,
+      soldOut:10,
+      lowStock:10,
+      orders:vendorOrders,
+    };
+
+    return sendResponse(res, 200, "Success", {
+      message: "Vender dashboard details fetched successfully",
+      data: data,
+      statusCode: 200,
+    });
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
+    });
+  }
+});
 module.exports = venderController;
