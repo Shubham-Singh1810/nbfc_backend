@@ -6,13 +6,38 @@ const adminController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 adminController.post("/create", async (req, res) => {
   try {
-    const AdminData = await Admin.create(req.body);
+    let { password, ...rest } = req.body;
+
+    // password encrypt karo
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const AdminData = await Admin.create({
+      ...rest,
+      password: hashedPassword,
+    });
+
+    // Generate JWT token
+          const token = jwt.sign(
+            { userId: AdminData._id, phone: AdminData.phone },
+            process.env.JWT_KEY
+          );
+    
+          // Store the token in the user object or return it in the response
+          AdminData.token = token;
+          const updatedAdmin = await Admin.findByIdAndUpdate(
+            AdminData._id,
+            { token },
+            { new: true }
+          );
+
     sendResponse(res, 200, "Success", {
       message: "Admin created successfully!",
-      data: AdminData,
+      data: updatedAdmin,
       statusCode: 200,
     });
   } catch (error) {
@@ -23,6 +48,7 @@ adminController.post("/create", async (req, res) => {
     });
   }
 });
+
 
 adminController.put("/update", async (req, res) => {
   try {
@@ -68,28 +94,49 @@ adminController.delete("/delete/:id", async (req, res) => {
 
 adminController.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await Admin.findOne({ email, password }).populate({
-      path: "role",
-    });
-    if (user) {
-      let updatedAdmin = await Admin.findByIdAndUpdate(user?._id, {deviceId:req?.body?.deviceId}, {
-      new: true,
-    }).populate({
-      path: "role",
-    });
-      return sendResponse(res, 200, "Success", {
-        message: "User logged in successfully",
-        data: updatedAdmin,
-        statusCode: 200,
+    const { email, password, deviceId } = req.body;
+
+    if (!email || !password) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Email/Phone and Password are required",
+        statusCode: 400,
       });
+    }
+    let query = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailRegex.test(email)) {
+      query.email = email;
     } else {
+      query.phone = email; 
+    }
+    const user = await Admin.findOne(query);
+    console.log(user)
+    if (!user) {
       return sendResponse(res, 422, "Failed", {
         message: "Invalid Credentials",
         statusCode: 422,
       });
     }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return sendResponse(res, 422, "Failed", {
+        message: "Invalid Credentials",
+        statusCode: 422,
+      });
+    }
+    let updatedAdmin = await Admin.findByIdAndUpdate(
+      user._id,
+      { deviceId },
+      { new: true }
+    );
+
+    return sendResponse(res, 200, "Success", {
+      message: "Admin logged in successfully",
+      data: updatedAdmin,
+      statusCode: 200,
+    });
   } catch (error) {
+    console.error(error);
     return sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error.",
       statusCode: 500,

@@ -22,10 +22,13 @@ const adminSchema = mongoose.Schema({
   password: {
     type: String,
   },
+  token: {
+    type: String,
+  },
   role: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Role",
-    required: true,
+    // required: true,
   },
   deviceId:{
     type: String
