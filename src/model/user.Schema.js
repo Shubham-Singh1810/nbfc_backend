@@ -48,23 +48,9 @@ const userSchema = mongoose.Schema({
     default: "incompleted",
       enum: ["incompleted", "completed"],
   },
-  pincode: {
-    type: String,
-  },
-  address: {
-    type: String,
-  },
-  androidDeviceId: {
+  deviceId: {
       type: String,
   },
-  lat: {
-    type: String,
-  },
-  long: {
-    type: String,
-  },
-  cartItems:  [{productId:{ type: String, ref: "Product" },quantity:{ type: Number }}],
-  wishListItems: [{ type: String, ref: "Product" }],
 });
 
 userSchema.plugin(timestamps);
