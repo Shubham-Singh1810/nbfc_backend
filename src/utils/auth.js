@@ -32,27 +32,29 @@ const jwt = require("jsonwebtoken");
 const User = require("../model/user.Schema");
 const Vendor = require("../model/vender.Schema");
 const Driver = require("../model/driver.Schema");
+const Admin = require("../model/admin.Schema");
 
 const auth = async (req, res, next) => {
   try {
     const token = req.header("Authorization")?.replace("Bearer ", "");
     if (!token) {
-      return res.status(401).json({ error: "Authentication token is required" });
+      return res.status(401).json({ message: "Authentication token is required", statusCode:401 });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_KEY);
 
     // Try finding user in each model
-    const [user, vendor, driver] = await Promise.all([
+    const [user, vendor, driver, admin] = await Promise.all([
       User.findOne({ token }),
       Vendor.findOne({ token }),
       Driver.findOne({ token }),
+      Admin.findOne({ token }),
     ]);
 
-    const account = user || vendor || driver;
+    const account = user || vendor || driver || admin;
 
     if (!account) {
-      return res.status(401).json({ error: "Invalid or expired token" });
+      return res.status(401).json({ message: "Invalid or expired token", statusCode:401 });
     }
 
     req.token = token;
@@ -60,7 +62,7 @@ const auth = async (req, res, next) => {
     req.role = user ? "User" : vendor ? "Vendor" : "Driver"; // optional: to identify role
     next();
   } catch (e) {
-    res.status(401).json({ error: "Invalid authentication token" });
+    res.status(401).json({ message: "Invalid authentication token", statusCode:401 });
   }
 };
 

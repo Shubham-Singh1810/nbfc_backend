@@ -110,7 +110,6 @@ adminController.post("/login", async (req, res) => {
       query.phone = email; 
     }
     const user = await Admin.findOne(query);
-    console.log(user)
     if (!user) {
       return sendResponse(res, 422, "Failed", {
         message: "Invalid Credentials",
