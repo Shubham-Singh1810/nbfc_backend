@@ -112,7 +112,6 @@ addressController.put("/update", async (req, res) => {
 addressController.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id);
     const addressItem = await Address.findById(id);
     if (!addressItem) {
       return sendResponse(res, 404, "Failed", {

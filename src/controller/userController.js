@@ -3,7 +3,7 @@ const { sendResponse, generateOTP } = require("../utils/common");
 require("dotenv").config();
 const User = require("../model/user.Schema");
 const Vendor = require("../model/vender.Schema");
-const Fund = require("../model/adminFund.Schema")
+const Fund = require("../model/adminFund.Schema");
 const Admin = require("../model/admin.Schema");
 const Product = require("../model/product.Schema");
 const Category = require("../model/category.Schema");
@@ -108,86 +108,81 @@ userController.post("/send-otp", async (req, res) => {
   }
 });
 
-userController.post(
-  "/sign-up",
-  upload.fields([{ name: "profilePic", maxCount: 1 }]),
-  async (req, res) => {
-    try {
-      // Check if the phone number is unique
-      const user = await User.findOne({ phone: req.body.phone });
-      if (user) {
+userController.post("/sign-up", async (req, res) => {
+  try {
+    // Check if the phone number is unique
+    const existingUser = await User.findOne({
+      $or: [{ phone: req.body.phone }, { email: req.body.email }],
+    });
+    if (existingUser) {
+      if (existingUser.phone === req.body.phone) {
         return sendResponse(res, 400, "Failed", {
-          message: "User is already registered.",
+          message: "Phone Number is already registered",
           statusCode: 400,
         });
       }
-
-      // Generate OTP
-      const otp = generateOTP();
-
-      // Upload images to Cloudinary
-      let profilePic;
-
-      if (req.files["profilePic"]) {
-        let image = await cloudinary.uploader.upload(
-          req.files["profilePic"][0].path
-        );
-        profilePic = image.url;
+      if (existingUser.email === req.body.email) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Email is already registered",
+          statusCode: 400,
+        });
       }
+    }
 
-      // Create a new user with provided details
-      let newUser = await User.create({
-        ...req.body,
-        phoneOtp: otp,
-        profilePic,
+    // Generate OTP
+    const otp = generateOTP();
+
+    // Create a new user with provided details
+    let newUser = await User.create({
+      ...req.body,
+      phoneOtp: otp,
+    });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: newUser._id, phone: newUser.phone },
+      process.env.JWT_KEY
+    );
+
+    // Store the token in the user object or return it in the response
+    newUser.token = token;
+    const updatedUser = await User.findByIdAndUpdate(
+      newUser._id,
+      { token },
+      { new: true }
+    );
+
+    // OTP message for autofill
+    const appHash = "ems/3nG2V1H"; // Replace with your actual hash
+    const otpMessage = `<#> ${otp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
+
+    let otpResponse = await axios.post(
+      `https://api.authkey.io/request?authkey=${
+        process.env.AUTHKEY_API_KEY
+      }&mobile=${req.body.phone}&country_code=91&sid=${
+        process.env.AUTHKEY_SENDER_ID
+      }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
+    );
+
+    if (otpResponse?.status == "200") {
+      return sendResponse(res, 200, "Success", {
+        message: "OTP sent successfully",
+        data: updatedUser,
+        statusCode: 200,
       });
-
-      // Generate JWT token
-      const token = jwt.sign(
-        { userId: newUser._id, phone: newUser.phone },
-        process.env.JWT_KEY
-      );
-
-      // Store the token in the user object or return it in the response
-      newUser.token = token;
-      const updatedUser = await User.findByIdAndUpdate(
-        newUser._id,
-        { token },
-        { new: true }
-      );
-
-      // OTP message for autofill
-      const appHash = "ems/3nG2V1H"; // Replace with your actual hash
-      const otpMessage = `<#> ${otp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
-
-      let otpResponse = await axios.post(
-        `https://api.authkey.io/request?authkey=${
-          process.env.AUTHKEY_API_KEY
-        }&mobile=${req.body.phone}&country_code=91&sid=${
-          process.env.AUTHKEY_SENDER_ID
-        }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
-      );
-
-      if (otpResponse?.status == "200") {
-        return sendResponse(res, 200, "Success", {
-          message: "OTP sent successfully",
-          data: updatedUser,
-          statusCode: 200,
-        });
-      } else {
-        return sendResponse(res, 422, "Failed", {
-          message: "Unable to send OTP",
-          statusCode: 200,
-        });
-      }
-    } catch (error) {
-      console.error("Error in /sign-up:", error.message);
-      return sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error.",
+    } else {
+      return sendResponse(res, 422, "Failed", {
+        message: "Unable to send OTP",
+        statusCode: 200,
       });
     }
+  } catch (error) {
+    console.error("Error in /sign-up:", error.message);
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+    });
   }
-);
+});
 
 userController.post("/otp-verification", async (req, res) => {
   try {
@@ -710,8 +705,12 @@ userController.post("/home-details", async (req, res) => {
     const homeCategory = await Category.find({});
     const bestSellerSubCategory = await SubCategory.find({});
     const homeSubCategory = await SubCategory.find({});
-    const trendingProducts = await Product.find({specialApperence:"Trending"});
-    const bestSellerProducts = await Product.find({specialApperence:"Best Seller"});
+    const trendingProducts = await Product.find({
+      specialApperence: "Trending",
+    });
+    const bestSellerProducts = await Product.find({
+      specialApperence: "Best Seller",
+    });
     sendResponse(res, 200, "Success", {
       message: "Home page data fetched successfully!",
       data: {
@@ -778,13 +777,13 @@ userController.delete("/delete/:id", async (req, res) => {
     if (!user) {
       return sendResponse(res, 404, "Failed", {
         message: "User not found",
-        statusCode:400
+        statusCode: 400,
       });
     }
     await User.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
       message: "User deleted successfully!",
-      statusCode:200
+      statusCode: 200,
     });
   } catch (error) {
     console.error(error);
