@@ -158,8 +158,9 @@ userController.post("/sign-up", async (req, res) => {
     // ----------- Generate User Code -----------
     const year = new Date().getFullYear().toString().slice(-2); // last 2 digits
     // last user of same year
-    const lastUser = await User.findOne({ code: { $regex: `^RL${year}` } })
-      .sort({ createdAt: -1 });
+    const lastUser = await User.findOne({
+      code: { $regex: `^RL${year}` },
+    }).sort({ createdAt: -1 });
 
     let count = 1;
     if (lastUser && lastUser.code) {
@@ -244,7 +245,6 @@ userController.post("/sign-up", async (req, res) => {
     });
   }
 });
-
 
 userController.post("/otp-verification", async (req, res) => {
   try {
@@ -421,7 +421,7 @@ userController.post("/resend-otp", async (req, res) => {
   }
 });
 
-userController.get("/details/:id",  async (req, res) => {
+userController.get("/details/:id", async (req, res) => {
   try {
     const id = req.params.id;
     const user = await User.findOne({ _id: id });
@@ -466,25 +466,27 @@ userController.post("/list", async (req, res) => {
         { phone: { $regex: searchKey, $options: "i" } },
       ];
     }
-    // Construct sorting object
+
+    // Sorting
     const sortField = sortByField || "createdAt";
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };
 
-    // Fetch the user list
+    // Pagination
     const userList = await User.find(query)
       .sort(sortOption)
       .limit(parseInt(pageCount))
-      .skip(parseInt(pageNo - 1) * parseInt(pageCount));
-    const totalCount = await User.countDocuments({});
-    const activeCount = await User.countDocuments({ status: true });
+      .skip((parseInt(pageNo) - 1) * parseInt(pageCount));
+
+    const totalCount = await User.countDocuments(query);
+
     sendResponse(res, 200, "Success", {
       message: "User list retrieved successfully!",
       data: userList,
       documentCount: {
         totalCount,
-        activeCount,
-        inactiveCount: totalCount - activeCount,
+        pageNo,
+        pageCount,
       },
       statusCode: 200,
     });
@@ -495,6 +497,81 @@ userController.post("/list", async (req, res) => {
     });
   }
 });
+
+userController.get("/stats", async (req, res) => {
+  try {
+    // Current counts
+    const totalCount = await User.countDocuments({});
+    const activeCount = await User.countDocuments({ profileStatus: "active" });
+    const registeredCount = await User.countDocuments({ profileStatus: "registered" });
+    const verifiedCount = await User.countDocuments({ profileStatus: "verified" });
+    const blockedCount = await User.countDocuments({ profileStatus: "blocked" });
+
+    // Last Month Dates
+    const now = new Date();
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    // Last month counts
+    const lastMonthTotal = await User.countDocuments({
+      createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
+    });
+    const lastMonthActive = await User.countDocuments({
+      profileStatus: "active",
+      createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
+    });
+    const lastMonthRegistered = await User.countDocuments({
+      profileStatus: "registered",
+      createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
+    });
+    const lastMonthVerified = await User.countDocuments({
+      profileStatus: "verified",
+      createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
+    });
+    const lastMonthBlocked = await User.countDocuments({
+      profileStatus: "blocked",
+      createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
+    });
+
+    // Trend calculator
+    const getTrend = (current, last) => {
+      if (last === 0 && current === 0) return { percent: 0, isTrendPositive: false };
+      if (last === 0) return { percent: 100, isTrendPositive: true };
+      const percent = ((current - last) / last) * 100;
+      return {
+        percent: Number(percent.toFixed(2)),
+        isTrendPositive: percent >= 0,
+      };
+    };
+
+    const trends = {
+      activeTrend: getTrend(activeCount, lastMonthActive),
+      registeredTrend: getTrend(registeredCount, lastMonthRegistered),
+      verifiedTrend: getTrend(verifiedCount, lastMonthVerified),
+      blockedTrend: getTrend(blockedCount, lastMonthBlocked),
+      totalTrend: getTrend(totalCount, lastMonthTotal),
+    };
+
+    sendResponse(res, 200, "Success", {
+      message: "User statistics retrieved successfully!",
+      stats: {
+        totalCount,
+        activeCount,
+        registeredCount,
+        verifiedCount,
+        blockedCount,
+        trends,
+      },
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
 
 userController.put(
   "/update",
@@ -560,7 +637,5 @@ userController.delete("/delete/:id", async (req, res) => {
     });
   }
 });
-
-
 
 module.exports = userController;
