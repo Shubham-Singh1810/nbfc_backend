@@ -36,6 +36,7 @@ const withdrawRequest = require("./controller/withdrawRequestController");
 const couponController = require("./controller/couponController");
 const assignmentController = require("./controller/assignmentController");
 const loanController = require("./controller/loanController");
+const branchController = require("./controller/branchController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -73,6 +74,7 @@ router.use("/withdraw-request", withdrawRequest);
 router.use("/coupon", couponController);
 router.use("/assignment", assignmentController);
 router.use("/loan", loanController);
+router.use("/branch", branchController);
 
 
 
