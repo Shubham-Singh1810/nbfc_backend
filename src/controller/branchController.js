@@ -54,10 +54,7 @@ branchController.post("/list", async (req, res) => {
 
     // Pagination
     const branchList = await Branch.find(query)
-      .populate({
-        path: "contactPersonId",
-        select: "firstName lastName profilePic phone",
-      })
+      
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip((parseInt(pageNo) - 1) * parseInt(pageCount));

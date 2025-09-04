@@ -8,12 +8,39 @@ const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const auth = require("../utils/auth");
 
-loanController.post("/create", async (req, res) => {
+loanController.post("/create", upload.single("icon"), async (req, res) => {
   try {
-    const addressCreated = await Loan.create(req.body);
+    let obj = { ...req.body };
+
+    // ✅ Handle icon upload if file is provided
+    if (req.file) {
+      const image = await cloudinary.uploader.upload(req.file.path);
+      obj.icon = image.secure_url;
+    }
+
+    // ✅ Generate Loan Code (RL001 format)
+    if (!req.body.code) {
+      const lastLoan = await Loan.findOne().sort({ createdAt: -1 });
+
+      let newCode;
+      if (lastLoan?.code) {
+        // Example: RL001 → RL002
+        const lastNumber = parseInt(lastLoan.code.replace("RL", ""), 10) || 0;
+        newCode = "RL" + String(lastNumber + 1).padStart(3, "0");
+      } else {
+        // If no loan exists
+        newCode = "RL001";
+      }
+
+      obj.code = newCode;
+    }
+
+    // ✅ Create loan
+    const loanCreated = await Loan.create(obj);
+
     sendResponse(res, 200, "Success", {
       message: "Loan created successfully!",
-      data: addressCreated,
+      data: loanCreated,
       statusCode: 200,
     });
   } catch (error) {
@@ -23,6 +50,7 @@ loanController.post("/create", async (req, res) => {
     });
   }
 });
+
 loanController.post("/list", async (req, res) => {
   try {
     const {
@@ -32,13 +60,11 @@ loanController.post("/list", async (req, res) => {
       pageCount = 10,
       sortByField,
       sortByOrder,
-      userId,
     } = req.body;
 
     const query = {};
     if (status) query.status = status;
     if (searchKey) query.name = { $regex: searchKey, $options: "i" };
-    if (userId) query.userId = userId;
 
     // Construct sorting object
     const sortField = sortByField || "createdAt";
@@ -49,9 +75,9 @@ loanController.post("/list", async (req, res) => {
     const loanTypeList = await Loan.find(query)
       .sort(sortOption)
       .limit(parseInt(pageCount))
-      .skip(parseInt(pageNo - 1) * parseInt(pageCount))
+      .skip(parseInt(pageNo - 1) * parseInt(pageCount));
     const totalCount = await Loan.countDocuments({});
-    const activeCount = await Loan.countDocuments({ status: "active" });
+    const activeCount = await Loan.countDocuments({ status: true });
     sendResponse(res, 200, "Success", {
       message: "Loan Type list retrieved successfully!",
       data: loanTypeList,
@@ -94,7 +120,7 @@ loanController.delete("/delete/:id", async (req, res) => {
 loanController.get("/details/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    const loanType = await Loan.findOne({ _id: id }) 
+    const loanType = await Loan.findOne({ _id: id });
     if (loanType) {
       return sendResponse(res, 200, "Success", {
         message: "Loan type details fetched  successfully",
@@ -128,13 +154,9 @@ loanController.put("/update", async (req, res) => {
 
     let updatedData = { ...req.body };
     // Update the category in the database
-    const updatedLoan = await Loan.findByIdAndUpdate(
-      id,
-      updatedData,
-      {
-        new: true, // Return the updated document
-      }
-    );
+    const updatedLoan = await Loan.findByIdAndUpdate(id, updatedData, {
+      new: true, // Return the updated document
+    });
     sendResponse(res, 200, "Success", {
       message: "Loan type updated successfully!",
       data: updatedLoan,

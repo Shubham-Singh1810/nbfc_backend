@@ -35,9 +35,8 @@ const branchSchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  contactPersonId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Admin",
+  contactPerson: {
+    type: String,
     required: true,
   },
 });

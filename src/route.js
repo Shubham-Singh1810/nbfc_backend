@@ -37,6 +37,7 @@ const couponController = require("./controller/couponController");
 const assignmentController = require("./controller/assignmentController");
 const loanController = require("./controller/loanController");
 const branchController = require("./controller/branchController");
+const documentController = require("./controller/documentController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -75,6 +76,7 @@ router.use("/coupon", couponController);
 router.use("/assignment", assignmentController);
 router.use("/loan", loanController);
 router.use("/branch", branchController);
+router.use("/document", documentController);
 
 
 

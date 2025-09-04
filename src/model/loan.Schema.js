@@ -11,77 +11,126 @@ const loanSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  status: {
+    type: Boolean,
+    default:true
+  },
+  icon: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  // --------
   minAmount: {
     type: Number,
-    required: true,
   },
   maxAmount: {
     type: Number,
-    required: true,
   },
   minTenure: {
     type: Number,
-    required: true,
+  },
+   maxTenure: {
+    type: Number,
   },
   intrestRate: {
     type: Number,
-    required: true,
   },
   intrestType: {
     type: String,
-    required: true,
     enum: ["simple", "compound"],
   },
   repaymentFrequency: {
     type: Number,
-    required: true,
   },
+  // ----
+  minAmountDays: {
+    type: Number,
+  },
+  maxAmountDays: {
+    type: Number,
+  },
+  minTenureDays: {
+    type: Number,
+  },
+   maxTenureDays: {
+    type: Number,
+  },
+  intrestRateDays: {
+    type: Number,
+  },
+  intrestTypeDays: {
+    type: String,
+    enum: ["simple", "compound"],
+  },
+  repaymentFrequencyDays: {
+    type: Number,
+  },
+  // -------------
+  minIncome: {
+    type: Number,
+    required:true
+  },
+  creditScoreRequired: {
+    type: Number,
+    required:true
+  },
+  minAge: {
+    type: Number,
+    required:true
+  },
+  maxAge: {
+    type: Number,
+    required:true
+  },
+  employmentTypesAllowed: [{
+    type: String,
+    required:true
+  }],
+  DTIR: {
+    type: Number, 
+    required:true
+  },
+  // -----
   collateralRequired: {
     type: Boolean,
     required: true,
   },
   collateralTypes: {
     type: String,
-    required: true,
+  
   },
   maxLTV: {
     type: Number,
-    required: true,
+     required: true,
   },
-  minAge: {
-    type: Number,
-  },
-  maxAge: {
-    type: Number,
-  },
-  minIncome: {
-    type: Number,
-  },
-  creditScoreRequired: {
-    type: Number,
-  },
-  employmentTypesAllowed: [{
-    type: String,
-  }],
+  // ------
   processingFee: {
     type: Number,
+    required: true,
   },
   latePaymentPenalty: {
     type: Number,
+    required: true,
   },
   prepaymentFee: {
     type: Number,
+    required: true,
   },
-  description: {
-    type: String,
-  },
-  status: {
-    type: String,
-    enum :["active", "inactive"]
-  },
+  // ------
   auto_approval: {
     type: Boolean,
+    default:false,
+    required: true,
   },
+  // ----
+  documentRequired: [{
+    type: String,
+    required: true,
+  }],
 });
 
 loanSchema.plugin(timestamps);
