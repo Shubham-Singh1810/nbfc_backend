@@ -41,7 +41,6 @@ const loanSchema = mongoose.Schema({
   },
   intrestType: {
     type: String,
-    enum: ["simple", "compound"],
   },
   repaymentFrequency: {
     type: Number,
@@ -64,7 +63,6 @@ const loanSchema = mongoose.Schema({
   },
   intrestTypeDays: {
     type: String,
-    enum: ["simple", "compound"],
   },
   repaymentFrequencyDays: {
     type: Number,
@@ -97,15 +95,14 @@ const loanSchema = mongoose.Schema({
   // -----
   collateralRequired: {
     type: Boolean,
-    required: true,
+    Boolean:false,
   },
-  collateralTypes: {
+  collateralTypes: [{
     type: String,
   
-  },
+  }],
   maxLTV: {
     type: Number,
-     required: true,
   },
   // ------
   processingFee: {

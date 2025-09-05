@@ -140,7 +140,7 @@ loanController.get("/details/:id", async (req, res) => {
     });
   }
 });
-loanController.put("/update", async (req, res) => {
+loanController.put("/update",upload.single("icon"), async (req, res) => {
   try {
     const id = req.body._id;
 
@@ -151,8 +151,15 @@ loanController.put("/update", async (req, res) => {
         message: "Loan Type not found",
       });
     }
+    let obj = { ...req.body };
 
-    let updatedData = { ...req.body };
+    // ✅ Handle icon upload if file is provided
+    if (req.file) {
+      const image = await cloudinary.uploader.upload(req.file.path);
+      obj.icon = image.secure_url;
+    }
+
+    let updatedData = obj;
     // Update the category in the database
     const updatedLoan = await Loan.findByIdAndUpdate(id, updatedData, {
       new: true, // Return the updated document
