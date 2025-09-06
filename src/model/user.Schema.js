@@ -3,16 +3,16 @@ const timestamps = require("mongoose-timestamp");
 const { type } = require("os");
 
 const userSchema = mongoose.Schema({
-  firstName: {
-    type: String,
-  },
-  lastName: {
-    type: String,
-  },
   code: {
     type: String,
   },
-  email: {
+  token: {
+    type: String,
+  },
+  profilePic: {
+    type: String,
+  },
+  deviceId: {
     type: String,
   },
   password: {
@@ -22,16 +22,6 @@ const userSchema = mongoose.Schema({
     type: String,
   },
   phoneOtp: {
-    type: String,
-  },
-  token: {
-    type: String,
-  },
-  phone: {
-    type: String,
-    required: true,
-  },
-  profilePic: {
     type: String,
   },
   isEmailVerified: {
@@ -45,35 +35,6 @@ const userSchema = mongoose.Schema({
   countryCode: {
     type: String,
     default: "91",
-  },
-  profileStatus: {
-    type: String,
-    default: "registered",
-    enum: ["registered", "verified", "active", "blocked"],
-  },
-  deviceId: {
-    type: String,
-  },
-  dob: {
-    type: String,
-  },
-  gender: {
-    type: String,
-  },
-  employementType: {
-    type: String,
-  },
-  monthlyIncome: {
-    type: Number,
-  },
-  annualIncome: {
-    type: Number,
-  },
-  creditScore: {
-    type: Number,
-  },
-  deptToIncomeRatio: {
-    type: Number,
   },
   kycStatus: {
     type: Number,
@@ -89,14 +50,68 @@ const userSchema = mongoose.Schema({
   lastLogin: {
     type: String,
   },
-  uploaded_documents: [
-    {
-      name: { type: String },
-      image: { type: String },
-    },
-  ],
-  wallet: {
+  // -------------
+  firstName: {
     type: String,
+    required: true,
+  },
+  lastName: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+  },
+  phone: {
+    type: String,
+    required: true,
+  },
+  dob: {
+    type: String,
+    required: true,
+  },
+  gender: {
+    type: String,
+    required: true,
+  },
+  profileStatus: {
+    type: String,
+    default: "registered",
+    enum: ["registered", "verified", "active", "blocked"],
+  },
+  // ----------------
+  state: {
+    type: String,
+  },
+  city: {
+    type: String,
+  },
+  pincode: {
+    type: String,
+    required: true,
+  },
+  //  -----------------
+  panNumber: {
+    type: String,
+    
+  },
+   aadharNumber: {
+    type: String,
+    required: true,
+  },
+  //  -------------
+  employementType: {
+    type: String,
+  },
+  monthlyIncome: {
+    type: Number,
+  },
+  annualIncome: {
+    type: Number,
+  },
+  creditScore: {
+    type: Number,
   },
 });
 

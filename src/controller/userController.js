@@ -421,6 +421,81 @@ userController.post("/resend-otp", async (req, res) => {
   }
 });
 
+userController.post("/create",upload.single("profilePic"),  async (req, res) => {
+  try {
+    // Check if the phone number is unique
+    const existingUser = await User.findOne({
+      $or: [{ phone: req.body.phone }, { email: req.body.email }],
+    });
+    if (existingUser) {
+      if (existingUser.phone === req.body.phone) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Phone Number is already registered",
+          statusCode: 400,
+        });
+      }
+      if (existingUser.email === req.body.email) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Email is already registered",
+          statusCode: 400,
+        });
+      }
+    }
+
+    // ----------- Generate User Code -----------
+    const year = new Date().getFullYear().toString().slice(-2); // last 2 digits
+    // last user of same year
+    const lastUser = await User.findOne({
+      code: { $regex: `^RL${year}` },
+    }).sort({ createdAt: -1 });
+
+    let count = 1;
+    if (lastUser && lastUser.code) {
+      const lastCount = parseInt(lastUser.code.slice(4)); // RL{yy}{count}
+      count = lastCount + 1;
+    }
+
+    const paddedCount = String(count).padStart(3, "0"); // 001, 002
+    const userCode = `RL${year}${paddedCount}`;
+    let profilePic;
+    // ------------------------------------------
+    if (req.file) {
+        profilePic = await cloudinary.uploader.upload(req.file.path);
+        profilePic = profilePic.url;
+      }
+    // Create a new user with provided details
+    let newUser = await User.create({
+      ...req.body,
+      code: userCode, 
+      profilePic
+    });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: newUser._id, phone: newUser.phone },
+      process.env.JWT_KEY
+    );
+
+    // Store the token in the user object
+    newUser.token = token;
+    const updatedUser = await User.findByIdAndUpdate(
+      newUser._id,
+      { token },
+      { new: true }
+    );
+    return sendResponse(res, 200, "Success", {
+      message: "User Created Successfully",
+      data: updatedUser,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in /sign-up:", error.message);
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+    });
+  }
+});
+
 userController.get("/details/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -503,9 +578,15 @@ userController.get("/stats", async (req, res) => {
     // Current counts
     const totalCount = await User.countDocuments({});
     const activeCount = await User.countDocuments({ profileStatus: "active" });
-    const registeredCount = await User.countDocuments({ profileStatus: "registered" });
-    const verifiedCount = await User.countDocuments({ profileStatus: "verified" });
-    const blockedCount = await User.countDocuments({ profileStatus: "blocked" });
+    const registeredCount = await User.countDocuments({
+      profileStatus: "registered",
+    });
+    const verifiedCount = await User.countDocuments({
+      profileStatus: "verified",
+    });
+    const blockedCount = await User.countDocuments({
+      profileStatus: "blocked",
+    });
 
     // Last Month Dates
     const now = new Date();
@@ -535,7 +616,8 @@ userController.get("/stats", async (req, res) => {
 
     // Trend calculator
     const getTrend = (current, last) => {
-      if (last === 0 && current === 0) return { percent: 0, isTrendPositive: false };
+      if (last === 0 && current === 0)
+        return { percent: 0, isTrendPositive: false };
       if (last === 0) return { percent: 100, isTrendPositive: true };
       const percent = ((current - last) / last) * 100;
       return {
@@ -571,7 +653,6 @@ userController.get("/stats", async (req, res) => {
     });
   }
 });
-
 
 userController.put(
   "/update",

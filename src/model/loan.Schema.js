@@ -40,7 +40,9 @@ const loanSchema = mongoose.Schema({
     type: Number,
   },
   intrestType: {
-    type: String,
+      type: String,
+      enum: ["flat", "reducing", "simple", "compound"], // ✅ enum set
+      required: true,
   },
   repaymentFrequency: {
     type: Number,
