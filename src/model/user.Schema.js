@@ -69,11 +69,9 @@ const userSchema = mongoose.Schema({
   },
   dob: {
     type: String,
-    required: true,
   },
   gender: {
     type: String,
-    required: true,
   },
   profileStatus: {
     type: String,
@@ -98,7 +96,6 @@ const userSchema = mongoose.Schema({
   },
    aadharNumber: {
     type: String,
-    required: true,
   },
   //  -------------
   employementType: {
