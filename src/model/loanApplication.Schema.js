@@ -27,6 +27,9 @@ const loanApplicationSchema = mongoose.Schema({
     default: "pending",
     enum: ["pending", "approved", "rejected", "disbursed", "completed"],
   },
+  code: {
+    type: String,
+  },
   emiSchedule: [
     {
       expectedDate: { type: String },
@@ -82,6 +85,12 @@ const loanApplicationSchema = mongoose.Schema({
   repaymentFrequencyType: {
     type: String,
     required: true,
+  },
+  startDate: {
+    type: String,
+  },
+  endDate: {
+    type: String,
   },
 });
 

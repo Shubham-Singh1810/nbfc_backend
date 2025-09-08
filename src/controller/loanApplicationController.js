@@ -19,6 +19,8 @@ loanApplicationController.post("/create", async (req, res) => {
       loanTenuareType,
       repaymentFrequency,
       repaymentFrequencyType,
+      userId,
+      loanId,
       ...restFields
     } = req.body;
 
@@ -82,6 +84,23 @@ loanApplicationController.post("/create", async (req, res) => {
       repaymentFrequency,
       repaymentFrequencyType,
     });
+    let newCode;
+// ✅ Generate Loan Code (RL001 format)
+    if (!req.body.code) {
+      const lastLoanApplication = await LoanApplication.findOne().sort({ createdAt: -1 });
+
+     
+      if (lastLoanApplication?.code) {
+        // Example: RL001 → RL002
+        const lastNumber = parseInt(lastLoanApplication.code.replace("RL", ""), 10) || 0;
+        newCode = "RL" + String(lastNumber + 1).padStart(3, "0");
+      } else {
+        // If no loan exists
+        newCode = "RL001";
+      }
+
+     
+    }
 
     // 👉 Loan Application create
     const loanApplicationCreated = await LoanApplication.create({
@@ -94,6 +113,9 @@ loanApplicationController.post("/create", async (req, res) => {
       repaymentFrequency,
       repaymentFrequencyType,
       emiSchedule: emiData.emiSchedule,
+      code:newCode,
+      userId,
+      loanId,
     });
 
     sendResponse(res, 200, "Success", {
@@ -122,12 +144,14 @@ loanApplicationController.post("/list", async (req, res) => {
       pageCount = 10,
       sortByField,
       sortByOrder,
+      loanId
     } = req.body;
 
     const query = {};
 
     // ===== Filters =====
     if (status) query.status = status;
+    if (loanId) query.loanId = loanId;
     if (userId) query.userId = userId;
     if (branchId) query.branchId = branchId;
     if (assignedAdminId) query.assignedAdminId = assignedAdminId;
@@ -147,9 +171,10 @@ loanApplicationController.post("/list", async (req, res) => {
     const sortOption = { [sortField]: sortOrder };
 
     // ===== Fetch Data =====
+
     const loanApplicationList = await LoanApplication.find(query)
       .populate("userId", "firstName lastName email phone profilePic") // user details
-      .populate("loanId", "name code con") // loan details
+      .populate("loanId", "name code") // loan details
       .populate("branchId", "name contactPerson address state city pincode") // branch details
       .populate("assignedAdminId", "firstName lastName profilePic phone email") // admin details
       .populate("createdBy", "firstName lastName profilePic phone email") // createdBy details
@@ -258,6 +283,28 @@ loanApplicationController.get("/stats", async (req, res) => {
     });
   } catch (error) {
     console.error("Loan Application Stats error:", error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+loanApplicationController.delete("/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const loanApplication = await LoanApplication.findById(id);
+    if (!loanApplication) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Loan application not found",
+      });
+    }
+    await LoanApplication.findByIdAndDelete(id);
+
+    sendResponse(res, 200, "Success", {
+      message: "Loan application deleted successfully!",
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
     });
