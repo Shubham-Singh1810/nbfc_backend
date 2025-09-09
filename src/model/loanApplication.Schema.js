@@ -49,13 +49,13 @@ const loanApplicationSchema = mongoose.Schema({
   collateralDetails: [
     {
       name: { type: String },
-      rejectReason: { type: String },
       description: { type: String },
-      status: {
-        type: String,
-        default: "pending",
-        enum: ["pending", "approved", "rejected", "reuploaded"],
-      },
+    },
+  ],
+  documents: [
+    {
+      name: { type: String },
+      image: { type: String },
     },
   ],
   loanAmount: {
@@ -68,6 +68,7 @@ const loanApplicationSchema = mongoose.Schema({
   },
   loanTenuareType: {
     type: String,
+     enum: ["days", "months", "years"],
     required: true,
   },
   intrestRate: {
@@ -92,6 +93,7 @@ const loanApplicationSchema = mongoose.Schema({
   endDate: {
     type: String,
   },
+
 });
 
 loanApplicationSchema.plugin(timestamps);

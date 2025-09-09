@@ -9,127 +9,157 @@ const upload = require("../utils/multer");
 const auth = require("../utils/auth");
 const { generateEmi } = require("../utils/emiCalculator");
 
-loanApplicationController.post("/create", async (req, res) => {
-  try {
-    const {
-      loanAmount,
-      intrestRate,
-      intrestRateType,
-      loanTenuare,
-      loanTenuareType,
-      repaymentFrequency,
-      repaymentFrequencyType,
-      userId,
-      loanId,
-      ...restFields
-    } = req.body;
+loanApplicationController.post(
+  "/create",
+  upload.array("documents", 5),
+  async (req, res) => {
+    try {
+      const {
+        loanAmount,
+        intrestRate,
+        intrestRateType,
+        loanTenuare,
+        loanTenuareType,
+        repaymentFrequency,
+        repaymentFrequencyType,
+        userId,
+        loanId,
+        ...restFields
+      } = req.body;
 
-    if (!userId) {
-      return sendResponse(res, 400, "Failed", {
-        message: "User ID is required",
-      });
-    }
-    if (!loanId) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Loan ID is required",
-      });
-    }
-    if (!loanAmount || loanAmount <= 0) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Loan amount must be greater than 0",
-      });
-    }
-    if (!loanTenuare || loanTenuare <= 0) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Loan tenure must be greater than 0",
-      });
-    }
-    if (!intrestRate || intrestRate <= 0) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Interest rate must be greater than 0",
-      });
-    }
-    if (
-      !intrestRateType ||
-      !["flat", "reducing", "simple", "compound"].includes(intrestRateType)
-    ) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Invalid interest rate type",
-      });
-    }
-    if (!loanTenuareType || !["month", "days"].includes(loanTenuareType)) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Invalid loan tenure type",
-      });
-    }
-    if (!repaymentFrequency || repaymentFrequency <= 0) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Repayment frequency must be greater than 0",
-      });
-    }
-    if (
-      !repaymentFrequencyType ||
-      !["month", "days"].includes(repaymentFrequencyType)
-    ) {
-      return sendResponse(res, 400, "Failed", {
-        message: "Invalid repayment frequency type",
-      });
-    }
-    const emiData = generateEmi({
-      loanAmount,
-      intrestRate,
-      intrestRateType,
-      loanTenuare,
-      loanTenuareType,
-      repaymentFrequency,
-      repaymentFrequencyType,
-    });
-    let newCode;
-// ✅ Generate Loan Code (RL001 format)
-    if (!req.body.code) {
-      const lastLoanApplication = await LoanApplication.findOne().sort({ createdAt: -1 });
-
-     
-      if (lastLoanApplication?.code) {
-        // Example: RL001 → RL002
-        const lastNumber = parseInt(lastLoanApplication.code.replace("RL", ""), 10) || 0;
-        newCode = "RL" + String(lastNumber + 1).padStart(3, "0");
-      } else {
-        // If no loan exists
-        newCode = "RL001";
+      if (!userId) {
+        return sendResponse(res, 400, "Failed", {
+          message: "User ID is required",
+        });
       }
+      if (!loanId) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Loan ID is required",
+        });
+      }
+      if (!loanAmount || loanAmount <= 0) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Loan amount must be greater than 0",
+        });
+      }
+      if (!loanTenuare || loanTenuare <= 0) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Loan tenure must be greater than 0",
+        });
+      }
+      if (!intrestRate || intrestRate <= 0) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Interest rate must be greater than 0",
+        });
+      }
+      if (
+        !intrestRateType ||
+        !["flat", "reducing", "simple", "compound"].includes(intrestRateType)
+      ) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Invalid interest rate type",
+        });
+      }
+      if (!loanTenuareType || !["months", "days"].includes(loanTenuareType)) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Invalid loan tenure type",
+        });
+      }
+      if (!repaymentFrequency || repaymentFrequency <= 0) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Repayment frequency must be greater than 0",
+        });
+      }
+      if (
+        !repaymentFrequencyType ||
+        !["months", "days"].includes(repaymentFrequencyType)
+      ) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Invalid repayment frequency type",
+        });
+      }
+      const emiData = generateEmi({
+        loanAmount,
+        intrestRate,
+        intrestRateType,
+        loanTenuare,
+        loanTenuareType,
+        repaymentFrequency,
+        repaymentFrequencyType,
+      });
+      let newCode;
+      // ✅ Generate Loan Code (RL001 format)
+      if (!req.body.code) {
+        const lastLoanApplication = await LoanApplication.findOne().sort({
+          createdAt: -1,
+        });
 
-     
-    }
+        if (lastLoanApplication?.code) {
+          // Example: RL001 → RL002
+          const lastNumber =
+            parseInt(lastLoanApplication.code.replace("RL", ""), 10) || 0;
+          newCode = "RL" + String(lastNumber + 1).padStart(3, "0");
+        } else {
+          // If no loan exists
+          newCode = "RL001";
+        }
+      }
+      let documents = [];
 
-    // 👉 Loan Application create
-    const loanApplicationCreated = await LoanApplication.create({
-      ...restFields,
-      loanAmount,
-      intrestRate,
-      intrestRateType,
-      loanTenuare,
-      loanTenuareType,
-      repaymentFrequency,
-      repaymentFrequencyType,
-      emiSchedule: emiData.emiSchedule,
-      code:newCode,
-      userId,
-      loanId,
-    });
 
-    sendResponse(res, 200, "Success", {
-      message: "Loan Application created successfully!",
-      data: loanApplicationCreated,
-      statusCode: 200,
-    });
-  } catch (error) {
-    console.error("Loan Application create error:", error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-    });
+      if (req.files && req.files.length > 0) {
+        const inputDocs = JSON.parse(req.body.documentsMeta || "[]"); // alag key for meta
+
+        for (let i = 0; i < req.files.length; i++) {
+          const file = req.files[i];
+          const uploaded = await cloudinary.uploader.upload(file.path);
+
+          documents.push({
+            name: inputDocs[i]?.name || `Doc-${i + 1}`,
+            image: uploaded.secure_url,
+          });
+        }
+      }
+      let collateralDetails = [];
+if (req.body.collateralDetails) {
+  try {
+    collateralDetails = JSON.parse(req.body.collateralDetails); // ✅ convert string → array
+  } catch (err) {
+    return sendResponse(res, 400, "Failed", { message: "Invalid collateral details format" });
   }
-});
+}
+
+      // 👉 Loan Application create
+      const loanApplicationCreated = await LoanApplication.create({
+        ...restFields,
+        loanAmount,
+        intrestRate,
+        intrestRateType,
+        loanTenuare,
+        loanTenuareType,
+        repaymentFrequency,
+        repaymentFrequencyType,
+        emiSchedule: emiData.emiSchedule,
+        code: newCode,
+        userId,
+        loanId,
+        documents,
+        collateralDetails
+      });
+
+      sendResponse(res, 200, "Success", {
+        message: "Loan Application created successfully!",
+        data: loanApplicationCreated,
+        statusCode: 200,
+      });
+    } catch (error) {
+      console.error("Loan Application create error:", error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+      });
+    }
+  }
+);
 
 loanApplicationController.post("/list", async (req, res) => {
   try {
@@ -144,7 +174,7 @@ loanApplicationController.post("/list", async (req, res) => {
       pageCount = 10,
       sortByField,
       sortByOrder,
-      loanId
+      loanId,
     } = req.body;
 
     const query = {};
@@ -210,11 +240,21 @@ loanApplicationController.get("/stats", async (req, res) => {
   try {
     // ===== Current Counts =====
     const totalCount = await LoanApplication.countDocuments({});
-    const pendingCount = await LoanApplication.countDocuments({ status: "pending" });
-    const approvedCount = await LoanApplication.countDocuments({ status: "approved" });
-    const rejectedCount = await LoanApplication.countDocuments({ status: "rejected" });
-    const disbursedCount = await LoanApplication.countDocuments({ status: "disbursed" });
-    const completedCount = await LoanApplication.countDocuments({ status: "completed" });
+    const pendingCount = await LoanApplication.countDocuments({
+      status: "pending",
+    });
+    const approvedCount = await LoanApplication.countDocuments({
+      status: "approved",
+    });
+    const rejectedCount = await LoanApplication.countDocuments({
+      status: "rejected",
+    });
+    const disbursedCount = await LoanApplication.countDocuments({
+      status: "disbursed",
+    });
+    const completedCount = await LoanApplication.countDocuments({
+      status: "completed",
+    });
 
     // ===== Last Month Dates =====
     const now = new Date();
@@ -310,6 +350,5 @@ loanApplicationController.delete("/delete/:id", async (req, res) => {
     });
   }
 });
-
 
 module.exports = loanApplicationController;

@@ -13,7 +13,7 @@ const loanSchema = mongoose.Schema({
   },
   status: {
     type: Boolean,
-    default:true
+    default: true,
   },
   icon: {
     type: String,
@@ -33,16 +33,16 @@ const loanSchema = mongoose.Schema({
   minTenure: {
     type: Number,
   },
-   maxTenure: {
+  maxTenure: {
     type: Number,
   },
   intrestRate: {
     type: Number,
   },
   intrestType: {
-      type: String,
-      enum: ["flat", "reducing", "simple", "compound"], // ✅ enum set
-      required: true,
+    type: String,
+    enum: ["flat", "reducing", "simple", "compound"], // ✅ enum set
+    required: true,
   },
   repaymentFrequency: {
     type: Number,
@@ -57,7 +57,7 @@ const loanSchema = mongoose.Schema({
   minTenureDays: {
     type: Number,
   },
-   maxTenureDays: {
+  maxTenureDays: {
     type: Number,
   },
   intrestRateDays: {
@@ -72,37 +72,34 @@ const loanSchema = mongoose.Schema({
   // -------------
   minIncome: {
     type: Number,
-    required:true
   },
   creditScoreRequired: {
     type: Number,
-    required:true
   },
   minAge: {
     type: Number,
-    required:true
   },
   maxAge: {
     type: Number,
-    required:true
   },
-  employmentTypesAllowed: [{
-    type: String,
-    required:true
-  }],
+  employmentTypesAllowed: [
+    {
+      type: String,
+    },
+  ],
   DTIR: {
-    type: Number, 
-    required:true
+    type: Number,
   },
   // -----
   collateralRequired: {
     type: Boolean,
-    Boolean:false,
+    Boolean: false,
   },
-  collateralTypes: [{
-    type: String,
-  
-  }],
+  collateralTypes: [
+    {
+      type: String,
+    },
+  ],
   maxLTV: {
     type: Number,
   },
@@ -122,14 +119,16 @@ const loanSchema = mongoose.Schema({
   // ------
   auto_approval: {
     type: Boolean,
-    default:false,
+    default: false,
     required: true,
   },
   // ----
-  documentRequired: [{
-    type: String,
-    required: true,
-  }],
+  documentRequired: [
+    {
+      type: String,
+      required: true,
+    },
+  ],
 });
 
 loanSchema.plugin(timestamps);
