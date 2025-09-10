@@ -93,6 +93,14 @@ const loanApplicationSchema = mongoose.Schema({
   endDate: {
     type: String,
   },
+  panNumber: {
+    type: String,
+  
+  },
+  creditScore: {
+    type: String,
+  },
+  
 
 });
 

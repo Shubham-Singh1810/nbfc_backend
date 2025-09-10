@@ -25,6 +25,36 @@ supportController.post("/add-contact-query", async (req, res) => {
   }
 });
 
+supportController.put("/update-contact-query", async (req, res) => {
+  try {
+    const id = req.body._id;
+
+    // Find the category by ID
+    const contactData = await Contact.findById(id);
+    if (!contactData) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Contact not found",
+      });
+    }
+
+    let updatedData = { ...req.body };
+    // Update the category in the database
+    const updatedContact = await Contact.findByIdAndUpdate(id, updatedData, {
+      new: true, // Return the updated document
+    });
+    sendResponse(res, 200, "Success", {
+      message: "Contact query updated successfully!",
+      data: updatedContact,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
 supportController.post("/list-contact-query", async (req, res) => {
   try {
     const {
@@ -33,7 +63,7 @@ supportController.post("/list-contact-query", async (req, res) => {
       pageCount = 10,
       sortByField,
       sortByOrder,
-      isResponded
+      isResponded,
     } = req.body;
     const query = {};
     if (isResponded) query.isResponded = isResponded;
@@ -54,7 +84,7 @@ supportController.post("/list-contact-query", async (req, res) => {
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
-   const totalCount = await Contact.countDocuments({});
+    const totalCount = await Contact.countDocuments({});
     const activeCount = await Contact.countDocuments({ isResponded: true });
     const inactiveCount = await Contact.countDocuments({ isResponded: false });
 
