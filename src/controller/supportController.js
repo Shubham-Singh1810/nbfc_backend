@@ -29,15 +29,24 @@ supportController.post("/list-contact-query", async (req, res) => {
   try {
     const {
       searchKey = "",
-      category,
       pageNo = 1,
       pageCount = 10,
       sortByField,
       sortByOrder,
+      isResponded
     } = req.body;
     const query = {};
-    if (category) query.category = category;
-    if (searchKey) query.question = { $regex: searchKey, $options: "i" };
+    if (isResponded) query.isResponded = isResponded;
+    if (searchKey) {
+      query.$or = [
+        { firstName: { $regex: searchKey, $options: "i" } },
+        { lastName: { $regex: searchKey, $options: "i" } },
+        { email: { $regex: searchKey, $options: "i" } },
+        { contactNumber: { $regex: searchKey, $options: "i" } },
+        { subject: { $regex: searchKey, $options: "i" } },
+        { message: { $regex: searchKey, $options: "i" } },
+      ];
+    }
     const sortField = sortByField || "createdAt";
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };
@@ -45,14 +54,14 @@ supportController.post("/list-contact-query", async (req, res) => {
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
-    const userQueries = await Contact.countDocuments({ category: "user" });
-    const driverQueries = await Contact.countDocuments({ category: "driver" });
-    const vendorQueries = await Contact.countDocuments({ category: "vender" });
+   const totalCount = await Contact.countDocuments({});
+    const activeCount = await Contact.countDocuments({ isResponded: true });
+    const inactiveCount = await Contact.countDocuments({ isResponded: false });
 
     sendResponse(res, 200, "Success", {
       message: "Contact list retrived successfully.",
       data: contactList,
-      documentCount: { userQueries, driverQueries, vendorQueries },
+      documentCount: { totalCount, activeCount, inactiveCount },
       statusCode: 200,
     });
   } catch (error) {

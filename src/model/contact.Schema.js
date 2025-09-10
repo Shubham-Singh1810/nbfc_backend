@@ -12,15 +12,25 @@ const contactSchema = mongoose.Schema({
   contactNumber: {
     type: Number,
   },
+  email: {
+    type: String,
+  },
   subject:{
     type: String,
   },
   message:{
     type: String,
   },
-  category:{
-    type: String,
+  isResponded:{
+    type:Boolean,
+    default:false,
   },
+  respondedVia:{
+    type:String
+  },
+  note:{
+    type:String
+  },  
 });
 
 contactSchema.plugin(timestamps);
