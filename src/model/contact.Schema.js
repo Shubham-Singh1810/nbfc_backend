@@ -5,21 +5,27 @@ const { type } = require("os");
 const contactSchema = mongoose.Schema({
   firstName: {
     type: String,
+    required: true,
   },
   lastName: {
     type: String,
+    required: true,
   },
   contactNumber: {
     type: Number,
+    required: true,
   },
   email: {
     type: String,
+    required: true,
   },
   subject:{
     type: String,
+    required: true,
   },
   message:{
     type: String,
+    required: true,
   },
   isResponded:{
     type:Boolean,
