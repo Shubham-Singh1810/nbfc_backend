@@ -52,7 +52,7 @@ supportController.post("/list-contact-query", async (req, res) => {
     sendResponse(res, 200, "Success", {
       message: "Contact list retrived successfully.",
       data: contactList,
-      documentCount:{userQueries, driverQueries, vendorQueries},
+      documentCount: { userQueries, driverQueries, vendorQueries },
       statusCode: 200,
     });
   } catch (error) {
@@ -194,9 +194,11 @@ supportController.post("/list-faq", async (req, res) => {
       pageCount = 10,
       sortByField,
       sortByOrder,
+      status,
     } = req.body;
     const query = {};
     if (category) query.category = category;
+    if (status) query.status = status;
     if (searchKey) query.question = { $regex: searchKey, $options: "i" };
     const sortField = sortByField || "createdAt";
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
@@ -205,14 +207,13 @@ supportController.post("/list-faq", async (req, res) => {
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
-    const userFaq = await Faq.countDocuments({ category: "user" });
-    const driverFaq = await Faq.countDocuments({ category: "driver" });
-    const vendorFaq = await Faq.countDocuments({ category: "vendor" });
-
+    const totalCount = await Faq.countDocuments({});
+    const activeCount = await Faq.countDocuments({ status: true });
+    const inactiveCount = await Faq.countDocuments({ status: false });
     sendResponse(res, 200, "Success", {
       message: "Faq list retrived successfully.",
       data: faqList,
-      documentCount:{userFaq, driverFaq, vendorFaq},
+      documentCount: { totalCount, activeCount, inactiveCount },
       statusCode: 200,
     });
   } catch (error) {
@@ -251,8 +252,7 @@ supportController.post("/create", async (req, res) => {
   try {
     const supportDetails = await Support.create(req.body);
     sendResponse(res, 200, "Success", {
-      message:
-        "Support Details added successfully",
+      message: "Support Details added successfully",
       data: supportDetails,
       statusCode: 200,
     });
@@ -264,6 +264,5 @@ supportController.post("/create", async (req, res) => {
     });
   }
 });
-
 
 module.exports = supportController;
