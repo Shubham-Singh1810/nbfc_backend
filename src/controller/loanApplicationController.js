@@ -351,4 +351,103 @@ loanApplicationController.delete("/delete/:id", async (req, res) => {
   }
 });
 
+
+loanApplicationController.post("/emi-list", async (req, res) => {
+  try {
+    const {
+      status,
+      userId,
+      branchId,
+      assignedAdminId,
+      createdBy,
+      loanId,
+      pageNo = 1,
+      pageCount = 10,
+      sortByField,
+      sortByOrder,
+    } = req.body;
+    const query = {};
+    if (loanId) query.loanId = loanId;
+    if (userId) query.userId = userId;
+    if (branchId) query.branchId = branchId;
+    if (assignedAdminId) query.assignedAdminId = assignedAdminId;
+    if (createdBy) query.createdBy = createdBy;
+    const sortField = sortByField || "createdAt";
+    const sortOrder = sortByOrder === "asc" ? 1 : -1;
+    const sortOption = { [sortField]: sortOrder };
+    const applications = await LoanApplication.find(query)
+      .populate("userId", "firstName lastName email phone profilePic")
+      .populate("loanId", "name code")
+      .populate("branchId", "name contactPerson")
+      .populate("assignedAdminId", "firstName lastName email")
+      .populate("createdBy", "firstName lastName email")
+      .sort(sortOption);
+
+    let emiList = [];
+    applications.forEach((app) => {
+      app.emiSchedule.forEach((emi) => {
+        if (!status || emi.status === status) {
+          emiList.push({
+            applicationId: app._id,
+            applicationCode: app.code,
+            loanId: app.loanId?._id,
+            loanName: app.loanId?.name,
+            userId: app.userId?._id,
+            userName: `${app.userId?.firstName} ${app.userId?.lastName}`,
+            branchName: app.branchId?.name,
+            assignedAdmin: app.assignedAdminId
+              ? `${app.assignedAdminId.firstName} ${app.assignedAdminId.lastName}`
+              : null,
+            expectedDate: emi.expectedDate,
+            amount: emi.amount,
+            status: emi.status,
+            paidDate: emi.paidDate,
+            transectionId: emi.transectionId,
+          });
+        }
+      });
+    });
+
+    // === Sorting EMI list manually (kyunki EMI application ke andar hai) ===
+    emiList.sort((a, b) => {
+      if (sortOrder === 1) {
+        return new Date(a[sortField]) - new Date(b[sortField]);
+      } else {
+        return new Date(b[sortField]) - new Date(a[sortField]);
+      }
+    });
+
+    // === Pagination on EMI list ===
+    const totalCount = emiList.length;
+    const startIndex = (parseInt(pageNo) - 1) * parseInt(pageCount);
+    const paginatedEmiList = emiList.slice(
+      startIndex,
+      startIndex + parseInt(pageCount)
+    );
+
+    // === Status wise count ===
+    const statusWiseCount = emiList.reduce((acc, emi) => {
+      acc[emi.status] = (acc[emi.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    sendResponse(res, 200, "Success", {
+      message: "EMI list retrieved successfully!",
+      data: paginatedEmiList,
+      documentCount: {
+        totalCount,
+        statusWiseCount,
+      },
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("EMI List error:", error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
+
+
+
 module.exports = loanApplicationController;
