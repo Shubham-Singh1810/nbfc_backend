@@ -8,20 +8,22 @@ const ticketSchema = mongoose.Schema({
     required: true,
   },
   userId: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
     required: true,
   },
   image: {
     type: String,
-    // required: true,
   },
-  userType: {
-    type: String,
-    enum: ["User", "Vender", "Driver"],
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Admin",
+    required: true,
   },
   status: {
-    type: Boolean,
-    default: true,
+    type: String,
+    enum: ["open", "closed"],
+    default:"open"
   },
   ticketCategoryId: {
     type: mongoose.Schema.Types.ObjectId,

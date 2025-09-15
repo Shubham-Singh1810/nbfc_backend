@@ -6,6 +6,10 @@ const roleSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  status: {
+    type: Boolean,
+    default:true,
+  },
   permissions: {
     type: [String],
     required: true,

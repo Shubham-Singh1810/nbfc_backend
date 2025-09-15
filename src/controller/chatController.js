@@ -42,24 +42,20 @@ chatController.post("/create", upload.single("image"), async (req, res) => {
 chatController.post("/list/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    const ticketDetails = await Ticket.findOne({_id:id}).populate("ticketCategoryId");
-    let userDetails = null;
-    const userType = ticketDetails?.userType;
-    const userId = ticketDetails?.userId;
-    if (userType == "User") {
-      userDetails = await User.findOne({_id:userId});
-    } else if (userType == "Vender") {
-      userDetails = await Vendor.findOne({_id:userId});
-    } else if (userType == "Driver") {
-      userDetails = await Driver.findOne({_id:userId});
-    } else if (userType == "Admin") {
-      userDetails = await Admin.findById({_id:userId});
-    }
+    const ticketDetails = await Ticket.findOne({_id:id}).populate("ticketCategoryId").populate({
+        path: "assignedTo",
+        select: "firstName lastName profilePic phone email",
+      })
+      .populate({
+        path: "userId",
+        select: "firstName lastName profilePic phone email",
+      });
+      ;
     const chatList = await Chat.find({ ticketId: id }).lean();
     const userUnreadCount = await Chat.countDocuments({
       ticketId: id,
       isRead: false,
-      userType: { $ne: "Admin" },
+      userType: "User",
     });
     const adminUnreadCount = await Chat.countDocuments({
       ticketId: id,
@@ -70,7 +66,6 @@ chatController.post("/list/:id", async (req, res) => {
       message: "Chat list retrieved successfully!",
       data: chatList,
       ticketDetails, 
-      userDetails,
       documentCount: {
         adminUnreadCount,
         userUnreadCount,

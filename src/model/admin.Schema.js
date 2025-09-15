@@ -32,7 +32,18 @@ const adminSchema = mongoose.Schema({
   },
   deviceId:{
     type: String
-  }
+  },
+  code: {
+    type: String,
+  },
+  branch: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Branch",
+  },
+  status: {
+    type: Boolean,
+    default:true,
+  },
 });
 
 adminSchema.plugin(timestamps);

@@ -13,14 +13,11 @@ const upload = require("../utils/multer");
 ticketController.post("/create", upload.single("image"), async (req, res) => {
   try {
     let obj = req.body;
-
     if (req.file) {
       const image = await cloudinary.uploader.upload(req.file.path);
       obj.image = image.url;
     }
-
     const ticketCreated = await Ticket.create(obj);
-
     sendResponse(res, 200, "Success", {
       message: "Ticket created successfully!",
       data: ticketCreated,
@@ -50,7 +47,6 @@ ticketController.post("/list", async (req, res) => {
 
     const query = {};
     if (status !== undefined && status !== "") query.status = status;
-    if (userType !== undefined && userType !== "") query.userType = userType;
     if (searchKey) query.subject = { $regex: searchKey, $options: "i" };
     if (userId) query.userId = userId;
 
@@ -62,40 +58,25 @@ ticketController.post("/list", async (req, res) => {
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip((parseInt(pageNo) - 1) * parseInt(pageCount))
-      .populate("ticketCategoryId");
-
-    // fetch user/vendor/driver/admin details based on userType
-    const enhancedTickets = await Promise.all(
-      ticketList.map(async (ticket) => {
-        let userDetails = null;
-
-        switch (ticket.userType) {
-          case "User":
-            userDetails = await User.findById(ticket.userId).lean();
-            break;
-          case "Vender":
-            userDetails = await Vender.findById(ticket.userId).lean();
-            break;
-          case "Driver":
-            userDetails = await Driver.findById(ticket.userId).lean();
-            break;
-          default:
-            userDetails = null;
-        }
-
-        return {
-          ...ticket.toObject(),
-          userDetails,
-        };
+      .populate("ticketCategoryId")
+      
+      .populate({
+        path: "assignedTo",
+        select: "firstName lastName profilePic phone",
       })
-    );
+      .populate({
+        path: "userId",
+        select: "firstName lastName profilePic phone",
+      });
+      
 
-    const totalCount = await Ticket.countDocuments({userType:userType});
-    const activeCount = await Ticket.countDocuments({ status: true, userType:userType });
+    
+    const totalCount = await Ticket.countDocuments({});
+    const activeCount = await Ticket.countDocuments({ status: "open" });
 
     sendResponse(res, 200, "Success", {
       message: "Ticket list retrieved successfully!",
-      data: enhancedTickets,
+      data: ticketList,
       documentCount: {
         totalCount,
         activeCount,

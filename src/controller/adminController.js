@@ -8,32 +8,55 @@ const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
-adminController.post("/create", async (req, res) => {
+// ✅ Admin Create
+adminController.post("/create", upload.single("profilePic"), async (req, res) => {
   try {
     let { password, ...rest } = req.body;
 
-    // password encrypt karo
+    // ✅ Password encrypt karo
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // ✅ Handle profilePic upload if file is provided
+    if (req.file) {
+      const image = await cloudinary.uploader.upload(req.file.path);
+      rest.profilePic = image.secure_url;
+    }
+
+    // ✅ Generate Admin Code (AD001 format)
+    if (!req.body.code) {
+      const lastAdmin = await Admin.findOne().sort({ createdAt: -1 });
+
+      let newCode;
+      if (lastAdmin?.code) {
+        // Example: AD001 → AD002
+        const lastNumber = parseInt(lastAdmin.code.replace("AD", ""), 10) || 0;
+        newCode = "AD" + String(lastNumber + 1).padStart(3, "0");
+      } else {
+        // If no admin exists
+        newCode = "AD001";
+      }
+
+      rest.code = newCode;
+    }
+
+    // ✅ Create admin
     const AdminData = await Admin.create({
       ...rest,
       password: hashedPassword,
     });
 
-    // Generate JWT token
-          const token = jwt.sign(
-            { userId: AdminData._id, phone: AdminData.phone },
-            process.env.JWT_KEY
-          );
-    
-          // Store the token in the user object or return it in the response
-          AdminData.token = token;
-          const updatedAdmin = await Admin.findByIdAndUpdate(
-            AdminData._id,
-            { token },
-            { new: true }
-          );
+    // ✅ Generate JWT token
+    const token = jwt.sign(
+      { userId: AdminData._id, phone: AdminData.phone },
+      process.env.JWT_KEY
+    );
+
+    // ✅ Store token in DB
+    const updatedAdmin = await Admin.findByIdAndUpdate(
+      AdminData._id,
+      { token },
+      { new: true }
+    );
 
     sendResponse(res, 200, "Success", {
       message: "Admin created successfully!",
@@ -48,6 +71,7 @@ adminController.post("/create", async (req, res) => {
     });
   }
 });
+
 
 
 adminController.put("/update", async (req, res) => {

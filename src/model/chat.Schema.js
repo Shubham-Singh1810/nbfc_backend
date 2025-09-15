@@ -10,11 +10,16 @@ const chatSchema = mongoose.Schema({
     type: String,
   },
   userId: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Admin",
   },
   userType: {
     type: String,
-    enum: ["User", "Vender", "Driver", "Admin"],
+    enum: ["User", "Admin"],
   },
   isRead: {
     type: Boolean,
