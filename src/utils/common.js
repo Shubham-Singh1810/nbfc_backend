@@ -11,7 +11,7 @@ exports.generateOTP = () => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-exports.sendMail = async (email, subject) => {
+exports.sendMail = async (email, subject, html) => {
   let transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
@@ -22,10 +22,11 @@ exports.sendMail = async (email, subject) => {
     },
   });
   const info = await transporter.sendMail({
-    from: `"NBFC" <"tpaunikar92@gmail.com">`,
+    from: `"Rupee Loan" <"tpaunikar92@gmail.com">`,
     to: email,
     subject:subject,
-    text: subject
+    text: subject,
+    html:html
   });
   return info;
 };
