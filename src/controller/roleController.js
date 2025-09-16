@@ -119,4 +119,28 @@ roleController.delete("/delete/:id", async (req, res) => {
   }
 });
 
+roleController.get("/details/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const role = await Role.findOne({ _id: id });
+    if (role) {
+      return sendResponse(res, 200, "Success", {
+        message: "Role details fetched  successfully",
+        data: role,
+        statusCode: 200,
+      });
+    } else {
+      return sendResponse(res, 404, "Failed", {
+        message: "Role not found",
+        statusCode: 404,
+      });
+    }
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
+    });
+  }
+});
+
 module.exports = roleController;
