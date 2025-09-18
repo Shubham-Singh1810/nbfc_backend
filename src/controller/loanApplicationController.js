@@ -353,7 +353,11 @@ loanApplicationController.delete("/delete/:id", async (req, res) => {
 loanApplicationController.get("/details/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    const loanApplication = await LoanApplication.findOne({ _id: id });
+    const loanApplication = await LoanApplication.findOne({ _id: id }).populate("userId", "firstName lastName email phone profilePic") // user details
+      .populate("loanId", "name code") // loan details
+      .populate("branchId", "name contactPerson address state city pincode") // branch details
+      .populate("assignedAdminId", "firstName lastName profilePic phone email") // admin details
+      .populate("createdBy", "firstName lastName profilePic phone email");
     if (loanApplication) {
       return sendResponse(res, 200, "Success", {
         message: "Loan application details fetched  successfully",
