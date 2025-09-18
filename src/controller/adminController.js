@@ -113,24 +113,80 @@ adminController.post(
   }
 );
 
-adminController.put("/update", async (req, res) => {
-  try {
-    const AdminData = await Admin.findByIdAndUpdate(req?.body?._id, req.body, {
-      new: true,
-    });
-    sendResponse(res, 200, "Success", {
-      message: "Admin updated successfully!",
-      data: AdminData,
-      statusCode: 200,
-    });
-  } catch (error) {
-    console.error(error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-      statusCode: 500,
-    });
+// adminController.put("/update", async (req, res) => {
+//   try {
+//     const AdminData = await Admin.findByIdAndUpdate(req?.body?._id, req.body, {
+//       new: true,
+//     });
+//     sendResponse(res, 200, "Success", {
+//       message: "Admin updated successfully!",
+//       data: AdminData,
+//       statusCode: 200,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     sendResponse(res, 500, "Failed", {
+//       message: error.message || "Internal server error",
+//       statusCode: 500,
+//     });
+//   }
+// });
+adminController.put(
+  "/update",
+  upload.single("profilePic"),
+  async (req, res) => {
+    try {
+      const id = req.body._id;
+      const adminData = await Admin.findById(id);
+
+      if (!adminData) {
+        return sendResponse(res, 404, "Failed", {
+          message: "Admin not found",
+        });
+      }
+
+      let updatedData = { ...req.body };
+
+      // ✅ If branch is empty string, set it to null (to clear in DB)
+      if (updatedData.branch === "") {
+        updatedData.branch = null;
+      }
+
+      // ✅ Handle profilePic update
+      if (req.file) {
+        if (adminData.image) {
+          const publicId = adminData.image.split("/").pop().split(".")[0];
+          await cloudinary.uploader.destroy(publicId, (error, result) => {
+            if (error) {
+              console.error("Error deleting old image from Cloudinary:", error);
+            } else {
+              console.log("Old image deleted from Cloudinary:", result);
+            }
+          });
+        }
+        const image = await cloudinary.uploader.upload(req.file.path);
+        updatedData.image = image.url;
+      }
+
+      const updatedAdmin = await Admin.findByIdAndUpdate(id, updatedData, {
+        new: true,
+      });
+
+      sendResponse(res, 200, "Success", {
+        message: "Admin updated successfully!",
+        data: updatedAdmin,
+        statusCode: 200,
+      });
+    } catch (error) {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+      });
+    }
   }
-});
+);
+
+
 
 adminController.delete("/delete/:id", async (req, res) => {
   try {
@@ -243,6 +299,9 @@ adminController.post("/list", async (req, res) => {
       .skip(parseInt(pageNo - 1) * parseInt(pageCount))
       .populate({
         path: "role",
+      })
+      .populate({
+        path: "branch",
       });
     const totalCount = await Admin.countDocuments({});
     const activeCount = await Admin.countDocuments({status:true});

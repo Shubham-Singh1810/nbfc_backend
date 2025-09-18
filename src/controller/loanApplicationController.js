@@ -350,7 +350,29 @@ loanApplicationController.delete("/delete/:id", async (req, res) => {
     });
   }
 });
-
+loanApplicationController.get("/details/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const loanApplication = await LoanApplication.findOne({ _id: id });
+    if (loanApplication) {
+      return sendResponse(res, 200, "Success", {
+        message: "Loan application details fetched  successfully",
+        data: loanApplication,
+        statusCode: 200,
+      });
+    } else {
+      return sendResponse(res, 404, "Failed", {
+        message: "Loan application not found",
+        statusCode: 404,
+      });
+    }
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
+    });
+  }
+});
 
 loanApplicationController.post("/emi-list", async (req, res) => {
   try {
