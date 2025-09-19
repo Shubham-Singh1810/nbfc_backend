@@ -80,11 +80,11 @@ adminController.post(
 
     <p><strong>Login details</strong><br/>
       Email: ${req?.body?.email}<br/>
-      Temporary PIN: <strong style="font-size:1.1rem;">${plainPassword}</strong>
+      Password: <strong style="font-size:1.1rem;">${plainPassword}</strong>
     </p>
 
     <p style="margin-top:0.5rem;">
-      For security, please change this PIN after your first login. If you didn't request this account, contact our support immediately.
+      For security, please change this Password after your first login. If you didn't request this account, contact our support immediately.
     </p>
 
     <hr style="border:none; border-top:1px solid #eee; margin:1rem 0;" />
@@ -96,10 +96,10 @@ adminController.post(
       await sendMail(
         req.body.email,
         "Welcome to Rupee Loan — Your Admin Account Details",
-        html 
+        html
       );
       sendResponse(res, 200, "Success", {
-        message: "Admin created successfully!",
+        message: "Staff created successfully!",
         data: updatedAdmin,
         statusCode: 200,
       });
@@ -154,8 +154,8 @@ adminController.put(
 
       // ✅ Handle profilePic update
       if (req.file) {
-        if (adminData.image) {
-          const publicId = adminData.image.split("/").pop().split(".")[0];
+        if (adminData.profilePic) {
+          const publicId = adminData.profilePic.split("/").pop().split(".")[0];
           await cloudinary.uploader.destroy(publicId, (error, result) => {
             if (error) {
               console.error("Error deleting old image from Cloudinary:", error);
@@ -165,7 +165,7 @@ adminController.put(
           });
         }
         const image = await cloudinary.uploader.upload(req.file.path);
-        updatedData.image = image.url;
+        updatedData.profilePic = image.url;
       }
 
       const updatedAdmin = await Admin.findByIdAndUpdate(id, updatedData, {
@@ -185,8 +185,6 @@ adminController.put(
     }
   }
 );
-
-
 
 adminController.delete("/delete/:id", async (req, res) => {
   try {
@@ -272,7 +270,7 @@ adminController.post("/list", async (req, res) => {
       sortByField,
       sortByOrder,
       branch,
-      role
+      role,
     } = req.body;
 
     const query = {};
@@ -304,13 +302,15 @@ adminController.post("/list", async (req, res) => {
         path: "branch",
       });
     const totalCount = await Admin.countDocuments({});
-    const activeCount = await Admin.countDocuments({status:true});
-    const inactiveCount = await Admin.countDocuments({status:false});
+    const activeCount = await Admin.countDocuments({ status: true });
+    const inactiveCount = await Admin.countDocuments({ status: false });
     sendResponse(res, 200, "Success", {
       message: "Admin list retrieved successfully!",
       data: adminList,
       documentCount: {
-        totalCount,activeCount,inactiveCount
+        totalCount,
+        activeCount,
+        inactiveCount,
       },
       statusCode: 200,
     });
@@ -322,4 +322,68 @@ adminController.post("/list", async (req, res) => {
   }
 });
 
+adminController.get("/details/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminDetails = await Admin.findOne({ _id: id })
+      .populate({
+        path: "role",
+      })
+      .populate({
+        path: "branch",
+      });
+    sendResponse(res, 200, "Success", {
+      message: "Admin Details retrived successfully",
+      data: adminDetails,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
+adminController.put(
+  "/update-password",
+
+  async (req, res) => {
+    try {
+      const id = req.body._id;
+      const adminData = await Admin.findById(id);
+
+      if (!adminData) {
+        return sendResponse(res, 404, "Failed", {
+          message: "Admin not found",
+          statusCode:"404"
+        });
+      }
+      const isMatch = await bcrypt.compare(req?.body?.oldPassword, adminData?.password);
+      console.log(adminData?.password)
+      if (!isMatch) {
+        return sendResponse(res, 404, "Failed", {
+          message: "Old password not matched",
+        });
+      }
+      const hashedPassword = await bcrypt.hash(req?.body?.newPassword, 10);
+      let updatedData = { password : hashedPassword };
+
+      const updatedAdmin = await Admin.findByIdAndUpdate(id, updatedData, {
+        new: true,
+      });
+
+      sendResponse(res, 200, "Success", {
+        message: "Admin password updated successfully!",
+        data: updatedAdmin,
+        statusCode: 200,
+      });
+    } catch (error) {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+      });
+    }
+  }
+);
 module.exports = adminController;
