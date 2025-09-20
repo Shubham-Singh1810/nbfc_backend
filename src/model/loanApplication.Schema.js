@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const timestamps = require("mongoose-timestamp");
+const { type } = require("os");
 
 const loanApplicationSchema = mongoose.Schema({
   userId: {
@@ -56,8 +57,13 @@ const loanApplicationSchema = mongoose.Schema({
     {
       name: { type: String },
       image: { type: String },
+      status: { type: String, default: "pending", enum: ["pending", "approved", "rejected"], },
+      rejectReason:{type:String}
     },
   ],
+  rejectReason:{
+    type:String
+  },
   loanAmount: {
     type: Number,
     required: true,
@@ -68,7 +74,7 @@ const loanApplicationSchema = mongoose.Schema({
   },
   loanTenuareType: {
     type: String,
-     enum: ["days", "months", "years"],
+    enum: ["days", "months", "years"],
     required: true,
   },
   intrestRate: {
@@ -95,13 +101,10 @@ const loanApplicationSchema = mongoose.Schema({
   },
   panNumber: {
     type: String,
-  
   },
   creditScore: {
     type: String,
   },
-  
-
 });
 
 loanApplicationSchema.plugin(timestamps);

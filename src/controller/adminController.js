@@ -11,14 +11,38 @@ const jwt = require("jsonwebtoken");
 const { sendMail } = require("../utils/common");
 // ✅ Admin Create
 
-function generatePin(length = 6) {
-  let pin = "";
-  const digits = "0123456789";
-  for (let i = 0; i < length; i++) {
-    pin += digits.charAt(Math.floor(Math.random() * digits.length));
+function generateAdminPassword(length = 8) {
+  if (length < 8) {
+    throw new Error("Password length must be at least 8 characters");
   }
-  return pin;
+
+  const upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const lowerCase = "abcdefghijklmnopqrstuvwxyz";
+  const digits = "0123456789";
+  const special = "!@#$%^&*()_+[]{}|;:,.<>?";
+
+  // ensure at least one of each rule
+  let password = "";
+  password += upperCase.charAt(Math.floor(Math.random() * upperCase.length));
+  password += lowerCase.charAt(Math.floor(Math.random() * lowerCase.length));
+  password += digits.charAt(Math.floor(Math.random() * digits.length));
+  password += special.charAt(Math.floor(Math.random() * special.length));
+
+  // fill remaining chars with all sets combined
+  const allChars = upperCase + lowerCase + digits + special;
+  for (let i = password.length; i < length; i++) {
+    password += allChars.charAt(Math.floor(Math.random() * allChars.length));
+  }
+
+  // shuffle password so required chars are not in fixed positions
+  password = password
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
+
+  return password;
 }
+
 
 adminController.post(
   "/create",
@@ -26,7 +50,7 @@ adminController.post(
   async (req, res) => {
     try {
       let { ...rest } = req.body;
-      const plainPassword = generatePin();
+      const plainPassword = generateAdminPassword();
 
       // ✅ Password encrypt karo
       const hashedPassword = await bcrypt.hash(plainPassword, 10);
