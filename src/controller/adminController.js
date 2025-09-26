@@ -268,7 +268,10 @@ adminController.post("/login", async (req, res) => {
       user._id,
       { deviceId },
       { new: true }
-    );
+    ).populate({
+        path: "role", 
+        
+      });
 
     return sendResponse(res, 200, "Success", {
       message: "Admin logged in successfully",
