@@ -674,7 +674,6 @@ userController.put(
         const profilePic = await cloudinary.uploader.upload(req.file.path);
         updatedData.profilePic = profilePic.url;
       }
-      updatedData.profileStatus = "completed";
       const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
         new: true, // Return the updated document
       });

@@ -89,6 +89,9 @@ const userSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+   address: {
+    type: String,
+  },
   //  -----------------
   panNumber: {
     type: String,
