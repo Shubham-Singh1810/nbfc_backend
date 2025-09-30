@@ -3,22 +3,13 @@ const timestamps = require("mongoose-timestamp");
 const { type } = require("os");
 
 const supportSchema = mongoose.Schema({
-  userPrivacyPolicy: {
+  privacyPolicy: {
     type: String,
   },
-  driverPrivacyPolicy: {
+  termsAndCondition: {
     type: String,
   },
-  vendorPrivacyPolicy: {
-    type: String,
-  },
-  userTermsAndCondition: {
-    type: String,
-  },
-  driverTermsAndCondition: {
-    type: String,
-  },
-  vendorTermsAndCondition: {
+  cookiePolicy: {
     type: String,
   },
   supportContact: {

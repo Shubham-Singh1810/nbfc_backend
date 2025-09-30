@@ -13,11 +13,29 @@ const upload = require("../utils/multer");
 ticketController.post("/create", upload.single("image"), async (req, res) => {
   try {
     let obj = req.body;
+
+    // Image upload logic
     if (req.file) {
       const image = await cloudinary.uploader.upload(req.file.path);
       obj.image = image.url;
     }
+
+    // Find last ticket to generate next code
+    const lastTicket = await Ticket.findOne().sort({ createdAt: -1 }); // मान लो createdAt field है
+    let count = 1;
+
+    if (lastTicket && lastTicket.code) {
+      // last code से count निकाले
+      const lastCount = parseInt(lastTicket.code.replace("RLST", ""), 10);
+      count = lastCount + 1;
+    }
+
+    // नया code generate
+    obj.code = `RLST${String(count).padStart(3, "0")}`; // RLST001 format
+
+    // Ticket create
     const ticketCreated = await Ticket.create(obj);
+
     sendResponse(res, 200, "Success", {
       message: "Ticket created successfully!",
       data: ticketCreated,

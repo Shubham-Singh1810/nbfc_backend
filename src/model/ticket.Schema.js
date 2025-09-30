@@ -3,6 +3,10 @@ const timestamps = require("mongoose-timestamp");
 const { type } = require("os");
 
 const ticketSchema = mongoose.Schema({
+  code: {
+    type: String,
+    required: true,
+  },
   subject: {
     type: String,
     required: true,
@@ -18,7 +22,7 @@ const ticketSchema = mongoose.Schema({
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Admin",
-    required: true,
+    // required: true,
   },
   status: {
     type: String,
