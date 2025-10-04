@@ -22,7 +22,6 @@ const ticketSchema = mongoose.Schema({
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Admin",
-    // required: true,
   },
   status: {
     type: String,
