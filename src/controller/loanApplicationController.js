@@ -106,7 +106,6 @@ loanApplicationController.post(
       }
       let documents = [];
 
-
       if (req.files && req.files.length > 0) {
         const inputDocs = JSON.parse(req.body.documentsMeta || "[]"); // alag key for meta
 
@@ -121,13 +120,15 @@ loanApplicationController.post(
         }
       }
       let collateralDetails = [];
-if (req.body.collateralDetails) {
-  try {
-    collateralDetails = JSON.parse(req.body.collateralDetails); // ✅ convert string → array
-  } catch (err) {
-    return sendResponse(res, 400, "Failed", { message: "Invalid collateral details format" });
-  }
-}
+      if (req.body.collateralDetails) {
+        try {
+          collateralDetails = JSON.parse(req.body.collateralDetails); // ✅ convert string → array
+        } catch (err) {
+          return sendResponse(res, 400, "Failed", {
+            message: "Invalid collateral details format",
+          });
+        }
+      }
 
       // 👉 Loan Application create
       const loanApplicationCreated = await LoanApplication.create({
@@ -144,7 +145,7 @@ if (req.body.collateralDetails) {
         userId,
         loanId,
         documents,
-        collateralDetails
+        collateralDetails,
       });
 
       sendResponse(res, 200, "Success", {
@@ -353,7 +354,8 @@ loanApplicationController.delete("/delete/:id", async (req, res) => {
 loanApplicationController.get("/details/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    const loanApplication = await LoanApplication.findOne({ _id: id }).populate("userId", "firstName lastName email phone profilePic") // user details
+    const loanApplication = await LoanApplication.findOne({ _id: id })
+      .populate("userId", "firstName lastName email phone profilePic") // user details
       .populate("loanId", "name code") // loan details
       .populate("branchId", "name contactPerson address state city pincode") // branch details
       .populate("assignedAdminId", "firstName lastName profilePic phone email") // admin details
@@ -474,6 +476,113 @@ loanApplicationController.post("/emi-list", async (req, res) => {
   }
 });
 
+loanApplicationController.put(
+  "/update",
+  upload.array("documents", 5),
+  async (req, res) => {
+    try {
+      const { _id } = req.body;
+      if (!_id) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Loan Application ID (_id) is required",
+        });
+      }
+
+      const {
+        loanAmount,
+        intrestRate,
+        intrestRateType,
+        loanTenuare,
+        loanTenuareType,
+        repaymentFrequency,
+        repaymentFrequencyType,
+        userId,
+        loanId,
+        ...restFields
+      } = req.body;
+
+      // ✅ Validation
+      if (!userId) return sendResponse(res, 400, "Failed", { message: "User ID is required" });
+      if (!loanId) return sendResponse(res, 400, "Failed", { message: "Loan ID is required" });
+      if (!loanAmount || loanAmount <= 0) return sendResponse(res, 400, "Failed", { message: "Loan amount must be greater than 0" });
+      if (!loanTenuare || loanTenuare <= 0) return sendResponse(res, 400, "Failed", { message: "Loan tenure must be greater than 0" });
+      if (!intrestRate || intrestRate <= 0) return sendResponse(res, 400, "Failed", { message: "Interest rate must be greater than 0" });
+      if (!intrestRateType || !["flat", "reducing", "simple", "compound"].includes(intrestRateType))
+        return sendResponse(res, 400, "Failed", { message: "Invalid interest rate type" });
+      if (!loanTenuareType || !["months", "days"].includes(loanTenuareType))
+        return sendResponse(res, 400, "Failed", { message: "Invalid loan tenure type" });
+      if (!repaymentFrequency || repaymentFrequency <= 0)
+        return sendResponse(res, 400, "Failed", { message: "Repayment frequency must be greater than 0" });
+      if (!repaymentFrequencyType || !["months", "days"].includes(repaymentFrequencyType))
+        return sendResponse(res, 400, "Failed", { message: "Invalid repayment frequency type" });
+
+      // ✅ Handle documents
+      let documents = [];
+      if (req.files && req.files.length > 0) {
+        const inputDocs = JSON.parse(req.body.documentsMeta || "[]");
+        for (let i = 0; i < req.files.length; i++) {
+          const file = req.files[i];
+          const uploaded = await cloudinary.uploader.upload(file.path);
+          documents.push({
+            name: inputDocs[i]?.name || `Doc-${i + 1}`,
+            image: uploaded.secure_url,
+          });
+        }
+      } else if (req.body.documents) {
+        try {
+          documents = JSON.parse(req.body.documents);
+        } catch (err) {
+          return sendResponse(res, 400, "Failed", { message: "Invalid documents format" ,statusCode:400});
+        }
+      }
+
+      // ✅ Handle collateral
+      let collateralDetails = [];
+      if (req.body.collateralDetails) {
+        try {
+          collateralDetails = JSON.parse(req.body.collateralDetails);
+        } catch (err) {
+          return sendResponse(res, 400, "Failed", { message: "Invalid collateral details format" , statusCode:400});
+        }
+      }
+
+      // 👉 Update
+      const updatedLoanApplication = await LoanApplication.findByIdAndUpdate(
+        _id,
+        {
+          ...restFields,
+          loanAmount,
+          intrestRate,
+          intrestRateType,
+          loanTenuare,
+          loanTenuareType,
+          repaymentFrequency,
+          repaymentFrequencyType,
+          userId,
+          loanId,
+          documents,
+          collateralDetails,
+        },
+        { new: true }
+      );
+
+      if (!updatedLoanApplication)
+        return sendResponse(res, 404, "Failed", { message: "Loan Application not found" , statusCode:404});
+
+      sendResponse(res, 200, "Success", {
+        message: "Loan Application updated successfully!",
+        data: updatedLoanApplication,
+        statusCode:200
+      });
+    } catch (error) {
+      console.error("Loan Application update error:", error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+        statusCode:500
+      });
+    }
+  }
+);
 
 
 module.exports = loanApplicationController;
