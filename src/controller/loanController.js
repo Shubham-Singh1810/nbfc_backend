@@ -2,54 +2,69 @@ const express = require("express");
 const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const Loan = require("../model/loan.Schema");
+const Faq = require("../model/faq.Schema");
 const loanController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const auth = require("../utils/auth");
 
-loanController.post("/create", upload.single("icon"), async (req, res) => {
-  try {
-    let obj = { ...req.body };
+loanController.post(
+  "/create",
+  upload.fields([
+    { name: "icon", maxCount: 1 },
+    { name: "banner", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      let obj = { ...req.body };
 
-    // ✅ Handle icon upload if file is provided
-    if (req.file) {
-      const image = await cloudinary.uploader.upload(req.file.path);
-      obj.icon = image.secure_url;
-    }
-
-    // ✅ Generate Loan Code (RL001 format)
-    if (!req.body.code) {
-      const lastLoan = await Loan.findOne().sort({ createdAt: -1 });
-
-      let newCode;
-      if (lastLoan?.code) {
-        // Example: RL001 → RL002
-        const lastNumber = parseInt(lastLoan.code.replace("RL", ""), 10) || 0;
-        newCode = "RL" + String(lastNumber + 1).padStart(3, "0");
-      } else {
-        // If no loan exists
-        newCode = "RL001";
+      // ✅ Handle icon upload if provided
+      if (req.files && req.files.icon && req.files.icon.length > 0) {
+        const iconFile = req.files.icon[0];
+        const uploadedIcon = await cloudinary.uploader.upload(iconFile.path);
+        obj.icon = uploadedIcon.secure_url;
       }
 
-      obj.code = newCode;
+      // ✅ Handle banner upload if provided
+      if (req.files && req.files.banner && req.files.banner.length > 0) {
+        const bannerFile = req.files.banner[0];
+        const uploadedBanner = await cloudinary.uploader.upload(bannerFile.path);
+        obj.banner = uploadedBanner.secure_url;
+      }
+
+      // ✅ Generate Loan Code (RL001 format)
+      if (!req.body.code) {
+        const lastLoan = await Loan.findOne().sort({ createdAt: -1 });
+
+        let newCode;
+        if (lastLoan?.code) {
+          const lastNumber = parseInt(lastLoan.code.replace("RL", ""), 10) || 0;
+          newCode = "RL" + String(lastNumber + 1).padStart(3, "0");
+        } else {
+          newCode = "RL001";
+        }
+
+        obj.code = newCode;
+      }
+
+      // ✅ Create loan
+      const loanCreated = await Loan.create(obj);
+
+      sendResponse(res, 200, "Success", {
+        message: "Loan created successfully!",
+        data: loanCreated,
+        statusCode: 200,
+      });
+    } catch (error) {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+      });
     }
-
-    // ✅ Create loan
-    const loanCreated = await Loan.create(obj);
-
-    sendResponse(res, 200, "Success", {
-      message: "Loan created successfully!",
-      data: loanCreated,
-      statusCode: 200,
-    });
-  } catch (error) {
-    console.error(error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-    });
   }
-});
+);
+
 
 loanController.post("/list", async (req, res) => {
   try {
@@ -173,6 +188,30 @@ loanController.put("/update",upload.single("icon"), async (req, res) => {
     console.error(error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
+    });
+  }
+});
+loanController.get("/details-for-web/:slug", async (req, res) => {
+  try {
+    const slug = req.params.slug;
+    const loanType = await Loan.findOne({ slug: slug });
+    const faqList = await Faq.find({category:loanType?.name})
+    if (loanType) {
+      return sendResponse(res, 200, "Success", {
+        message: "Loan type details fetched  successfully",
+        data: {loanType, faqList},
+        statusCode: 200,
+      });
+    } else {
+      return sendResponse(res, 404, "Failed", {
+        message: "Loan type not found",
+        statusCode: 404,
+      });
+    }
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
     });
   }
 });

@@ -129,6 +129,14 @@ const loanSchema = mongoose.Schema({
       required: true,
     },
   ],
+  // ----
+  isActiveOnWeb: { type: Boolean, default:false },
+  title: { type: String },
+  slug: { type: String },
+  banner: { type: String },
+  seoTitle: { type: String },
+  metaKeywords: { type: String },
+  metaDescription: { type: String },
 });
 
 loanSchema.plugin(timestamps);
