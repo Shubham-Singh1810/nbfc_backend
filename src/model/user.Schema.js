@@ -76,8 +76,13 @@ const userSchema = mongoose.Schema({
   profileStatus: {
     type: String,
     default: "registered",
-    enum: ["registered", "verified", "active", "blocked"],
+    enum: ["registered", "verified", "inActive", "active", "blocked"],
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Admin",
+  },
+
   // ----------------
   state: {
     type: String,
@@ -89,15 +94,14 @@ const userSchema = mongoose.Schema({
     type: String,
     required: true,
   },
-   address: {
+  address: {
     type: String,
   },
   //  -----------------
   panNumber: {
     type: String,
-    
   },
-   aadharNumber: {
+  aadharNumber: {
     type: String,
   },
   //  -------------
