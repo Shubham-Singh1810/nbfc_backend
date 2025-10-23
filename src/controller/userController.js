@@ -265,6 +265,12 @@ userController.post("/otp-verification", async (req, res) => {
       updateData.isPhoneVerified = true;
     }
     const user = await User.findOne(query);
+    if(user?.isUserApproved){
+     return sendResponse(res, 200, "Success", {
+        message: "Your profile has not been approved yet",
+        statusCode: 404,
+      });
+    }
     if (user) {
       if (
         user?.toObject().isEmailVerified &&
@@ -551,7 +557,12 @@ userController.post("/list", async (req, res) => {
     const userList = await User.find(query)
       .sort(sortOption)
       .limit(parseInt(pageCount))
-      .skip((parseInt(pageNo) - 1) * parseInt(pageCount));
+      .skip((parseInt(pageNo) - 1) * parseInt(pageCount))
+      .populate({
+    path: "createdBy",        
+   
+   
+  });
 
     const totalCount = await User.countDocuments(query);
 

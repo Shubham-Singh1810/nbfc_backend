@@ -76,11 +76,15 @@ const userSchema = mongoose.Schema({
   profileStatus: {
     type: String,
     default: "registered",
-    enum: ["registered", "verified", "inActive", "active", "blocked"],
+    enum: ["registered", "verified", "active", "blocked"],
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Admin",
+  },
+  isUserApproved:{
+    type: Boolean,
+    default: true,
   },
 
   // ----------------

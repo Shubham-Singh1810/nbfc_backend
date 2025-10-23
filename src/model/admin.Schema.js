@@ -36,10 +36,10 @@ const adminSchema = mongoose.Schema({
   code: {
     type: String,
   },
-  branch: {
+  branch: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Branch",
-  },
+  }],
   status: {
     type: Boolean,
     default:true,

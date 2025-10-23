@@ -40,6 +40,7 @@ const branchController = require("./controller/branchController");
 const documentController = require("./controller/documentController");
 const loanApplicationController = require("./controller/loanApplicationController");
 const loanPurposeController = require("./controller/loanPurposeController");
+const paydayLoanController = require("./controller/paydayLoanController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -81,7 +82,6 @@ router.use("/branch", branchController);
 router.use("/document", documentController);
 router.use("/loan-application", loanApplicationController);
 router.use("/loan-purpose", loanPurposeController);
-
-
+router.use("/payday-loan", paydayLoanController);
 
 module.exports = router;

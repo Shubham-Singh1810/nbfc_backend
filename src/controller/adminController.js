@@ -43,13 +43,26 @@ function generateAdminPassword(length = 8) {
   return password;
 }
 
-
 adminController.post(
   "/create",
   upload.single("profilePic"),
   async (req, res) => {
     try {
       let { ...rest } = req.body;
+      if (rest.branch) {
+        if (typeof rest.branch === "string") {
+          try {
+            // 🔹 Case 1: JSON string — '["id1","id2"]'
+            const parsed = JSON.parse(rest.branch);
+            rest.branch = Array.isArray(parsed) ? parsed : [parsed];
+          } catch (err) {
+            // 🔹 Case 2: Comma-separated string — "id1,id2"
+            rest.branch = rest.branch.split(",").map((b) => b.trim());
+          }
+        } else if (!Array.isArray(rest.branch)) {
+          rest.branch = [rest.branch];
+        }
+      }
       const plainPassword = generateAdminPassword();
 
       // ✅ Password encrypt karo
@@ -171,12 +184,22 @@ adminController.put(
 
       let updatedData = { ...req.body };
 
-      // ✅ If branch is empty string, set it to null (to clear in DB)
-      if (updatedData.branch === "") {
-        updatedData.branch = null;
+      if (updatedData.branch) {
+        if (typeof updatedData.branch === "string") {
+          try {
+            // handle cases like: '["id1", "id2"]' or 'id1,id2'
+            const parsed = JSON.parse(updatedData.branch);
+            updatedData.branch = Array.isArray(parsed)
+              ? parsed
+              : [updatedData.branch];
+          } catch {
+            updatedData.branch = updatedData.branch.split(",");
+          }
+        }
+      } else {
+        updatedData.branch = []; // No branches selected
       }
 
-      // ✅ Handle profilePic update
       if (req.file) {
         if (adminData.profilePic) {
           const publicId = adminData.profilePic.split("/").pop().split(".")[0];
@@ -269,9 +292,8 @@ adminController.post("/login", async (req, res) => {
       { deviceId },
       { new: true }
     ).populate({
-        path: "role", 
-        
-      });
+      path: "role",
+    });
 
     return sendResponse(res, 200, "Success", {
       message: "Admin logged in successfully",
@@ -301,9 +323,19 @@ adminController.post("/list", async (req, res) => {
     } = req.body;
 
     const query = {};
+
     if (status) query.status = status;
-    if (branch) query.branch = branch;
     if (role) query.role = role;
+
+    // ✅ Handle branch filter (array or single)
+    if (branch) {
+      if (Array.isArray(branch)) {
+        query.branch = { $in: branch };
+      } else {
+        query.branch = branch;
+      }
+    }
+
     if (searchKey) {
       query.$or = [
         { firstName: { $regex: searchKey, $options: "i" } },
@@ -312,33 +344,33 @@ adminController.post("/list", async (req, res) => {
       ];
     }
 
-    // Construct sorting object
+    // ✅ Sorting setup
     const sortField = sortByField || "createdAt";
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };
 
-    // Fetch the category list
+    // ✅ Fetch list with populate (works for array too)
     const adminList = await Admin.find(query)
       .sort(sortOption)
       .limit(parseInt(pageCount))
-      .skip(parseInt(pageNo - 1) * parseInt(pageCount))
+      .skip((parseInt(pageNo) - 1) * parseInt(pageCount))
       .populate({
         path: "role",
+        select: "name", // optional: only select certain fields
       })
       .populate({
         path: "branch",
+        select: "name location", // ✅ multiple branch details
       });
+
     const totalCount = await Admin.countDocuments({});
     const activeCount = await Admin.countDocuments({ status: true });
     const inactiveCount = await Admin.countDocuments({ status: false });
+
     sendResponse(res, 200, "Success", {
       message: "Admin list retrieved successfully!",
       data: adminList,
-      documentCount: {
-        totalCount,
-        activeCount,
-        inactiveCount,
-      },
+      documentCount: { totalCount, activeCount, inactiveCount },
       statusCode: 200,
     });
   } catch (error) {
@@ -348,6 +380,7 @@ adminController.post("/list", async (req, res) => {
     });
   }
 });
+
 
 adminController.get("/details/:id", async (req, res) => {
   try {
@@ -383,18 +416,21 @@ adminController.put(
       if (!adminData) {
         return sendResponse(res, 404, "Failed", {
           message: "Admin not found",
-          statusCode:"404"
+          statusCode: "404",
         });
       }
-      const isMatch = await bcrypt.compare(req?.body?.oldPassword, adminData?.password);
-      console.log(adminData?.password)
+      const isMatch = await bcrypt.compare(
+        req?.body?.oldPassword,
+        adminData?.password
+      );
+      console.log(adminData?.password);
       if (!isMatch) {
         return sendResponse(res, 404, "Failed", {
           message: "Old password not matched",
         });
       }
       const hashedPassword = await bcrypt.hash(req?.body?.newPassword, 10);
-      let updatedData = { password : hashedPassword };
+      let updatedData = { password: hashedPassword };
 
       const updatedAdmin = await Admin.findByIdAndUpdate(id, updatedData, {
         new: true,
