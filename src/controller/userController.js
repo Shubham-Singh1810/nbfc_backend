@@ -530,7 +530,7 @@ userController.post("/list", async (req, res) => {
   try {
     const {
       searchKey = "",
-      status,
+      profileStatus,
       pageNo = 1,
       pageCount = 10,
       sortByField,
@@ -538,7 +538,7 @@ userController.post("/list", async (req, res) => {
     } = req.body;
 
     const query = {};
-    if (status) query.profileStatus = status;
+    if (profileStatus) query.profileStatus = profileStatus;
     if (searchKey) {
       query.$or = [
         { firstName: { $regex: searchKey, $options: "i" } },
@@ -559,10 +559,8 @@ userController.post("/list", async (req, res) => {
       .limit(parseInt(pageCount))
       .skip((parseInt(pageNo) - 1) * parseInt(pageCount))
       .populate({
-    path: "createdBy",        
-   
-   
-  });
+      path: "createdBy",
+    });
 
     const totalCount = await User.countDocuments(query);
 
