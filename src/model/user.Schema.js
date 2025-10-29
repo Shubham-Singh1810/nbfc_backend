@@ -98,6 +98,13 @@ const userSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  landmark: {
+    type: String,
+  },
+  residenceType: {
+    type: String,
+    enum: ["owned", "rented", "company_provided", "other"],
+  },
   address: {
     type: String,
   },
@@ -121,6 +128,12 @@ const userSchema = mongoose.Schema({
   creditScore: {
     type: Number,
   },
+  salaryDate:{
+    type:String
+  },
+  salaryType:{
+    type:String
+  }
 });
 
 userSchema.plugin(timestamps);
