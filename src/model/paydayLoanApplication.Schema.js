@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 const timestamps = require("mongoose-timestamp");
-const { type } = require("os");
 
 const paydayLoanApplicationSchema = mongoose.Schema({
+  // important Id
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -23,6 +23,32 @@ const paydayLoanApplicationSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Admin",
   },
+  // processing status
+  processingStatus: {
+    type: String,
+    default: "checkEligibility",
+    enum: ["checkEligibility", "ekyc", "selfie", "bankStatement", "loanOffer","residenceProof", "reference", "bankDetails", "eSign"],
+  },
+  // Check Eligibility
+  fullName: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+  },
+  dob: {
+    type: String,
+    required: true,
+  },
+  gender: {
+    type: String,
+    enum: ["male", "female", "other"],
+  },
+
+
+
   status: {
     type: String,
     default: "pending",
@@ -31,17 +57,10 @@ const paydayLoanApplicationSchema = mongoose.Schema({
   code: {
     type: String,
   },
-  documents: [
-    {
-      name: { type: String },
-      image: { type: String },
-      status: { type: String, default: "pending", enum: ["pending", "approved", "rejected"], },
-      rejectReason:{type:String}
-    },
-  ],
   rejectReason:{
     type:String
   },
+
   loanAmount: {
     type: Number,
     required: true,
@@ -54,7 +73,6 @@ const paydayLoanApplicationSchema = mongoose.Schema({
     type: Number,
     required: true,
   },
-  
   repaymentFrequency: {
     type: Number,
     required: true,

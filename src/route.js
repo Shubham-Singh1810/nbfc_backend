@@ -41,6 +41,8 @@ const documentController = require("./controller/documentController");
 const loanApplicationController = require("./controller/loanApplicationController");
 const loanPurposeController = require("./controller/loanPurposeController");
 const paydayLoanController = require("./controller/paydayLoanController");
+const systemConfigrationController = require("./controller/systemConfigrationController");
+const paydayLoanApplicationController = require("./controller/paydayLoanApplicationController");
 
 router.use("/user", userController);
 router.use("/driver", driverController);
@@ -83,5 +85,7 @@ router.use("/document", documentController);
 router.use("/loan-application", loanApplicationController);
 router.use("/loan-purpose", loanPurposeController);
 router.use("/payday-loan", paydayLoanController);
+router.use("/payday-loan-application", paydayLoanApplicationController);
+router.use("/system-configration", systemConfigrationController);
 
 module.exports = router;
