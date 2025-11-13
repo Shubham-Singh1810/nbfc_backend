@@ -9,7 +9,7 @@ const paydayLoanApplicationSchema = mongoose.Schema({
   },
   loanPurposeId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Loan Purpose",
+    ref: "LoanPurpose",
   },
   branchId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -23,77 +23,139 @@ const paydayLoanApplicationSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Admin",
   },
+  status: {
+    type: String,
+    default: "pending",
+    enum: ["pending", "approved", "rejected", "disbursed", "overdue", "completed"],
+  },
+  code: {
+    type: String,
+  },
+  rejectReason: {
+    type: String,
+  },
   // processing status
   processingStatus: {
     type: String,
     default: "checkEligibility",
-    enum: ["checkEligibility", "ekyc", "selfie", "bankStatement", "loanOffer","residenceProof", "reference", "bankDetails", "eSign"],
+    enum: [
+      "checkEligibility", 
+      "ekyc",
+      "selfie",
+      "bankStatement",
+      "loanOffer",
+      "residenceProof",
+      "reference",
+      "bankDetails",
+      "eSign",
+    ],
   },
   // Check Eligibility
   fullName: {
     type: String,
-    required: true,
   },
   email: {
     type: String,
-    required: true,
   },
   dob: {
     type: String,
-    required: true,
   },
   gender: {
     type: String,
     enum: ["male", "female", "other"],
   },
-
-
-
-  status: {
-    type: String,
-    default: "pending",
-    enum: ["pending", "approved", "rejected", "disbursed", "completed"],
-  },
-  code: {
+  educationQ: {
     type: String,
   },
-  rejectReason:{
-    type:String
+  maritalStatus: {
+    type: String,
   },
-
+  empType: {
+    type: String,
+  },
+  cmpName: {
+    type: String,
+  },
+  monthlyIncome: {
+    type: String,
+  },
+  nextSalary: {
+    type: String,
+  },
+  pincode: {
+    type: String,
+  },
+  area: {
+    type: String,
+  },
+  currentAddress: {
+    type: String,
+  },
+  currentAddressOwnership: {
+    type: String,
+  },
+  whoYouliveWith: {
+    type: String,
+  },
+  // e-kyc
+  adharFrontend: {
+    type: String,
+  },
+  adharBack: {
+    type: String,
+  },
+  pan: {
+    type: String,
+  },
+  // selfie
+  selfie: {
+    type: String,
+  },
+  // bank statement
+  bankVerificationMode: {
+    type: String,
+  },
   loanAmount: {
-    type: Number,
-    required: true,
-  },
-  loanTenuare: {
-    type: Number,
-    required: true,
-  },
-  intrestRate: {
-    type: Number,
-    required: true,
-  },
-  repaymentFrequency: {
-    type: Number,
-    required: true,
-  },
-  repaymentFrequencyType: {
-    type: String,
-    required: true,
-  },
-  startDate: {
     type: String,
   },
-  endDate: {
+  tenure: {
     type: String,
   },
-  panNumber: {
+  // residence proof
+  residenceProofType: {
     type: String,
   },
-  creditScore: {
+  residenceProof: {
+    type: String,
+  },
+  // reference
+  referenceName: {
+    type: String,
+  },
+  referenceRelation: {
+    type: String,
+  },
+  referencePhone: {
+    type: String,
+  },
+  // banking details
+  bankName: {
+    type: String,
+  },
+  acountNumber: {
+    type: String,
+  },
+  ifscCode: {
+    type: String,
+  },
+  // e-sigm
+  eSign: {
     type: String,
   },
 });
 
 paydayLoanApplicationSchema.plugin(timestamps);
-module.exports = mongoose.model("PaydayLoanApplication", paydayLoanApplicationSchema);
+module.exports = mongoose.model(
+  "PaydayLoanApplication",
+  paydayLoanApplicationSchema
+);

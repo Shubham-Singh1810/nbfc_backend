@@ -11,7 +11,6 @@ const { generateEmi } = require("../utils/emiCalculator");
 
 paydayLoanApplicationController.post(
   "/create",
-  upload.array("documents", 5),
   async (req, res) => {
     try {
       const {
@@ -26,105 +25,16 @@ paydayLoanApplicationController.post(
         loanId,
         ...restFields
       } = req.body;
-
-      if (!userId) {
-        return sendResponse(res, 400, "Failed", {
-          message: "User ID is required",
-        });
-      }
-      if (!loanId) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Loan ID is required",
-        });
-      }
-      if (!loanAmount || loanAmount <= 0) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Loan amount must be greater than 0",
-        });
-      }
-      if (!loanTenuare || loanTenuare <= 0) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Loan tenure must be greater than 0",
-        });
-      }
-      if (!intrestRate || intrestRate <= 0) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Interest rate must be greater than 0",
-        });
-      }
-      if (
-        !intrestRateType ||
-        !["flat", "reducing", "simple", "compound"].includes(intrestRateType)
-      ) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Invalid interest rate type",
-        });
-      }
-      if (!loanTenuareType || !["months", "days"].includes(loanTenuareType)) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Invalid loan tenure type",
-        });
-      }
-      if (!repaymentFrequency || repaymentFrequency <= 0) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Repayment frequency must be greater than 0",
-        });
-      }
-      if (
-        !repaymentFrequencyType ||
-        !["months", "days"].includes(repaymentFrequencyType)
-      ) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Invalid repayment frequency type",
-        });
-      }
-      
       let newCode;
-      // ✅ Generate Loan Code (RL001 format)
-      if (!req.body.code) {
-        const lastLoanApplication = await PaydayLoanApplication.findOne().sort({
-          createdAt: -1,
-        });
-
-        if (lastLoanApplication?.code) {
-          // Example: RL001 → RL002
-          const lastNumber =
-            parseInt(lastLoanApplication.code.replace("RPL", ""), 10) || 0;
-          newCode = "RPL" + String(lastNumber + 1).padStart(3, "0");
-        } else {
-          // If no loan exists
-          newCode = "RPL001";
-        }
+      const lastLoanApplication = await PaydayLoanApplication.findOne().sort({ createdAt: -1 });
+      if (lastLoanApplication?.code) {
+        const lastNumber = parseInt(lastLoanApplication.code.replace("RPL", ""), 10) || 0;
+        newCode = "RPL" + String(lastNumber + 1).padStart(3, "0");
+      } else {
+        newCode = "RPL001";
       }
-      let documents = [];
-
-      if (req.files && req.files.length > 0) {
-        const inputDocs = JSON.parse(req.body.documentsMeta || "[]"); // alag key for meta
-
-        for (let i = 0; i < req.files.length; i++) {
-          const file = req.files[i];
-          const uploaded = await cloudinary.uploader.upload(file.path);
-
-          documents.push({
-            name: inputDocs[i]?.name || `Doc-${i + 1}`,
-            image: uploaded.secure_url,
-          });
-        }
-      }
-      let collateralDetails = [];
-      if (req.body.collateralDetails) {
-        try {
-          collateralDetails = JSON.parse(req.body.collateralDetails); // ✅ convert string → array
-        } catch (err) {
-          return sendResponse(res, 400, "Failed", {
-            message: "Invalid collateral details format",
-          });
-        }
-      }
-
-      // 👉 Loan Application create
       const loanApplicationCreated = await PaydayLoanApplication.create({
-        ...restFields,
+        code: newCode,
         loanAmount,
         intrestRate,
         intrestRateType,
@@ -132,19 +42,16 @@ paydayLoanApplicationController.post(
         loanTenuareType,
         repaymentFrequency,
         repaymentFrequencyType,
-        emiSchedule: emiData.emiSchedule,
-        code: newCode,
         userId,
         loanId,
-        documents,
-        collateralDetails,
+        ...restFields,
       });
 
       sendResponse(res, 200, "Success", {
         message: "Payday Loan Application created successfully!",
         data: loanApplicationCreated,
-        statusCode: 200,
       });
+
     } catch (error) {
       console.error("Payday Loan Application create error:", error);
       sendResponse(res, 500, "Failed", {
@@ -153,37 +60,44 @@ paydayLoanApplicationController.post(
     }
   }
 );
+
 paydayLoanApplicationController.post("/list", async (req, res) => {
   try {
     const {
       searchKey = "",
       status,
+      processingStatus,
       userId,
       branchId,
       assignedAdminId,
       createdBy,
+      loanPurposeId,
       pageNo = 1,
       pageCount = 10,
       sortByField,
       sortByOrder,
-      loanId,
     } = req.body;
 
     const query = {};
 
     // ===== Filters =====
     if (status) query.status = status;
-    if (loanId) query.loanId = loanId;
+    if (processingStatus) query.processingStatus = processingStatus;
     if (userId) query.userId = userId;
     if (branchId) query.branchId = branchId;
     if (assignedAdminId) query.assignedAdminId = assignedAdminId;
     if (createdBy) query.createdBy = createdBy;
+    if (loanPurposeId) query.loanPurposeId = loanPurposeId;
 
     // ===== Search =====
-    if (searchKey) {
+    if (searchKey && searchKey.trim() !== "") {
       query.$or = [
+        { fullName: { $regex: searchKey, $options: "i" } },
+        { email: { $regex: searchKey, $options: "i" } },
+        { code: { $regex: searchKey, $options: "i" } },
         { loanAmount: { $regex: searchKey, $options: "i" } },
-        { intrestRate: { $regex: searchKey, $options: "i" } },
+        { bankName: { $regex: searchKey, $options: "i" } },
+        { pan: { $regex: searchKey, $options: "i" } },
       ];
     }
 
@@ -193,57 +107,61 @@ paydayLoanApplicationController.post("/list", async (req, res) => {
     const sortOption = { [sortField]: sortOrder };
 
     // ===== Fetch Data =====
-
-    const loanApplicationList = await LoanApplication.find(query)
-      .populate("userId", "firstName lastName email phone profilePic") // user details
-      .populate("loanId", "name code") // loan details
-      .populate("branchId", "name contactPerson address state city pincode") // branch details
-      .populate("assignedAdminId", "firstName lastName profilePic phone email") // admin details
-      .populate("createdBy", "firstName lastName profilePic phone email") // createdBy details
+    const loanApplications = await PaydayLoanApplication.find(query)
+      .populate("userId", "firstName lastName email phone profilePic")
+      .populate("branchId", "name contactPerson address state city pincode")
+      .populate("assignedAdminId", "firstName lastName profilePic phone email")
+      .populate("createdBy", "firstName lastName profilePic phone email")
+      .populate("loanPurposeId", "name")
+      // 👇 Skip loanPurpose populate to avoid MissingSchemaError
+      
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip((parseInt(pageNo) - 1) * parseInt(pageCount));
 
     // ===== Counts =====
-    const totalCount = await LoanApplication.countDocuments(query);
-    const statusWiseCount = await LoanApplication.aggregate([
+    const totalCount = await PaydayLoanApplication.countDocuments(query);
+    const statusWiseCount = await PaydayLoanApplication.aggregate([
       { $match: query },
       { $group: { _id: "$status", count: { $sum: 1 } } },
     ]);
 
+    // ===== Response =====
     sendResponse(res, 200, "Success", {
-      message: "Loan Application list retrieved successfully!",
-      data: loanApplicationList,
+      message: "Payday Loan Application list retrieved successfully!",
+      data: loanApplications,
+      statusCode:"200",
       documentCount: {
         totalCount,
         statusWiseCount,
       },
-      statusCode: 200,
     });
   } catch (error) {
-    console.error("Loan Application List error:", error);
+    console.error("Payday Loan Application List error:", error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
     });
   }
 });
+
+
 paydayLoanApplicationController.get("/stats", async (req, res) => {
   try {
     // ===== Current Counts =====
-    const totalCount = await LoanApplication.countDocuments({});
-    const pendingCount = await LoanApplication.countDocuments({
+    const totalCount = await PaydayLoanApplication.countDocuments({});
+    const pendingCount = await PaydayLoanApplication.countDocuments({
       status: "pending",
     });
-    const approvedCount = await LoanApplication.countDocuments({
+    const approvedCount = await PaydayLoanApplication.countDocuments({
       status: "approved",
     });
-    const rejectedCount = await LoanApplication.countDocuments({
+    const rejectedCount = await PaydayLoanApplication.countDocuments({
       status: "rejected",
     });
-    const disbursedCount = await LoanApplication.countDocuments({
+    const disbursedCount = await PaydayLoanApplication.countDocuments({
       status: "disbursed",
     });
-    const completedCount = await LoanApplication.countDocuments({
+    const completedCount = await PaydayLoanApplication.countDocuments({
       status: "completed",
     });
 
@@ -253,26 +171,26 @@ paydayLoanApplicationController.get("/stats", async (req, res) => {
     const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
     // ===== Last Month Counts =====
-    const lastMonthTotal = await LoanApplication.countDocuments({
+    const lastMonthTotal = await PaydayLoanApplication.countDocuments({
       createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
     });
-    const lastMonthPending = await LoanApplication.countDocuments({
+    const lastMonthPending = await PaydayLoanApplication.countDocuments({
       status: "pending",
       createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
     });
-    const lastMonthApproved = await LoanApplication.countDocuments({
+    const lastMonthApproved = await PaydayLoanApplication.countDocuments({
       status: "approved",
       createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
     });
-    const lastMonthRejected = await LoanApplication.countDocuments({
+    const lastMonthRejected = await PaydayLoanApplication.countDocuments({
       status: "rejected",
       createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
     });
-    const lastMonthDisbursed = await LoanApplication.countDocuments({
+    const lastMonthDisbursed = await PaydayLoanApplication.countDocuments({
       status: "disbursed",
       createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
     });
-    const lastMonthCompleted = await LoanApplication.countDocuments({
+    const lastMonthCompleted = await PaydayLoanApplication.countDocuments({
       status: "completed",
       createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
     });
@@ -322,16 +240,16 @@ paydayLoanApplicationController.get("/stats", async (req, res) => {
 paydayLoanApplicationController.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const loanApplication = await LoanApplication.findById(id);
+    const loanApplication = await PaydayLoanApplication.findById(id);
     if (!loanApplication) {
       return sendResponse(res, 404, "Failed", {
-        message: "Loan application not found",
+        message: "Payday loan application not found",
       });
     }
-    await LoanApplication.findByIdAndDelete(id);
+    await PaydayLoanApplication.findByIdAndDelete(id);
 
     sendResponse(res, 200, "Success", {
-      message: "Loan application deleted successfully!",
+      message: "Payday Loan application deleted successfully!",
       statusCode: 200,
     });
   } catch (error) {
