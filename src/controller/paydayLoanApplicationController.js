@@ -49,6 +49,7 @@ paydayLoanApplicationController.post(
 
       sendResponse(res, 200, "Success", {
         message: "Payday Loan Application created successfully!",
+        statusCode:"200",
         data: loanApplicationCreated,
       });
 
