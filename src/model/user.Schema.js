@@ -53,15 +53,12 @@ const userSchema = mongoose.Schema({
   // -------------
   firstName: {
     type: String,
-    required: true,
   },
   lastName: {
     type: String,
-    required: true,
   },
   email: {
     type: String,
-    required: true,
   },
   phone: {
     type: String,
@@ -96,7 +93,6 @@ const userSchema = mongoose.Schema({
   },
   pincode: {
     type: String,
-    required: true,
   },
   landmark: {
     type: String,

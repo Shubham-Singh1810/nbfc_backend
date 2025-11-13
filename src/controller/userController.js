@@ -62,7 +62,7 @@ userController.post("/login-with-otp", async (req, res) => {
       user.token = token;
       const superAdmin = await Admin.findOne();
 
-      user = await User.findByIdAndUpdate(user._id, { token }, { new: true });
+      user = await User.findByIdAndUpdate(user._id, { token }, { new: true }).select('-password -emailOtp -phoneOtp');
 
       // Send notification to admin
       sendNotification({
@@ -84,7 +84,7 @@ userController.post("/login-with-otp", async (req, res) => {
         user._id,
         isEmail ? { emailOtp: otp } : { phoneOtp: otp },
         { new: true }
-      );
+      ).select('-password -emailOtp -phoneOtp');
     }
 
     // Send OTP based on type
@@ -183,7 +183,7 @@ userController.post("/sign-up", async (req, res) => {
       phoneOtp,
       emailOtp,
       password: hashedPassword,
-      code: userCode, // <-- add this
+      code: userCode,
     });
 
     // Generate JWT token
@@ -198,7 +198,7 @@ userController.post("/sign-up", async (req, res) => {
       newUser._id,
       { token },
       { new: true }
-    );
+    ).select('-password -emailOtp -phoneOtp');
 
     // Send OTP to phone
     const appHash = "ems/3nG2V1H";
@@ -265,7 +265,7 @@ userController.post("/otp-verification", async (req, res) => {
       updateData.isPhoneVerified = true;
     }
     const user = await User.findOne(query);
-    if(user?.isUserApproved){
+    if(!user?.isUserApproved){
      return sendResponse(res, 200, "Success", {
         message: "Your profile has not been approved yet",
         statusCode: 404,
@@ -282,7 +282,7 @@ userController.post("/otp-verification", async (req, res) => {
         user._id,
         { $set: updateData },
         { new: true }
-      );
+      ).select('-password -emailOtp -phoneOtp');
 
       return sendResponse(res, 200, "Success", {
         message: "OTP verified successfully",
@@ -390,7 +390,6 @@ userController.post("/resend-otp", async (req, res) => {
 
       return sendResponse(res, 200, "Success", {
         message: "OTP sent successfully on email",
-        data: updatedUser,
         statusCode: 200,
       });
     } else {
@@ -409,7 +408,6 @@ userController.post("/resend-otp", async (req, res) => {
       if (otpResponse?.status == "200") {
         return sendResponse(res, 200, "Success", {
           message: "OTP sent successfully on phone",
-          data: updatedUser,
           statusCode: 200,
         });
       } else {
@@ -488,7 +486,7 @@ userController.post("/create",upload.single("profilePic"),  async (req, res) => 
       newUser._id,
       { token },
       { new: true }
-    );
+    ).select('-password -emailOtp -phoneOtp');
     return sendResponse(res, 200, "Success", {
       message: "User Created Successfully",
       data: updatedUser,
@@ -505,7 +503,7 @@ userController.post("/create",upload.single("profilePic"),  async (req, res) => 
 userController.get("/details/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    const user = await User.findOne({ _id: id });
+    const user = await User.findOne({ _id: id }).select('-password -emailOtp -phoneOtp');
     if (user) {
       return sendResponse(res, 200, "Success", {
         message: "User details fetched  successfully",
@@ -560,7 +558,7 @@ userController.post("/list", async (req, res) => {
       .skip((parseInt(pageNo) - 1) * parseInt(pageCount))
       .populate({
       path: "createdBy",
-    });
+    }).select('-password -emailOtp -phoneOtp');
 
     const totalCount = await User.countDocuments(query);
 
@@ -684,8 +682,8 @@ userController.put(
         updatedData.profilePic = profilePic.url;
       }
       const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
-        new: true, // Return the updated document
-      });
+        new: true, 
+      }).select('-password -emailOtp -phoneOtp');
 
       const io = req.io;
       io.emit("user-updated", updatedUser);
