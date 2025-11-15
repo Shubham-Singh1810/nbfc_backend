@@ -156,15 +156,14 @@ userController.post("/sign-up", async (req, res) => {
     }
 
     // ----------- Generate User Code -----------
-    const year = new Date().getFullYear().toString().slice(-2); // last 2 digits
-    // last user of same year
+    const year = new Date().getFullYear().toString().slice(-2); 
     const lastUser = await User.findOne({
       code: { $regex: `^RL${year}` },
     }).sort({ createdAt: -1 });
 
     let count = 1;
     if (lastUser && lastUser.code) {
-      const lastCount = parseInt(lastUser.code.slice(4)); // RL{yy}{count}
+      const lastCount = parseInt(lastUser.code.slice(4)); 
       count = lastCount + 1;
     }
 

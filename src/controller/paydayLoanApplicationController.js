@@ -8,6 +8,7 @@ const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const auth = require("../utils/auth");
 const { generateEmi } = require("../utils/emiCalculator");
+const pdApplicationValidation = require("../middleware/loanApplicationValidation")
 
 paydayLoanApplicationController.post(
   "/create",
@@ -61,7 +62,6 @@ paydayLoanApplicationController.post(
     }
   }
 );
-
 paydayLoanApplicationController.post("/list", async (req, res) => {
   try {
     const {
@@ -144,8 +144,6 @@ paydayLoanApplicationController.post("/list", async (req, res) => {
     });
   }
 });
-
-
 paydayLoanApplicationController.get("/stats", async (req, res) => {
   try {
     // ===== Current Counts =====
@@ -391,6 +389,34 @@ paydayLoanApplicationController.put(
       sendResponse(res, 500, "Failed", {
         message: error.message || "Internal server error",
         statusCode:500
+      });
+    }
+  }
+);
+
+paydayLoanApplicationController.post(
+  "/apply", pdApplicationValidation,
+  async (req, res) => {
+    try {
+      let newCode;
+      const lastLoanApplication = await PaydayLoanApplication.findOne().sort({ createdAt: -1 });
+      if (lastLoanApplication?.code) {
+        const lastNumber = parseInt(lastLoanApplication.code.replace("RPL", ""), 10) || 0;
+        newCode = "RPL" + String(lastNumber + 1).padStart(3, "0");
+      } else {
+        newCode = "RPL001";
+      }
+      const loanApplicationCreated = await PaydayLoanApplication.create(req.body);
+      sendResponse(res, 200, "Success", {
+        message: "Payday Loan Application created successfully!",
+        statusCode:"200",
+        data: loanApplicationCreated,
+      });
+
+    } catch (error) {
+      console.error("Payday Loan Application create error:", error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
       });
     }
   }
