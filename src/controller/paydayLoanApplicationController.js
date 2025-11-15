@@ -114,8 +114,6 @@ paydayLoanApplicationController.post("/list", async (req, res) => {
       .populate("assignedAdminId", "firstName lastName profilePic phone email")
       .populate("createdBy", "firstName lastName profilePic phone email")
       .populate("loanPurposeId", "name")
-      // 👇 Skip loanPurpose populate to avoid MissingSchemaError
-      
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip((parseInt(pageNo) - 1) * parseInt(pageCount));
@@ -261,15 +259,15 @@ paydayLoanApplicationController.delete("/delete/:id", async (req, res) => {
 paydayLoanApplicationController.get("/details/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    const loanApplication = await LoanApplication.findOne({ _id: id })
-      .populate("userId", "firstName lastName email phone profilePic") // user details
-      .populate("loanId", "name code") // loan details
-      .populate("branchId", "name contactPerson address state city pincode") // branch details
-      .populate("assignedAdminId", "firstName lastName profilePic phone email") // admin details
-      .populate("createdBy", "firstName lastName profilePic phone email");
+    const loanApplication = await PaydayLoanApplication.findOne({ _id: id })
+      .populate("userId", "firstName lastName email phone profilePic")
+      .populate("branchId", "name contactPerson address state city pincode")
+      .populate("assignedAdminId", "firstName lastName profilePic phone email")
+      .populate("createdBy", "firstName lastName profilePic phone email")
+      .populate("loanPurposeId", "name")
     if (loanApplication) {
       return sendResponse(res, 200, "Success", {
-        message: "Loan application details fetched  successfully",
+        message: "Payday Loan application details fetched successfully",
         data: loanApplication,
         statusCode: 200,
       });
@@ -297,7 +295,6 @@ paydayLoanApplicationController.put(
           message: "Loan Application ID (_id) is required",
         });
       }
-
       const {
         loanAmount,
         intrestRate,
@@ -421,5 +418,32 @@ paydayLoanApplicationController.post(
     }
   }
 );
-
+paydayLoanApplicationController.get("/in-progress/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const loanApplication = await PaydayLoanApplication.findOne({ userId: id , status:"pending"})
+      .populate("userId", "firstName lastName email phone profilePic")
+      .populate("branchId", "name contactPerson address state city pincode")
+      .populate("assignedAdminId", "firstName lastName profilePic phone email")
+      .populate("createdBy", "firstName lastName profilePic phone email")
+      .populate("loanPurposeId", "name")
+    if (loanApplication) {
+      return sendResponse(res, 200, "Success", {
+        message: "In progress loan retrived successfully",
+        data: loanApplication,
+        statusCode: 200,
+      });
+    } else {
+      return sendResponse(res, 404, "Failed", {
+        message: "Loan application not found",
+        statusCode: 404,
+      });
+    }
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
+    });
+  }
+});
 module.exports = paydayLoanApplicationController;
