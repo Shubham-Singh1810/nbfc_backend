@@ -434,9 +434,10 @@ paydayLoanApplicationController.get("/in-progress/:id", async (req, res) => {
         statusCode: 200,
       });
     } else {
-      return sendResponse(res, 404, "Failed", {
+      return sendResponse(res, 200, "Success", {
         message: "Loan application not found",
-        statusCode: 404,
+        statusCode: 200,
+        data: {},
       });
     }
   } catch (error) {
