@@ -142,6 +142,9 @@ const paydayLoanApplicationSchema = mongoose.Schema({
   bankName: {
     type: String,
   },
+  acountHolderName: {
+    type: String,
+  },
   acountNumber: {
     type: String,
   },

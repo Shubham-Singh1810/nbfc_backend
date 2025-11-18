@@ -8,52 +8,76 @@ const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const auth = require("../utils/auth");
 const { generateEmi } = require("../utils/emiCalculator");
-const pdApplicationValidation = require("../middleware/loanApplicationValidation")
+const pdApplicationValidation = require("../middleware/loanApplicationValidation");
 
 paydayLoanApplicationController.post(
   "/create",
+  upload.fields([
+    { name: "adharFrontend", maxCount: 1 },
+    { name: "adharBack", maxCount: 1 },
+    { name: "pan", maxCount: 1 },
+    { name: "residenceProof", maxCount: 1 },
+    { name: "bankVerificationMode", maxCount: 1 },
+    { name: "eSign", maxCount: 1 },
+  ]),
   async (req, res) => {
     try {
-      const {
-        loanAmount,
-        intrestRate,
-        intrestRateType,
-        loanTenuare,
-        loanTenuareType,
-        repaymentFrequency,
-        repaymentFrequencyType,
-        userId,
-        loanId,
-        ...restFields
-      } = req.body;
       let newCode;
-      const lastLoanApplication = await PaydayLoanApplication.findOne().sort({ createdAt: -1 });
+      const lastLoanApplication = await PaydayLoanApplication.findOne().sort({
+        createdAt: -1,
+      });
       if (lastLoanApplication?.code) {
-        const lastNumber = parseInt(lastLoanApplication.code.replace("RPL", ""), 10) || 0;
+        const lastNumber =
+          parseInt(lastLoanApplication.code.replace("RPL", ""), 10) || 0;
         newCode = "RPL" + String(lastNumber + 1).padStart(3, "0");
       } else {
         newCode = "RPL001";
       }
-      const loanApplicationCreated = await PaydayLoanApplication.create({
-        code: newCode,
-        loanAmount,
-        intrestRate,
-        intrestRateType,
-        loanTenuare,
-        loanTenuareType,
-        repaymentFrequency,
-        repaymentFrequencyType,
-        userId,
-        loanId,
-        ...restFields,
-      });
-
+      let updatedData = {...req.body , code: newCode}
+      if (req.file || req.files) {
+        if (req.files["adharFrontend"]) {
+          const image = await cloudinary.uploader.upload(
+            req.files["adharFrontend"][0].path
+          );
+          updatedData = { ...updatedData, adharFrontend: image.url };
+        } 
+         if (req.files["adharBack"]) {
+          const image = await cloudinary.uploader.upload(
+            req.files["adharBack"][0].path
+          );
+          updatedData = { ...updatedData, adharBack: image.url };
+        } 
+         if (req.files["pan"]) {
+          const image = await cloudinary.uploader.upload(
+            req.files["pan"][0].path
+          );
+          updatedData = { ...updatedData, pan: image.url };
+        } 
+         if (req.files["residenceProof"]) {
+          const image = await cloudinary.uploader.upload(
+            req.files["residenceProof"][0].path
+          );
+          updatedData = { ...updatedData, residenceProof: image.url };
+        } 
+         if (req.files["bankVerificationMode"]) {
+          const image = await cloudinary.uploader.upload(
+            req.files["bankVerificationMode"][0].path
+          );
+          updatedData = { ...updatedData, bankVerificationMode: image.url };
+        } 
+         if (req.files["eSign"]) {
+          const image = await cloudinary.uploader.upload(
+            req.files["eSign"][0].path
+          );
+          updatedData = { ...updatedData, eSign: image.url };
+        } 
+      }
+      const loanApplicationCreated = await PaydayLoanApplication.create(updatedData);
       sendResponse(res, 200, "Success", {
         message: "Payday Loan Application created successfully!",
-        statusCode:"200",
+        statusCode: "200",
         data: loanApplicationCreated,
       });
-
     } catch (error) {
       console.error("Payday Loan Application create error:", error);
       sendResponse(res, 500, "Failed", {
@@ -129,7 +153,7 @@ paydayLoanApplicationController.post("/list", async (req, res) => {
     sendResponse(res, 200, "Success", {
       message: "Payday Loan Application list retrieved successfully!",
       data: loanApplications,
-      statusCode:"200",
+      statusCode: "200",
       documentCount: {
         totalCount,
         statusWiseCount,
@@ -264,7 +288,7 @@ paydayLoanApplicationController.get("/details/:id", async (req, res) => {
       .populate("branchId", "name contactPerson address state city pincode")
       .populate("assignedAdminId", "firstName lastName profilePic phone email")
       .populate("createdBy", "firstName lastName profilePic phone email")
-      .populate("loanPurposeId", "name")
+      .populate("loanPurposeId", "name");
     if (loanApplication) {
       return sendResponse(res, 200, "Success", {
         message: "Payday Loan application details fetched successfully",
@@ -286,7 +310,14 @@ paydayLoanApplicationController.get("/details/:id", async (req, res) => {
 });
 paydayLoanApplicationController.put(
   "/update",
-  upload.array("documents", 5),
+  upload.fields([
+    { name: "adharFrontend", maxCount: 1 },
+    { name: "adharBack", maxCount: 1 },
+    { name: "pan", maxCount: 1 },
+    { name: "residenceProof", maxCount: 1 },
+    { name: "bankVerificationMode", maxCount: 1 },
+    { name: "eSign", maxCount: 1 },
+  ]),
   async (req, res) => {
     try {
       const { _id } = req.body;
@@ -295,121 +326,80 @@ paydayLoanApplicationController.put(
           message: "Loan Application ID (_id) is required",
         });
       }
-      const {
-        loanAmount,
-        intrestRate,
-        intrestRateType,
-        loanTenuare,
-        loanTenuareType,
-        repaymentFrequency,
-        repaymentFrequencyType,
-        userId,
-        loanId,
-        ...restFields
-      } = req.body;
 
-      // ✅ Validation
-      if (!userId) return sendResponse(res, 400, "Failed", { message: "User ID is required" });
-      if (!loanId) return sendResponse(res, 400, "Failed", { message: "Loan ID is required" });
-      if (!loanAmount || loanAmount <= 0) return sendResponse(res, 400, "Failed", { message: "Loan amount must be greater than 0" });
-      if (!loanTenuare || loanTenuare <= 0) return sendResponse(res, 400, "Failed", { message: "Loan tenure must be greater than 0" });
-      if (!intrestRate || intrestRate <= 0) return sendResponse(res, 400, "Failed", { message: "Interest rate must be greater than 0" });
-      if (!intrestRateType || !["flat", "reducing", "simple", "compound"].includes(intrestRateType))
-        return sendResponse(res, 400, "Failed", { message: "Invalid interest rate type" });
-      if (!loanTenuareType || !["months", "days"].includes(loanTenuareType))
-        return sendResponse(res, 400, "Failed", { message: "Invalid loan tenure type" });
-      if (!repaymentFrequency || repaymentFrequency <= 0)
-        return sendResponse(res, 400, "Failed", { message: "Repayment frequency must be greater than 0" });
-      if (!repaymentFrequencyType || !["months", "days"].includes(repaymentFrequencyType))
-        return sendResponse(res, 400, "Failed", { message: "Invalid repayment frequency type" });
+      let updatedData = { ...req.body };
 
-      // ✅ Handle documents
-      let documents = [];
-      if (req.files && req.files.length > 0) {
-        const inputDocs = JSON.parse(req.body.documentsMeta || "[]");
-        for (let i = 0; i < req.files.length; i++) {
-          const file = req.files[i];
-          const uploaded = await cloudinary.uploader.upload(file.path);
-          documents.push({
-            name: inputDocs[i]?.name || `Doc-${i + 1}`,
-            image: uploaded.secure_url,
-          });
+      // ✅ Image upload helper (new upload OR old saved image)
+      const uploadAndSet = async (fieldName) => {
+        if (req.files && req.files[fieldName]) {
+          const image = await cloudinary.uploader.upload(
+            req.files[fieldName][0].path
+          );
+          updatedData[fieldName] = image.secure_url;
+        } else if (req.body[fieldName + "Prev"]) {
+          updatedData[fieldName] = req.body[fieldName + "Prev"];
         }
-      } else if (req.body.documents) {
-        try {
-          documents = JSON.parse(req.body.documents);
-        } catch (err) {
-          return sendResponse(res, 400, "Failed", { message: "Invalid documents format" ,statusCode:400});
-        }
-      }
+      };
 
-      // ✅ Handle collateral
-      let collateralDetails = [];
-      if (req.body.collateralDetails) {
-        try {
-          collateralDetails = JSON.parse(req.body.collateralDetails);
-        } catch (err) {
-          return sendResponse(res, 400, "Failed", { message: "Invalid collateral details format" , statusCode:400});
-        }
-      }
+      // 🔥 Apply for all image fields
+      await uploadAndSet("adharFrontend");
+      await uploadAndSet("adharBack");
+      await uploadAndSet("pan");
+      await uploadAndSet("residenceProof");
+      await uploadAndSet("bankVerificationMode");
+      await uploadAndSet("eSign");
 
-      // 👉 Update
-      const updatedLoanApplication = await LoanApplication.findByIdAndUpdate(
+      // 👉 Update DB
+      const loanUpdated = await PaydayLoanApplication.findByIdAndUpdate(
         _id,
-        {
-          ...restFields,
-          loanAmount,
-          intrestRate,
-          intrestRateType,
-          loanTenuare,
-          loanTenuareType,
-          repaymentFrequency,
-          repaymentFrequencyType,
-          userId,
-          loanId,
-          documents,
-          collateralDetails,
-        },
+        updatedData,
         { new: true }
       );
 
-      if (!updatedLoanApplication)
-        return sendResponse(res, 404, "Failed", { message: "Loan Application not found" , statusCode:404});
+      if (!loanUpdated) {
+        return sendResponse(res, 404, "Failed", {
+          message: "Loan Application not found",
+        });
+      }
 
       sendResponse(res, 200, "Success", {
-        message: "Loan Application updated successfully!",
-        data: updatedLoanApplication,
-        statusCode:200
+        message: "Payday Loan Application updated successfully!",
+        data: loanUpdated,
       });
     } catch (error) {
-      console.error("Loan Application update error:", error);
+      console.error("Payday Loan Application update error:", error);
       sendResponse(res, 500, "Failed", {
         message: error.message || "Internal server error",
-        statusCode:500
       });
     }
   }
 );
 
+
 paydayLoanApplicationController.post(
-  "/apply", pdApplicationValidation,
+  "/apply",
+  pdApplicationValidation,
   async (req, res) => {
     try {
       let newCode;
-      const lastLoanApplication = await PaydayLoanApplication.findOne().sort({ createdAt: -1 });
+      const lastLoanApplication = await PaydayLoanApplication.findOne().sort({
+        createdAt: -1,
+      });
       if (lastLoanApplication?.code) {
-        const lastNumber = parseInt(lastLoanApplication.code.replace("RPL", ""), 10) || 0;
+        const lastNumber =
+          parseInt(lastLoanApplication.code.replace("RPL", ""), 10) || 0;
         newCode = "RPL" + String(lastNumber + 1).padStart(3, "0");
       } else {
         newCode = "RPL001";
       }
-      const loanApplicationCreated = await PaydayLoanApplication.create(req.body);
+      const loanApplicationCreated = await PaydayLoanApplication.create(
+        req.body
+      );
       sendResponse(res, 200, "Success", {
         message: "Payday Loan Application created successfully!",
-        statusCode:"200",
+        statusCode: "200",
         data: loanApplicationCreated,
       });
-
     } catch (error) {
       console.error("Payday Loan Application create error:", error);
       sendResponse(res, 500, "Failed", {
@@ -421,12 +411,15 @@ paydayLoanApplicationController.post(
 paydayLoanApplicationController.get("/in-progress/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    const loanApplication = await PaydayLoanApplication.findOne({ userId: id , status:"pending"})
+    const loanApplication = await PaydayLoanApplication.findOne({
+      userId: id,
+      status: "pending",
+    })
       .populate("userId", "firstName lastName email phone profilePic")
       .populate("branchId", "name contactPerson address state city pincode")
       .populate("assignedAdminId", "firstName lastName profilePic phone email")
       .populate("createdBy", "firstName lastName profilePic phone email")
-      .populate("loanPurposeId", "name")
+      .populate("loanPurposeId", "name");
     if (loanApplication) {
       return sendResponse(res, 200, "Success", {
         message: "In progress loan retrived successfully",
