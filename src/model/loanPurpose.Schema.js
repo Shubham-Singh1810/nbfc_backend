@@ -7,6 +7,13 @@ const loanPurposeSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+   img: {
+    type: String,
+  },
+   description: {
+    type: String,
+    required: true,
+  },
   status: {
     type: Boolean,
     default: true,
