@@ -62,7 +62,11 @@ userController.post("/login-with-otp", async (req, res) => {
       user.token = token;
       const superAdmin = await Admin.findOne();
 
-      user = await User.findByIdAndUpdate(user._id, { token }, { new: true }).select('-password -emailOtp -phoneOtp');
+      user = await User.findByIdAndUpdate(
+        user._id,
+        { token },
+        { new: true }
+      ).select("-password -emailOtp -phoneOtp");
 
       // Send notification to admin
       sendNotification({
@@ -84,7 +88,7 @@ userController.post("/login-with-otp", async (req, res) => {
         user._id,
         isEmail ? { emailOtp: otp } : { phoneOtp: otp },
         { new: true }
-      ).select('-password -emailOtp -phoneOtp');
+      ).select("-password -emailOtp -phoneOtp");
     }
 
     // Send OTP based on type
@@ -112,7 +116,7 @@ userController.post("/login-with-otp", async (req, res) => {
           process.env.AUTHKEY_SENDER_ID
         }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
       );
-     console.log(optResponse)
+      console.log(optResponse);
       if (optResponse?.status == "200") {
         return sendResponse(res, 200, "Success", {
           message: "OTP sent successfully on phone",
@@ -156,14 +160,14 @@ userController.post("/sign-up", async (req, res) => {
     }
 
     // ----------- Generate User Code -----------
-    const year = new Date().getFullYear().toString().slice(-2); 
+    const year = new Date().getFullYear().toString().slice(-2);
     const lastUser = await User.findOne({
       code: { $regex: `^RL${year}` },
     }).sort({ createdAt: -1 });
 
     let count = 1;
     if (lastUser && lastUser.code) {
-      const lastCount = parseInt(lastUser.code.slice(4)); 
+      const lastCount = parseInt(lastUser.code.slice(4));
       count = lastCount + 1;
     }
 
@@ -197,7 +201,7 @@ userController.post("/sign-up", async (req, res) => {
       newUser._id,
       { token },
       { new: true }
-    ).select('-password -emailOtp -phoneOtp');
+    ).select("-password -emailOtp -phoneOtp");
 
     // Send OTP to phone
     const appHash = "ems/3nG2V1H";
@@ -260,17 +264,17 @@ userController.post("/otp-verification", async (req, res) => {
       updateData.isEmailVerified = true;
     } else {
       query.phone = phone;
-      query.phoneOtp = 1234;
+      query.phoneOtp = otp;
       updateData.isPhoneVerified = true;
     }
     const user = await User.findOne(query);
-    if(!user?.isUserApproved){
-     return sendResponse(res, 200, "Success", {
-        message: "Your profile has not been approved yet",
-        statusCode: 404,
-      });
-    }
     if (user) {
+      if (!user.isUserApproved) {
+        return sendResponse(res, 200, "Success", {
+          message: "Your profile has not been approved yet",
+          statusCode: 404,
+        });
+      }
       if (
         user?.toObject().isEmailVerified &&
         user?.toObject().isPhoneVerified
@@ -281,7 +285,7 @@ userController.post("/otp-verification", async (req, res) => {
         user._id,
         { $set: updateData },
         { new: true }
-      ).select('-password -emailOtp -phoneOtp');
+      ).select("-password -emailOtp -phoneOtp");
 
       return sendResponse(res, 200, "Success", {
         message: "OTP verified successfully",
@@ -424,85 +428,91 @@ userController.post("/resend-otp", async (req, res) => {
   }
 });
 
-userController.post("/create",upload.single("profilePic"),  async (req, res) => {
-  try {
-    // Check if the phone number is unique
-    const existingUser = await User.findOne({
-      $or: [{ phone: req.body.phone }, { email: req.body.email }],
-    });
-    if (existingUser) {
-      if (existingUser.phone === req.body.phone) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Phone Number is already registered",
-          statusCode: 400,
-        });
+userController.post(
+  "/create",
+  upload.single("profilePic"),
+  async (req, res) => {
+    try {
+      // Check if the phone number is unique
+      const existingUser = await User.findOne({
+        $or: [{ phone: req.body.phone }, { email: req.body.email }],
+      });
+      if (existingUser) {
+        if (existingUser.phone === req.body.phone) {
+          return sendResponse(res, 400, "Failed", {
+            message: "Phone Number is already registered",
+            statusCode: 400,
+          });
+        }
+        if (existingUser.email === req.body.email) {
+          return sendResponse(res, 400, "Failed", {
+            message: "Email is already registered",
+            statusCode: 400,
+          });
+        }
       }
-      if (existingUser.email === req.body.email) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Email is already registered",
-          statusCode: 400,
-        });
+
+      // ----------- Generate User Code -----------
+      const year = new Date().getFullYear().toString().slice(-2); // last 2 digits
+      // last user of same year
+      const lastUser = await User.findOne({
+        code: { $regex: `^RL${year}` },
+      }).sort({ createdAt: -1 });
+
+      let count = 1;
+      if (lastUser && lastUser.code) {
+        const lastCount = parseInt(lastUser.code.slice(4)); // RL{yy}{count}
+        count = lastCount + 1;
       }
-    }
 
-    // ----------- Generate User Code -----------
-    const year = new Date().getFullYear().toString().slice(-2); // last 2 digits
-    // last user of same year
-    const lastUser = await User.findOne({
-      code: { $regex: `^RL${year}` },
-    }).sort({ createdAt: -1 });
-
-    let count = 1;
-    if (lastUser && lastUser.code) {
-      const lastCount = parseInt(lastUser.code.slice(4)); // RL{yy}{count}
-      count = lastCount + 1;
-    }
-
-    const paddedCount = String(count).padStart(3, "0"); // 001, 002
-    const userCode = `RL${year}${paddedCount}`;
-    let profilePic;
-    // ------------------------------------------
-    if (req.file) {
+      const paddedCount = String(count).padStart(3, "0"); // 001, 002
+      const userCode = `RL${year}${paddedCount}`;
+      let profilePic;
+      // ------------------------------------------
+      if (req.file) {
         profilePic = await cloudinary.uploader.upload(req.file.path);
         profilePic = profilePic.url;
       }
-    // Create a new user with provided details
-    let newUser = await User.create({
-      ...req.body,
-      code: userCode, 
-      profilePic
-    });
+      // Create a new user with provided details
+      let newUser = await User.create({
+        ...req.body,
+        code: userCode,
+        profilePic,
+      });
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: newUser._id, phone: newUser.phone },
-      process.env.JWT_KEY
-    );
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: newUser._id, phone: newUser.phone },
+        process.env.JWT_KEY
+      );
 
-    // Store the token in the user object
-    newUser.token = token;
-    const updatedUser = await User.findByIdAndUpdate(
-      newUser._id,
-      { token },
-      { new: true }
-    ).select('-password -emailOtp -phoneOtp');
-    return sendResponse(res, 200, "Success", {
-      message: "User Created Successfully",
-      data: updatedUser,
-      statusCode: 200,
-    });
-  } catch (error) {
-    console.error("Error in /sign-up:", error.message);
-    return sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error.",
-    });
+      // Store the token in the user object
+      newUser.token = token;
+      const updatedUser = await User.findByIdAndUpdate(
+        newUser._id,
+        { token },
+        { new: true }
+      ).select("-password -emailOtp -phoneOtp");
+      return sendResponse(res, 200, "Success", {
+        message: "User Created Successfully",
+        data: updatedUser,
+        statusCode: 200,
+      });
+    } catch (error) {
+      console.error("Error in /sign-up:", error.message);
+      return sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error.",
+      });
+    }
   }
-});
+);
 
 userController.get("/details/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    const user = await User.findOne({ _id: id }).select('-password -emailOtp -phoneOtp');
+    const user = await User.findOne({ _id: id }).select(
+      "-password -emailOtp -phoneOtp"
+    );
     if (user) {
       return sendResponse(res, 200, "Success", {
         message: "User details fetched  successfully",
@@ -556,8 +566,9 @@ userController.post("/list", async (req, res) => {
       .limit(parseInt(pageCount))
       .skip((parseInt(pageNo) - 1) * parseInt(pageCount))
       .populate({
-      path: "createdBy",
-    }).select('-password -emailOtp -phoneOtp');
+        path: "createdBy",
+      })
+      .select("-password -emailOtp -phoneOtp");
 
     const totalCount = await User.countDocuments(query);
 
@@ -681,8 +692,8 @@ userController.put(
         updatedData.profilePic = profilePic.url;
       }
       const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
-        new: true, 
-      }).select('-password -emailOtp -phoneOtp');
+        new: true,
+      }).select("-password -emailOtp -phoneOtp");
 
       const io = req.io;
       io.emit("user-updated", updatedUser);
