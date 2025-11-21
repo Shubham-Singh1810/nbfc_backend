@@ -359,12 +359,14 @@ paydayLoanApplicationController.put(
       if (!loanUpdated) {
         return sendResponse(res, 404, "Failed", {
           message: "Loan Application not found",
+          statusCode:404
         });
       }
 
       sendResponse(res, 200, "Success", {
         message: "Payday Loan Application updated successfully!",
         data: loanUpdated,
+        statusCode:200
       });
     } catch (error) {
       console.error("Payday Loan Application update error:", error);
