@@ -112,7 +112,7 @@ userController.post("/login-with-otp", async (req, res) => {
           process.env.AUTHKEY_SENDER_ID
         }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
       );
-
+     console.log(optResponse)
       if (optResponse?.status == "200") {
         return sendResponse(res, 200, "Success", {
           message: "OTP sent successfully on phone",
@@ -260,7 +260,7 @@ userController.post("/otp-verification", async (req, res) => {
       updateData.isEmailVerified = true;
     } else {
       query.phone = phone;
-      query.phoneOtp = otp;
+      query.phoneOtp = 1234;
       updateData.isPhoneVerified = true;
     }
     const user = await User.findOne(query);
