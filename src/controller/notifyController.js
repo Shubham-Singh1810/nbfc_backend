@@ -6,41 +6,64 @@ const Notify = require("../model/notify.Schema");
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
-const { sendNotification } = require("../utils/sendNotification");
+const { sendEmailToUsers, sendSMSToUsers, sendPushToUsers } = require("../utils/notify");
 
-notifyController.post("/create", upload.single("icon"), async (req, res) => {
-  try {
-    let obj = req.body;
+notifyController.post(
+  "/create",
+  upload.single("icon"),
+  async (req, res) => {
+    try {
+      let obj = req.body;
 
-    if (req.file) {
-      const icon = await cloudinary.uploader.upload(req.file.path);
-      obj.icon = icon.url;
-    }
+      // Parse JSON fields
+      if (obj.notifyUserIds) {
+        obj.notifyUserIds = JSON.parse(obj.notifyUserIds);
+      }
+      if (obj.mode) {
+        obj.mode = JSON.parse(obj.mode);
+      }
 
-    const notifyCreated = await Notify.create(obj);
-    obj.notifyUserToken?.map((v, i) => {
-      return sendNotification({
-        icon: notifyCreated?.icon,
-        title: notifyCreated?.title,
-        subTitle: notifyCreated?.subTitle,
-        fcmToken: v,
-        onlyPushNotification: true,
+      // Handle Image upload
+      if (req.file) {
+        const icon = await cloudinary.uploader.upload(req.file.path);
+        obj.icon = icon.secure_url;
+      }
+
+      let notifyCreated 
+
+      // For each mode call matching function
+      if (obj.mode.includes("email")) {
+        sendEmailToUsers(obj.notifyUserIds, obj.title, obj.subTitle, obj.icon);
+      }
+
+      if (obj.mode.includes("text")) {
+        sendSMSToUsers(obj.notifyUserIds, obj.title);
+      }
+
+      if (obj.mode.includes("push")) {
+        sendPushToUsers(obj.notifyUserIds, obj.title, obj.subTitle, obj.icon);
+      }
+
+      if (obj.mode.includes("in_app")) {
+       notifyCreated = await Notify.create(obj);
+      }
+
+      sendResponse(res, 200, "Success", {
+        message: "Notify created successfully!",
+        data: notifyCreated,
+        statusCode: 200,
       });
-    });
 
-    sendResponse(res, 200, "Success", {
-      message: "notify created successfully!",
-      data: notifyCreated,
-      statusCode: 200,
-    });
-  } catch (error) {
-    console.error(error);
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-      statusCode: 500,
-    });
+    } catch (error) {
+      console.error(error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+        statusCode: 500,
+      });
+    }
   }
-});
+);
+
 
 notifyController.post("/list", async (req, res) => {
   try {

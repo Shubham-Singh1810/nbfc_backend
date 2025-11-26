@@ -15,10 +15,9 @@ const notifySchema = mongoose.Schema({
   notifyUserIds: [{
     type: String
   }],
-  isRead: {
-    type: Boolean,
-    default: false,
-  },
+  mode: [{
+    type: String,
+  }],
 });
 
 notifySchema.plugin(timestamps);
