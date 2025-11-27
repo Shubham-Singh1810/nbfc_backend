@@ -6,64 +6,83 @@ const routes = require("./src/route");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
+const startCronScheduler = require("./src/corn/notifyCorn"); // Cron import 👈
 
 const app = express();
 const server = createServer(app);
 
-// ✅ CORS config — sabko allow
-app.use(cors());  // <-- sab origin allow
-app.options("*", cors());  // preflight requests ke liye
-
-// ✅ Body parser
-app.use(express.urlencoded({ extended: false }));
+// ========================
+// 🛡 Middleware & CORS
+// ========================
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  })
+);
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
 
-// ✅ Static files (like image uploads)
-app.use('/uploads', express.static('uploads'));
-
-// ✅ Socket.IO setup — sabko allow
+// ========================
+// 🔌 Socket.IO Setup
+// ========================
 const io = new Server(server, {
   cors: {
-    origin: "*",               // <-- sab origin allow
-    methods: ["GET", "POST", "PUT", "DELETE"],  // allowed methods
-    credentials: false         // credentials off for wildcard
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
   },
-  transports: ['websocket'],
+  transports: ["websocket"],
 });
 
-// ✅ Socket.IO event listeners
 io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
+  console.log("User connected =>", socket.id);
 
   socket.on("sendMessage", (data) => {
-    console.log("Message from client:", data);
     io.emit("receiveMessage", data);
   });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+    console.log("User disconnected =>", socket.id);
   });
 });
 
-// ✅ Database connection
-mongoose.connect(process.env.DB_STRING).then(() => {
-  console.warn("DB connection done again");
-});
-
-// ✅ Attach Socket.IO instance to requests
+// Attach io to every API request
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-// ✅ Routes
-app.get("/", (req, res) => res.send(`Server listing on port ${process.env.PORT}`));
+// ========================
+// 📡 Routes Setup
+// ========================
+app.get("/", (req, res) =>
+  res.send(`Server running on port ${process.env.PORT}`)
+);
 app.use("/api", routes);
-app.all("*", (req, res) => res.status(404).json({ error: "404 Not Found" }));
 
-// ✅ Start Server
-const PORT = process.env.PORT || 8000;
-server.listen(PORT, () => {
-  console.log(`Server running on ${process.env.BACKEND_URL}`);
+app.all("*", (req, res) => {
+  res.status(404).json({ error: "404 Route Not Found" });
 });
 
+// ========================
+// 🛢 Database + Server Start
+// ========================
+const PORT = process.env.PORT || 8000;
+
+mongoose
+  .connect(process.env.DB_STRING, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log("✔ MongoDB Connected!");
+
+    // ⏱ Start Cron after DB connection only
+    startCronScheduler();
+
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => console.error("❌ DB Connection Error: ", err.message));

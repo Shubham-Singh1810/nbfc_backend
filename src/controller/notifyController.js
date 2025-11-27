@@ -6,36 +6,38 @@ const Notify = require("../model/notify.Schema");
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
-const { sendEmailToUsers, sendSMSToUsers, sendPushToUsers } = require("../utils/notify");
+const {
+  sendEmailToUsers,
+  sendSMSToUsers,
+  sendPushToUsers,
+} = require("../utils/notify");
 
-notifyController.post(
-  "/create",
-  upload.single("icon"),
-  async (req, res) => {
-    try {
-      let obj = req.body;
+notifyController.post("/create", upload.single("icon"), async (req, res) => {
+  try {
+    let obj = req.body;
 
-      // Parse JSON fields
-      if (obj.notifyUserIds) {
-        obj.notifyUserIds = JSON.parse(obj.notifyUserIds);
-      }
-      if (obj.mode) {
-        obj.mode = JSON.parse(obj.mode);
-      }
+    if (obj.notifyUserIds) {
+      obj.notifyUserIds = JSON.parse(obj.notifyUserIds);
+    }
 
-      // Handle Image upload
-      if (req.file) {
-        const icon = await cloudinary.uploader.upload(req.file.path);
-        obj.icon = icon.secure_url;
-      }
+    if (obj.mode) {
+      obj.mode = JSON.parse(obj.mode);
+    }
 
-      let notifyCreated 
+    if (obj.date && obj.time) {
+      obj.scheduledAt = new Date(`${obj.date} ${obj.time}`);
+    }
 
-      // For each mode call matching function
+    if (req.file) {
+      const icon = await cloudinary.uploader.upload(req.file.path);
+      obj.icon = icon.secure_url;
+    }
+
+    let notifyCreated = await Notify.create(obj);
+    if (obj.isScheduled=="false") {
       if (obj.mode.includes("email")) {
         sendEmailToUsers(obj.notifyUserIds, obj.title, obj.subTitle, obj.icon);
       }
-
       if (obj.mode.includes("text")) {
         sendSMSToUsers(obj.notifyUserIds, obj.title);
       }
@@ -43,48 +45,68 @@ notifyController.post(
       if (obj.mode.includes("push")) {
         sendPushToUsers(obj.notifyUserIds, obj.title, obj.subTitle, obj.icon);
       }
-
-      if (obj.mode.includes("in_app")) {
-       notifyCreated = await Notify.create(obj);
-      }
-
-      sendResponse(res, 200, "Success", {
-        message: "Notify created successfully!",
-        data: notifyCreated,
-        statusCode: 200,
-      });
-
-    } catch (error) {
-      console.error(error);
-      sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error",
-        statusCode: 500,
-      });
     }
-  }
-);
 
+    sendResponse(res, 200, "Success", {
+      message: obj.isScheduled
+        ? "Scheduled Notify created successfully!"
+        : "Notify sent successfully!",
+      data: notifyCreated,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
 
 notifyController.post("/list", async (req, res) => {
   try {
-    const { notifyUserId, isRead, pageNo = 1, pageCount = 10 } = req.body;
+    const {
+      notifyUserId,
+      searchKey = "",
+      isScheduled,
+      isDelivered,
+      pageNo = 1,
+      pageCount = 10,
+    } = req.body;
     const query = {};
 
     if (notifyUserId) {
       query.notifyUserIds = notifyUserId;
     }
-    if (isRead) {
-      query.isRead = isRead;
+    if (isScheduled) {
+      query.isScheduled = isScheduled;
+    }
+    if (isDelivered) {
+      query.isDelivered = isDelivered;
+    }
+    if (searchKey) {
+      query.$or = [
+        { title: { $regex: searchKey, $options: "i" } },
+        { subTitle: { $regex: searchKey, $options: "i" } },
+      ];
     }
     const notifyList = await Notify.find(query)
-
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount));
-
+    const totalCount = await Notify.countDocuments({ isScheduled: true });
+    const activeCount = await Notify.countDocuments({
+      isScheduled: true,
+      isDelivered: false,
+    });
     sendResponse(res, 200, "Success", {
       message: "Notify list retrieved successfully!",
       data: notifyList,
       statusCode: 200,
+      documentCount: {
+        totalCount,
+        activeCount,
+        inactiveCount: totalCount - activeCount,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -144,7 +166,7 @@ notifyController.delete("/delete/:id", async (req, res) => {
     await Notify.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
       message: "Notify and associated image deleted successfully!",
-      statusCode:"200"
+      statusCode: "200",
     });
   } catch (error) {
     console.error(error);
@@ -153,6 +175,5 @@ notifyController.delete("/delete/:id", async (req, res) => {
     });
   }
 });
-
 
 module.exports = notifyController;

@@ -12,12 +12,33 @@ const notifySchema = mongoose.Schema({
   subTitle: {
     type: String,
   },
-  notifyUserIds: [{
-    type: String
-  }],
-  mode: [{
+  notifyUserIds: [
+    {
+      type: String,
+    },
+  ],
+  mode: [
+    {
+      type: String,
+    },
+  ],
+  date: {
     type: String,
-  }],
+  },
+  time: {
+    type: String,
+  },
+  scheduledAt: {
+    type: Date,
+  },
+  isScheduled: {
+    type: Boolean,
+    default:false
+  },
+  isDelivered: {
+    type: Boolean,
+    default:false
+  },
 });
 
 notifySchema.plugin(timestamps);
