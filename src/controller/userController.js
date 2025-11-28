@@ -86,7 +86,7 @@ userController.post("/login-with-otp", async (req, res) => {
       // Update OTP in existing user
       user = await User.findByIdAndUpdate(
         user._id,
-        isEmail ? { emailOtp: otp } : { phoneOtp: otp },
+        isEmail ? { emailOtp: otp, deviceId:req.body?.deviceId } : { phoneOtp: otp, deviceId:req.body?.deviceId },
         { new: true }
       ).select("-password -emailOtp -phoneOtp");
     }
