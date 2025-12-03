@@ -275,8 +275,14 @@ userController.post("/otp-verification", async (req, res) => {
           statusCode: 404,
         });
       }
+      if (user.profileStatus=="blocked") {
+        return sendResponse(res, 200, "Success", {
+          message: "Your profile has been currently blocked",
+          statusCode: 404,
+        });
+      }
       if (
-        user?.toObject().isEmailVerified &&
+        user?.toObject().isEmailVerified ||
         user?.toObject().isPhoneVerified
       ) {
         updateData.profileStatus = "verified";
@@ -685,7 +691,7 @@ userController.put(
         });
       }
 
-      let updatedData = { ...req.body };
+      let updatedData = { ...req.body, profileStatus:"profileUpdated" };
 
       if (req.file) {
         const profilePic = await cloudinary.uploader.upload(req.file.path);

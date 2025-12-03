@@ -128,10 +128,10 @@ notifyController.put("/update", async (req, res) => {
       });
     }
     const updatedNotify = await Notify.findByIdAndUpdate(id, req.body, {
-      new: true, // Return the updated document
+      new: true, 
     });
     sendResponse(res, 200, "Success", {
-      message: "Mark as read!",
+      message: "Notification Updated Successfully",
       data: updatedNotify,
       statusCode: 200,
     });
@@ -165,7 +165,7 @@ notifyController.delete("/delete/:id", async (req, res) => {
     }
     await Notify.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
-      message: "Notify and associated image deleted successfully!",
+      message: "Notification deleted successfully!",
       statusCode: "200",
     });
   } catch (error) {

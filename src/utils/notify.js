@@ -1,5 +1,13 @@
 const nodemailer = require("nodemailer");
 const User = require("../model/user.Schema");
+const admin = require("firebase-admin");
+var serviceAccount = require("./serviceAccountKey.json");
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
 
 exports.sendEmailToUsers = async (notifyUserIds, title, subTitle, icon) => {
   const users = await User.find({ _id: { $in: notifyUserIds } }).select(
@@ -38,6 +46,50 @@ exports.sendSMSToUsers = async (notifyUserIds, title, subTitle, icon) => {
   console.log("sms");
 };
 
+
+
 exports.sendPushToUsers = async (notifyUserIds, title, subTitle, icon) => {
-  console.log("push");
+  const users = await User.find({ _id: { $in: notifyUserIds } })
+    .select("deviceId");
+  
+  const deviceTokens = users
+    .map((u) => u.deviceId)
+    .filter((i) => i);
+  console.log(deviceTokens)
+  if (!deviceTokens.length) {
+    console.log("No device tokens found");
+    return;
+  }
+
+  const message = {
+    notification: {
+      title: title || "Default Title",
+      body: subTitle || "Default Body",
+      image: icon || null,
+    },
+    tokens: deviceTokens,
+  };
+
+  try {
+    const messaging = admin.messaging();
+    const response = await messaging.sendEachForMulticast(message);
+
+    console.log("Success:", response.successCount);
+    console.log("Failed:", response.failureCount);
+
+    // remove invalid tokens
+    response.responses.forEach(async (res, index) => {
+      if (!res.success) {
+        await User.updateOne(
+          { deviceId: deviceTokens[index] },
+          { $unset: { deviceId: "" } }
+        );
+      }
+    });
+
+    return response;
+  } catch (error) {
+    console.error("Push sending failed:", error);
+  }
 };
+

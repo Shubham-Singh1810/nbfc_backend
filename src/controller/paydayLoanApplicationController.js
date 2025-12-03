@@ -9,6 +9,7 @@ const upload = require("../utils/multer");
 const auth = require("../utils/auth");
 const { generateEmi } = require("../utils/emiCalculator");
 const pdApplicationValidation = require("../middleware/loanApplicationValidation");
+const PaydayLoanTypeSchema = require("../model/paydayLoanType.Schema");
 
 paydayLoanApplicationController.post(
   "/create",
@@ -33,46 +34,69 @@ paydayLoanApplicationController.post(
       } else {
         newCode = "RPL001";
       }
-      let updatedData = {...req.body , code: newCode}
+      let updatedData = { ...req.body, code: newCode };
       if (req.file || req.files) {
         if (req.files["adharFrontend"]) {
           const image = await cloudinary.uploader.upload(
             req.files["adharFrontend"][0].path
           );
           updatedData = { ...updatedData, adharFrontend: image.url };
-        } 
-         if (req.files["adharBack"]) {
+        }
+        if (req.files["adharBack"]) {
           const image = await cloudinary.uploader.upload(
             req.files["adharBack"][0].path
           );
           updatedData = { ...updatedData, adharBack: image.url };
-        } 
-         if (req.files["pan"]) {
+        }
+        if (req.files["pan"]) {
           const image = await cloudinary.uploader.upload(
             req.files["pan"][0].path
           );
           updatedData = { ...updatedData, pan: image.url };
-        } 
-         if (req.files["residenceProof"]) {
+        }
+        if (req.files["residenceProof"]) {
           const image = await cloudinary.uploader.upload(
             req.files["residenceProof"][0].path
           );
           updatedData = { ...updatedData, residenceProof: image.url };
-        } 
-         if (req.files["bankVerificationMode"]) {
+        }
+        if (req.files["bankVerificationMode"]) {
           const image = await cloudinary.uploader.upload(
             req.files["bankVerificationMode"][0].path
           );
           updatedData = { ...updatedData, bankVerificationMode: image.url };
-        } 
-         if (req.files["eSign"]) {
+        }
+        if (req.files["eSign"]) {
           const image = await cloudinary.uploader.upload(
             req.files["eSign"][0].path
           );
           updatedData = { ...updatedData, eSign: image.url };
-        } 
+        }
       }
-      const loanApplicationCreated = await PaydayLoanApplication.create(updatedData);
+      if (updatedData?.loanAmount && updatedData?.tenure) {
+        const loanAmount = parseInt(updatedData.loanAmount) || 0;
+        const tenure = parseInt(updatedData.tenure) || 0;
+
+        const paydayConfig = await PaydayLoanTypeSchema.findOne({});
+        const processingFeeRate = parseFloat(paydayConfig?.processingFee) || 0;
+        const interestRate = parseFloat(paydayConfig?.intrestRate) || 0;
+
+        const processingFee = (loanAmount * processingFeeRate) / 100;
+        const payable =
+          (loanAmount * tenure * interestRate) / 100 + processingFee;
+
+        updatedData = {
+          ...updatedData,
+          loanAmount,
+          tenure,
+          processingFee,
+          payable: Math.round(payable), // Round off if needed
+        };
+      }
+
+      const loanApplicationCreated = await PaydayLoanApplication.create(
+        updatedData
+      );
       sendResponse(res, 200, "Success", {
         message: "Payday Loan Application created successfully!",
         statusCode: "200",
@@ -348,8 +372,27 @@ paydayLoanApplicationController.put(
       await uploadAndSet("residenceProof");
       await uploadAndSet("bankVerificationMode");
       await uploadAndSet("eSign");
+      
+      if (updatedData?.loanAmount && updatedData?.tenure) {
+        const loanAmount = parseInt(updatedData.loanAmount) || 0;
+        const tenure = parseInt(updatedData.tenure) || 0;
 
-      // 👉 Update DB
+        const paydayConfig = await PaydayLoanTypeSchema.findOne({});
+        const processingFeeRate = parseFloat(paydayConfig?.processingFee) || 0;
+        const interestRate = parseFloat(paydayConfig?.intrestRate) || 0;
+
+        const processingFee = (loanAmount * processingFeeRate) / 100;
+        const payable =
+          (loanAmount * tenure * interestRate) / 100 + processingFee;
+
+        updatedData = {
+          ...updatedData,
+          loanAmount,
+          tenure,
+          processingFee,
+          payable: Math.round(payable), // Round off if needed
+        };
+      }
       const loanUpdated = await PaydayLoanApplication.findByIdAndUpdate(
         _id,
         updatedData,
@@ -359,14 +402,14 @@ paydayLoanApplicationController.put(
       if (!loanUpdated) {
         return sendResponse(res, 404, "Failed", {
           message: "Loan Application not found",
-          statusCode:404
+          statusCode: 404,
         });
       }
 
       sendResponse(res, 200, "Success", {
         message: "Payday Loan Application updated successfully!",
         data: loanUpdated,
-        statusCode:200
+        statusCode: 200,
       });
     } catch (error) {
       console.error("Payday Loan Application update error:", error);
@@ -376,8 +419,6 @@ paydayLoanApplicationController.put(
     }
   }
 );
-
-
 paydayLoanApplicationController.post(
   "/apply",
   pdApplicationValidation,
@@ -394,8 +435,9 @@ paydayLoanApplicationController.post(
       } else {
         newCode = "RPL001";
       }
+      let updatedData = {...req.body , newCode}
       const loanApplicationCreated = await PaydayLoanApplication.create(
-        req.body
+        updatedData
       );
       sendResponse(res, 200, "Success", {
         message: "Payday Loan Application created successfully!",

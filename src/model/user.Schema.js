@@ -73,7 +73,7 @@ const userSchema = mongoose.Schema({
   profileStatus: {
     type: String,
     default: "registered",
-    enum: ["registered", "verified", "active", "blocked"],
+    enum: ["registered", "verified", "profileUpdated", "active", "blocked"],
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

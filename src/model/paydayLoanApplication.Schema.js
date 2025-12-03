@@ -116,10 +116,16 @@ const paydayLoanApplicationSchema = mongoose.Schema({
     type: String,
   },
   loanAmount: {
-    type: String,
+    type: Number,
   },
   tenure: {
-    type: String,
+    type: Number,
+  },
+  payable: {
+    type: Number,
+  },
+  processingFee: {
+    type: Number,
   },
   // residence proof
   residenceProofType: {
