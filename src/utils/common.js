@@ -6,7 +6,6 @@ exports.sendResponse = (res, code, message, data) => {
     return res.status(code).json(data);
   };
 exports.generateOTP = () => {
-  return 1234
     const min = 1000;
     const max = 9999;
     return Math.floor(Math.random() * (max - min + 1)) + min;

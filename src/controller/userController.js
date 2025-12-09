@@ -114,7 +114,7 @@ userController.post("/login-with-otp", async (req, res) => {
           process.env.AUTHKEY_API_KEY
         }&mobile=${phone}&country_code=91&sid=${
           process.env.AUTHKEY_SENDER_ID
-        }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
+        }&company=Rupeeloan&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
       );
       console.log(optResponse);
       if (optResponse?.status == "200") {

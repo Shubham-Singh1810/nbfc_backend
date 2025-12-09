@@ -117,31 +117,62 @@ notifyController.post("/list", async (req, res) => {
   }
 });
 
-notifyController.put("/update", async (req, res) => {
-  try {
-    const id = req.body._id;
-    const notify = await Notify.findById(id);
-    if (!notify) {
-      return sendResponse(res, 404, "Failed", {
-        message: "Notify not found",
-        statusCode: 403,
+notifyController.put(
+  "/update",
+  upload.single("icon"),
+  async (req, res) => {
+    try {
+      const id = req.body._id;
+
+      let notify = await Notify.findById(id);
+      if (!notify) {
+        return sendResponse(res, 404, "Failed", {
+          message: "Notify not found",
+          statusCode: 403,
+        });
+      }
+
+      let obj = req.body;
+
+      // Safe JSON parsing (only when string)
+      if (obj.notifyUserIds && typeof obj.notifyUserIds === "string") {
+        obj.notifyUserIds = JSON.parse(obj.notifyUserIds);
+      }
+
+      if (obj.mode && typeof obj.mode === "string") {
+        obj.mode = JSON.parse(obj.mode);
+      }
+
+      // scheduled date time update
+      if (obj.date && obj.time) {
+        obj.scheduledAt = new Date(`${obj.date} ${obj.time}`);
+      }
+
+      // icon update
+      if (req.file) {
+        const icon = await cloudinary.uploader.upload(req.file.path);
+        obj.icon = icon.secure_url;
+      }
+
+      const updatedNotify = await Notify.findByIdAndUpdate(id, obj, {
+        new: true,
+      });
+
+      return sendResponse(res, 200, "Success", {
+        message: "Notification Updated Successfully!",
+        data: updatedNotify,
+        statusCode: 200,
+      });
+    } catch (error) {
+      console.error(error);
+      return sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+        statusCode: 500,
       });
     }
-    const updatedNotify = await Notify.findByIdAndUpdate(id, req.body, {
-      new: true, 
-    });
-    sendResponse(res, 200, "Success", {
-      message: "Notification Updated Successfully",
-      data: updatedNotify,
-      statusCode: 200,
-    });
-  } catch (error) {
-    sendResponse(res, 500, "Failed", {
-      message: error.message || "Internal server error",
-      statusCode: 500,
-    });
   }
-});
+);
+
 notifyController.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
