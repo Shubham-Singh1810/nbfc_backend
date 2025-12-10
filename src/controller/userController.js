@@ -107,7 +107,8 @@ userController.post("/login-with-otp", async (req, res) => {
     } else {
       // Send OTP to Phone
       const appHash = "ems/3nG2V1H";
-      const otpMessage = `<#> ${otp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
+      // const otpMessage = `<#> ${otp} is your OTP for verification. Do not share it with anyone.\n${appHash}`;
+      const otpMessage = `Use ${otp} as your OTP to access your Rupee Loan, OTP is confidential and valid for 5 mins This sms sent by authkey.io`;
 
       let optResponse = await axios.post(
         `https://api.authkey.io/request?authkey=${
