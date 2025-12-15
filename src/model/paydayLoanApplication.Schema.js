@@ -161,6 +161,15 @@ const paydayLoanApplicationSchema = mongoose.Schema({
   eSign: {
     type: String,
   },
+  gstAmount: {
+    type: Number,
+  },
+  gstRate: {
+    type: Number,
+  },  
+  interestRate: {
+    type: Number,
+  },       
 });
 
 paydayLoanApplicationSchema.plugin(timestamps);

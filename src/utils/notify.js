@@ -46,8 +46,6 @@ exports.sendSMSToUsers = async (notifyUserIds, title, subTitle, icon) => {
   console.log("sms");
 };
 
-
-
 exports.sendPushToUsers = async (notifyUserIds, title, subTitle, icon) => {
   const users = await User.find({ _id: { $in: notifyUserIds } })
     .select("deviceId");

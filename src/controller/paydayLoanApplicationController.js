@@ -380,16 +380,21 @@ paydayLoanApplicationController.put(
         const paydayConfig = await PaydayLoanTypeSchema.findOne({});
         const processingFeeRate = parseFloat(paydayConfig?.processingFee) || 0;
         const interestRate = parseFloat(paydayConfig?.intrestRate) || 0;
+        const gstRate = parseFloat(paydayConfig?.gst) || 0;
 
         const processingFee = (loanAmount * processingFeeRate) / 100;
+        const gstAmount = (loanAmount * gstRate) / 100;
         const payable =
-          (loanAmount * tenure * interestRate) / 100 + processingFee;
+          (loanAmount * tenure * interestRate) / 100 + processingFee + gstAmount;
 
         updatedData = {
           ...updatedData,
           loanAmount,
           tenure,
           processingFee,
+          gstAmount,
+          gstRate,
+          interestRate,
           payable: Math.round(payable), // Round off if needed
         };
       }

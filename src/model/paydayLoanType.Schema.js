@@ -47,6 +47,10 @@ const paydayLoanTypeSchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  gst: {
+    type: Number,
+    default:0
+  },
   lateFee: {
     type: Number,
     required: true,
