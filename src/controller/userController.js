@@ -16,7 +16,6 @@ const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const auth = require("../utils/auth");
-const { sendNotification } = require("../utils/sendNotification");
 const Driver = require("../model/driver.Schema");
 const moment = require("moment");
 const { sendMail } = require("../utils/common");
@@ -50,7 +49,7 @@ userController.post("/login-with-otp", async (req, res) => {
       });
       if (lastUser?.code) {
         const lastNumber =
-          parseInt(lastLoanApplication.code.replace("RPLU", ""), 10) || 0;
+          parseInt(lastUser.code.replace("RPLU", ""), 10) || 0;
         newCode = "RPLU" + String(lastNumber + 1).padStart(3, "0");
       } else {
         newCode = "RPLU001";
@@ -79,17 +78,7 @@ userController.post("/login-with-otp", async (req, res) => {
         { new: true }
       ).select("-password -emailOtp -phoneOtp");
 
-      // // Send notification to admin
-      // sendNotification({
-      //   title: "User registered",
-      //   subTitle: "A new user registered to the portal.",
-      //   icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
-      //   notifyUserId: "admin",
-      //   category: "User",
-      //   subCategory: "Register",
-      //   notifyUser: "Admin",
-      //   fcmToken: superAdmin.deviceId,
-      // });
+  
 
       const io = req.io;
       io.emit("new-user-registered", user);
