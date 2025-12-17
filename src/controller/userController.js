@@ -44,9 +44,20 @@ userController.post("/login-with-otp", async (req, res) => {
     let user = await User.findOne(query);
 
     if (!user) {
-      // Create a new user with provided details and OTP
+      let newCode;
+      const lastUser = await User.findOne().sort({
+        createdAt: -1,
+      });
+      if (lastUser?.code) {
+        const lastNumber =
+          parseInt(lastLoanApplication.code.replace("RPLU", ""), 10) || 0;
+        newCode = "RPLU" + String(lastNumber + 1).padStart(3, "0");
+      } else {
+        newCode = "RPLU001";
+      }
       user = await User.create({
         ...otherDetails,
+        code: newCode,
         phone: isEmail ? undefined : phone,
         email: isEmail ? phone : undefined,
         phoneOtp: isEmail ? undefined : otp,
@@ -68,17 +79,17 @@ userController.post("/login-with-otp", async (req, res) => {
         { new: true }
       ).select("-password -emailOtp -phoneOtp");
 
-      // Send notification to admin
-      sendNotification({
-        title: "User registered",
-        subTitle: "A new user registered to the portal.",
-        icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
-        notifyUserId: "admin",
-        category: "User",
-        subCategory: "Register",
-        notifyUser: "Admin",
-        fcmToken: superAdmin.deviceId,
-      });
+      // // Send notification to admin
+      // sendNotification({
+      //   title: "User registered",
+      //   subTitle: "A new user registered to the portal.",
+      //   icon: "https://cdn-icons-png.flaticon.com/128/190/190411.png",
+      //   notifyUserId: "admin",
+      //   category: "User",
+      //   subCategory: "Register",
+      //   notifyUser: "Admin",
+      //   fcmToken: superAdmin.deviceId,
+      // });
 
       const io = req.io;
       io.emit("new-user-registered", user);
@@ -86,7 +97,9 @@ userController.post("/login-with-otp", async (req, res) => {
       // Update OTP in existing user
       user = await User.findByIdAndUpdate(
         user._id,
-        isEmail ? { emailOtp: otp, deviceId:req.body?.deviceId } : { phoneOtp: otp, deviceId:req.body?.deviceId },
+        isEmail
+          ? { emailOtp: otp, deviceId: req.body?.deviceId }
+          : { phoneOtp: otp, deviceId: req.body?.deviceId },
         { new: true }
       ).select("-password -emailOtp -phoneOtp");
     }
@@ -115,7 +128,9 @@ userController.post("/login-with-otp", async (req, res) => {
           process.env.AUTHKEY_API_KEY
         }&mobile=${phone}&country_code=91&sid=${
           process.env.AUTHKEY_SENDER_ID
-        }&company=Rupeeloan&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
+        }&company=Rupeeloan&otp=${otp}&message=${encodeURIComponent(
+          otpMessage
+        )}`
       );
       console.log(optResponse);
       if (optResponse?.status == "200") {
@@ -276,18 +291,21 @@ userController.post("/otp-verification", async (req, res) => {
           statusCode: 404,
         });
       }
-      if (user.profileStatus=="blocked") {
+      if (user.profileStatus == "blocked") {
         return sendResponse(res, 200, "Success", {
           message: "Your profile has been currently blocked",
           statusCode: 404,
         });
       }
-      if (
-        user?.toObject().isEmailVerified ||
-        user?.toObject().isPhoneVerified
-      ) {
-        updateData.profileStatus = "verified";
+      if (user?.toObject().profileStatus=="registered") {
+        if (
+          user?.toObject().isEmailVerified ||
+          user?.toObject().isPhoneVerified
+        ) {
+          updateData.profileStatus = "verified";
+        }
       }
+
       const updatedUser = await User.findByIdAndUpdate(
         user._id,
         { $set: updateData },
@@ -692,7 +710,7 @@ userController.put(
         });
       }
 
-      let updatedData = { ...req.body, profileStatus:"profileUpdated" };
+      let updatedData = { ...req.body, profileStatus: "profileUpdated" };
 
       if (req.file) {
         const profilePic = await cloudinary.uploader.upload(req.file.path);
