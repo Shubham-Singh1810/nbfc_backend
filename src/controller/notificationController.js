@@ -81,6 +81,38 @@ notificationController.put("/update", async (req, res) => {
   }
 });
 
+notificationController.put("/mark-all", async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Notification ids array is required",
+        statusCode: 400,
+      });
+    }
+
+    const result = await Notification.updateMany(
+      { _id: { $in: ids } },
+      { $set: { isRead: true } }
+    );
+
+    sendResponse(res, 200, "Success", {
+      message: "Notifications marked as read",
+      data: {
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+      },
+      statusCode: 200,
+    });
+  } catch (error) {
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
+
 notificationController.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
