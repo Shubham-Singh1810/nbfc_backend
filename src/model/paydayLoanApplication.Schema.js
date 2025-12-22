@@ -111,6 +111,11 @@ const paydayLoanApplicationSchema = mongoose.Schema({
   selfie: {
     type: String,
   },
+  selfieApprovalStatus: {
+    type: String,
+    enum:["pending", "approved", "rejected"],
+    default:"pending"
+  },
   // bank statement
   bankVerificationMode: {
     type: String,
@@ -119,12 +124,6 @@ const paydayLoanApplicationSchema = mongoose.Schema({
     type: Number,
   },
   tenure: {
-    type: Number,
-  },
-  payable: {
-    type: Number,
-  },
-  processingFee: {
     type: Number,
   },
   // residence proof
@@ -161,15 +160,45 @@ const paydayLoanApplicationSchema = mongoose.Schema({
   eSign: {
     type: String,
   },
+    
+  
+  // configration details
+  payable: {
+    type: Number,
+  },
+  interestRate: {
+    type: Number,
+  },
+  interestAmount: {
+    type: Number,
+  },
+  processingFee: {
+    type: Number,
+  },
+  processingAmount: {
+    type: Number,
+  },
+  isGstApplicable: {
+    type: Boolean,
+  },
+   gstRate: {
+    type: Number,
+  }, 
   gstAmount: {
     type: Number,
   },
-  gstRate: {
+  lateFee: {
     type: Number,
-  },  
-  interestRate: {
+  },
+  penaltyGraceDays: {
     type: Number,
-  },       
+  },
+  isPrepaymentAllowed: {
+    type: Boolean,
+  },
+  prepaymentFee: {
+    type: Boolean,
+  },
 });
 
 paydayLoanApplicationSchema.plugin(timestamps);

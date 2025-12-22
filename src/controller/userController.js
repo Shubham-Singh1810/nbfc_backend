@@ -280,16 +280,16 @@ userController.post("/otp-verification", async (req, res) => {
           statusCode: 404,
         });
       }
-      if (user.profileStatus == "blocked") {
+      if (user?.profileStatus == "blocked") {
         return sendResponse(res, 200, "Success", {
           message: "Your profile has been currently blocked",
           statusCode: 404,
         });
       }
-      if (user?.toObject().profileStatus=="registered") {
+      if (user?.profileStatus=="registered") {
         if (
-          user?.toObject().isEmailVerified ||
-          user?.toObject().isPhoneVerified
+          user?.isEmailVerified ||
+          user?.isPhoneVerified
         ) {
           updateData.profileStatus = "verified";
         }
