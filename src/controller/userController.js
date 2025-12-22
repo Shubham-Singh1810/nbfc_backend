@@ -287,12 +287,7 @@ userController.post("/otp-verification", async (req, res) => {
         });
       }
       if (user?.profileStatus=="registered") {
-        if (
-          user?.isEmailVerified ||
-          user?.isPhoneVerified
-        ) {
           updateData.profileStatus = "verified";
-        }
       }
 
       const updatedUser = await User.findByIdAndUpdate(
@@ -699,11 +694,14 @@ userController.put(
         });
       }
 
-      let updatedData = { ...req.body, profileStatus: "profileUpdated" };
+      let updatedData = { ...req.body };
 
       if (req.file) {
         const profilePic = await cloudinary.uploader.upload(req.file.path);
         updatedData.profilePic = profilePic.url;
+      }
+      if(userData?.profileStatus != "active"){
+        updatedData.profileStatus = "profileUpdated";
       }
       const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
         new: true,
