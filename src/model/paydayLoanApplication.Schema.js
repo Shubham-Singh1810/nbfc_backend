@@ -50,6 +50,9 @@ const paydayLoanApplicationSchema = mongoose.Schema({
       "eSign",
     ],
   },
+  step:  {
+    type: Number,
+  },
   // Check Eligibility
   fullName: {
     type: String,
@@ -113,7 +116,7 @@ const paydayLoanApplicationSchema = mongoose.Schema({
   },
   selfieApprovalStatus: {
     type: String,
-    enum:["pending", "approved", "rejected"],
+    enum:["pending","uploaded", "approved", "rejected"],
     default:"pending"
   },
   // bank statement
@@ -197,7 +200,10 @@ const paydayLoanApplicationSchema = mongoose.Schema({
     type: Boolean,
   },
   prepaymentFee: {
-    type: Boolean,
+    type: Number,
+  },
+  disbursedAmount : {
+    type: Number,
   },
 });
 

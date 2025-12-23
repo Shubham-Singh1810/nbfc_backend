@@ -73,27 +73,35 @@ paydayLoanApplicationController.post(
           updatedData = { ...updatedData, eSign: image.url };
         }
       }
-      if (updatedData?.loanAmount && updatedData?.tenure) {
-        const loanAmount = parseInt(updatedData.loanAmount) || 0;
-        const tenure = parseInt(updatedData.tenure) || 0;
+      const paydayConfig = await PaydayLoanTypeSchema.findOne({});
+      const loanAmount = parseInt(updatedData.loanAmount) || 0;
+      const tenure = parseInt(updatedData.tenure) || 0;
+      const processingFeeRate = parseFloat(paydayConfig?.processingFee) || 0;
+      const gst = parseFloat(paydayConfig?.gst) || 0;
+      const interestRate = parseFloat(paydayConfig?.intrestRate) || 0;
 
-        const paydayConfig = await PaydayLoanTypeSchema.findOne({});
-        const processingFeeRate = parseFloat(paydayConfig?.processingFee) || 0;
-        const interestRate = parseFloat(paydayConfig?.intrestRate) || 0;
+      const interestAmount = (loanAmount*interestRate*tenure)/100
+      const processingAmount = (loanAmount*processingFeeRate)/100
+      const gstAmount = (loanAmount*gst)/100
+      const payable = loanAmount+interestAmount+processingAmount+gstAmount
+      const disbursedAmount = loanAmount-processingAmount-gstAmount
 
-        const processingFee = (loanAmount * processingFeeRate) / 100;
-        const payable =
-          (loanAmount * tenure * interestRate) / 100 + processingFee;
-
-        updatedData = {
-          ...updatedData,
-          loanAmount,
-          tenure,
-          processingFee,
-          payable: Math.round(payable), // Round off if needed
-        };
-      }
-
+      updatedData = {
+        ...updatedData,
+        payable,
+        interestRate : paydayConfig?.intrestRate,
+        interestAmount,
+        disbursedAmount,
+        processingFee : paydayConfig?.processingFee,
+        processingAmount,
+        isGstApplicable : paydayConfig?.gstApplicable,
+        gstRate : paydayConfig?.gst || 0,
+        gstAmount,
+        lateFee : paydayConfig?.lateFee,
+        isPrepaymentAllowed : paydayConfig?.prepaymentAllowed,
+        prepaymentFee : paydayConfig?.prepaymentFee,
+        penaltyGraceDays:paydayConfig?.penaltyGraceDays
+      };
       const loanApplicationCreated = await PaydayLoanApplication.create(
         updatedData
       );
@@ -350,9 +358,7 @@ paydayLoanApplicationController.put(
           message: "Loan Application ID (_id) is required",
         });
       }
-
       let updatedData = { ...req.body };
-
       // ✅ Image upload helper (new upload OR old saved image)
       const uploadAndSet = async (fieldName) => {
         if (req.files && req.files[fieldName]) {
@@ -364,7 +370,6 @@ paydayLoanApplicationController.put(
           updatedData[fieldName] = req.body[fieldName + "Prev"];
         }
       };
-
       // 🔥 Apply for all image fields
       await uploadAndSet("adharFrontend");
       await uploadAndSet("adharBack");
@@ -372,45 +377,17 @@ paydayLoanApplicationController.put(
       await uploadAndSet("residenceProof");
       await uploadAndSet("bankVerificationMode");
       await uploadAndSet("eSign");
-      
-      if (updatedData?.loanAmount && updatedData?.tenure) {
-        const loanAmount = parseInt(updatedData.loanAmount) || 0;
-        const tenure = parseInt(updatedData.tenure) || 0;
-
-        const paydayConfig = await PaydayLoanTypeSchema.findOne({});
-        const processingFeeRate = parseFloat(paydayConfig?.processingFee) || 0;
-        const interestRate = parseFloat(paydayConfig?.intrestRate) || 0;
-        const gstRate = parseFloat(paydayConfig?.gst) || 0;
-
-        const processingFee = (loanAmount * processingFeeRate) / 100;
-        const gstAmount = (loanAmount * gstRate) / 100;
-        const payable =
-          (loanAmount * tenure * interestRate) / 100 + processingFee + gstAmount;
-
-        updatedData = {
-          ...updatedData,
-          loanAmount,
-          tenure,
-          processingFee,
-          gstAmount,
-          gstRate,
-          interestRate,
-          payable: Math.round(payable), // Round off if needed
-        };
-      }
       const loanUpdated = await PaydayLoanApplication.findByIdAndUpdate(
         _id,
         updatedData,
         { new: true }
       );
-
       if (!loanUpdated) {
         return sendResponse(res, 404, "Failed", {
           message: "Loan Application not found",
           statusCode: 404,
         });
       }
-
       sendResponse(res, 200, "Success", {
         message: "Payday Loan Application updated successfully!",
         data: loanUpdated,
@@ -440,7 +417,7 @@ paydayLoanApplicationController.post(
       } else {
         newCode = "RPL001";
       }
-      let updatedData = {...req.body , newCode}
+      let updatedData = { ...req.body, newCode };
       const loanApplicationCreated = await PaydayLoanApplication.create(
         updatedData
       );

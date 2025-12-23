@@ -24,6 +24,7 @@ const pdApplicationValidation = async (req, res, next) => {
           educationQ,
           maritalStatus,
           userId,
+          step
         } = req.body;
         const requiredFields = {
           fullName,
@@ -33,6 +34,7 @@ const pdApplicationValidation = async (req, res, next) => {
           educationQ,
           maritalStatus,
           userId,
+          step
         };
         const missingFields = Object.keys(requiredFields).filter(
           (key) =>
@@ -78,12 +80,13 @@ const pdApplicationValidation = async (req, res, next) => {
         return next();
       }
       if (step == 2) {
-        const { empType, cmpName, monthlyIncome, nextSalary } = req.body;
+        const { empType, cmpName, monthlyIncome, nextSalary, step } = req.body;
         const requiredFields = {
           empType,
           cmpName,
           monthlyIncome,
           nextSalary,
+          step
         };
         const missingFields = Object.keys(requiredFields).filter(
           (key) =>
@@ -118,6 +121,7 @@ const pdApplicationValidation = async (req, res, next) => {
           currentAddress,
           currentAddressOwnership,
           whoYouliveWith,
+          step
         } = req.body;
         const requiredFields = {
           pincode,
@@ -125,6 +129,7 @@ const pdApplicationValidation = async (req, res, next) => {
           currentAddress,
           currentAddressOwnership,
           whoYouliveWith,
+          step
         };
         const missingFields = Object.keys(requiredFields).filter(
           (key) =>
