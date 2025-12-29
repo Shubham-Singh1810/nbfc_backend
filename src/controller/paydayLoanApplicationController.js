@@ -410,6 +410,7 @@ paydayLoanApplicationController.post(
       const lastLoanApplication = await PaydayLoanApplication.findOne().sort({
         createdAt: -1,
       });
+      console.log(lastLoanApplication)
       if (lastLoanApplication?.code) {
         const lastNumber =
           parseInt(lastLoanApplication.code.replace("RPL", ""), 10) || 0;
@@ -417,7 +418,8 @@ paydayLoanApplicationController.post(
       } else {
         newCode = "RPL001";
       }
-      let updatedData = { ...req.body, newCode };
+      let updatedData = { ...req.body, code: newCode };
+
       const loanApplicationCreated = await PaydayLoanApplication.create(
         updatedData
       );

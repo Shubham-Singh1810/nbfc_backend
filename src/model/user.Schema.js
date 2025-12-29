@@ -129,7 +129,8 @@ const userSchema = mongoose.Schema({
   },
   salaryType:{
     type:String
-  }
+  },
+  contacts:[]
 });
 
 userSchema.plugin(timestamps);

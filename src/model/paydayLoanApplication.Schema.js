@@ -82,6 +82,9 @@ const paydayLoanApplicationSchema = mongoose.Schema({
   monthlyIncome: {
     type: String,
   },
+  monthlyExpense: {
+    type: String,
+  },
   nextSalary: {
     type: String,
   },
