@@ -349,6 +349,7 @@ paydayLoanApplicationController.put(
     { name: "residenceProof", maxCount: 1 },
     { name: "bankVerificationMode", maxCount: 1 },
     { name: "eSign", maxCount: 1 },
+    { name: "selfie", maxCount: 1 },
   ]),
   async (req, res) => {
     try {
@@ -359,7 +360,6 @@ paydayLoanApplicationController.put(
         });
       }
       let updatedData = { ...req.body };
-      // ✅ Image upload helper (new upload OR old saved image)
       const uploadAndSet = async (fieldName) => {
         if (req.files && req.files[fieldName]) {
           const image = await cloudinary.uploader.upload(
@@ -370,13 +370,13 @@ paydayLoanApplicationController.put(
           updatedData[fieldName] = req.body[fieldName + "Prev"];
         }
       };
-      // 🔥 Apply for all image fields
       await uploadAndSet("adharFrontend");
       await uploadAndSet("adharBack");
       await uploadAndSet("pan");
       await uploadAndSet("residenceProof");
       await uploadAndSet("bankVerificationMode");
       await uploadAndSet("eSign");
+      await uploadAndSet("selfie");
       const loanUpdated = await PaydayLoanApplication.findByIdAndUpdate(
         _id,
         updatedData,
