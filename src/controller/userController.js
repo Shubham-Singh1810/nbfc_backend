@@ -700,9 +700,9 @@ userController.put(
         const profilePic = await cloudinary.uploader.upload(req.file.path);
         updatedData.profilePic = profilePic.url;
       }
-      if(userData?.profileStatus != "active"){
-        updatedData.profileStatus = "profileUpdated";
-      }
+      // if(userData?.profileStatus != "active"){
+      //   updatedData.profileStatus = "profileUpdated";
+      // }
       const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
         new: true,
       }).select("-password -emailOtp -phoneOtp");
