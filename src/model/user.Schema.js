@@ -104,6 +104,12 @@ const userSchema = mongoose.Schema({
   address: {
     type: String,
   },
+  lat: {
+    type: String,
+  },
+  long: {
+    type: String,
+  },
   //  -----------------
   panNumber: {
     type: String,

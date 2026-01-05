@@ -20,6 +20,7 @@ paydayLoanApplicationController.post(
     { name: "residenceProof", maxCount: 1 },
     { name: "bankVerificationMode", maxCount: 1 },
     { name: "eSign", maxCount: 1 },
+    { name: "selfie", maxCount: 1 },
   ]),
   async (req, res) => {
     try {
@@ -71,6 +72,12 @@ paydayLoanApplicationController.post(
             req.files["eSign"][0].path
           );
           updatedData = { ...updatedData, eSign: image.url };
+        }
+        if (req.files["selfie"]) {
+          const image = await cloudinary.uploader.upload(
+            req.files["selfie"][0].path
+          );
+          updatedData = { ...updatedData, selfie: image.url };
         }
       }
       const paydayConfig = await PaydayLoanTypeSchema.findOne({});
