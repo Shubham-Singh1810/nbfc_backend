@@ -12,6 +12,17 @@ loanPurposeController.post(
   upload.single("img"),
   async (req, res) => {
     try {
+      const {name} = req?.body
+       const existing = await LoanPurpose.findOne({
+        name: { $regex: `^${name}$`, $options: "i" }, // case-insensitive
+      });
+
+      if (existing) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Loan purpose name already exists",
+          statusCode: 400,
+        });
+      }
       let obj;
       if (req.file) {
         let image = await cloudinary.uploader.upload(
@@ -88,29 +99,45 @@ loanPurposeController.put(
   upload.single("img"),
   async (req, res) => {
     try {
-      const id = req.body._id;
+      const { _id, name } = req.body;
 
-      const loanPurpose = await LoanPurpose.findById(id);
+      const loanPurpose = await LoanPurpose.findById(_id);
       if (!loanPurpose) {
         return sendResponse(res, 404, "Failed", {
           message: "Loan purpose not found",
-          statusCode: 403,
+          statusCode: 404,
         });
+      }
+
+      // ✅ 1. Check duplicate name (exclude current document)
+      if (name) {
+        const existing = await LoanPurpose.findOne({
+          name: { $regex: `^${name}$`, $options: "i" }, // case-insensitive
+          _id: { $ne: _id }, // 🔥 exclude current record
+        });
+
+        if (existing) {
+          return sendResponse(res, 400, "Failed", {
+            message: "Loan purpose name already exists",
+            statusCode: 400,
+          });
+        }
       }
 
       let updateData = { ...req.body };
 
-      // If new image is uploaded
+      // ✅ 2. Handle image upload
       if (req.file) {
         const image = await cloudinary.uploader.upload(req.file.path);
-        updateData.img = image.secure_url; // update image URL
+        updateData.img = image.secure_url;
       }
 
       const updatedDocument = await LoanPurpose.findByIdAndUpdate(
-        id,
+        _id,
         updateData,
         {
           new: true,
+          runValidators: true, // 🔥 important
         }
       );
 
@@ -121,6 +148,15 @@ loanPurposeController.put(
       });
     } catch (error) {
       console.error(error);
+
+      // ✅ 3. MongoDB duplicate key fallback
+      if (error.code === 11000) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Loan purpose name already exists",
+          statusCode: 400,
+        });
+      }
+
       sendResponse(res, 500, "Failed", {
         message: error.message || "Internal server error",
         statusCode: 500,
@@ -128,6 +164,7 @@ loanPurposeController.put(
     }
   }
 );
+
 
 
 loanPurposeController.delete("/delete/:id", async (req, res) => {
