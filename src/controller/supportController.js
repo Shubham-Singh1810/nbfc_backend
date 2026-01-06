@@ -72,11 +72,15 @@ supportController.post("/list-contact-query", async (req, res) => {
         { firstName: { $regex: searchKey, $options: "i" } },
         { lastName: { $regex: searchKey, $options: "i" } },
         { email: { $regex: searchKey, $options: "i" } },
-        { contactNumber: { $regex: searchKey, $options: "i" } },
         { subject: { $regex: searchKey, $options: "i" } },
         { message: { $regex: searchKey, $options: "i" } },
       ];
+
+      if (!isNaN(searchKey)) {
+        query.$or.push({ contactNumber: Number(searchKey) });
+      }
     }
+
     const sortField = sortByField || "createdAt";
     const sortOrder = sortByOrder === "asc" ? 1 : -1;
     const sortOption = { [sortField]: sortOrder };

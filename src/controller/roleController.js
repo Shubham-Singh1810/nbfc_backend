@@ -2,6 +2,7 @@ const express = require("express");
 const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const Role = require("../model/role.Schema");
+const Admin = require("../model/admin.Schema")
 const roleController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
@@ -103,6 +104,14 @@ roleController.delete("/delete/:id", async (req, res) => {
       return sendResponse(res, 404, "Failed", {
         message: "Role not found",
         statusCode: 404,
+      });
+    }
+    const isRoleUsed = await Admin.exists({ role: id });
+
+    if (isRoleUsed) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Role is already assigned to one or more admins. Cannot delete.",
+        statusCode: 400,
       });
     }
     await Role.findByIdAndDelete(id);

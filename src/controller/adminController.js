@@ -49,6 +49,25 @@ adminController.post(
   async (req, res) => {
     try {
       let { ...rest } = req.body;
+      if (rest.email) {
+        const emailExists = await Admin.findOne({ email: rest.email });
+        if (emailExists) {
+          return sendResponse(res, 400, "Failed", {
+            message: "Email already exists. Please use another email.",
+            statusCode: 400,
+          });
+        }
+      }
+      if (rest.phone) {
+        const phoneExists = await Admin.findOne({ phone: rest.phone });
+        if (phoneExists) {
+          return sendResponse(res, 400, "Failed", {
+            message:
+              "Phone number already exists. Please use another phone number.",
+            statusCode: 400,
+          });
+        }
+      }
       if (rest.branch) {
         if (typeof rest.branch === "string") {
           try {
@@ -184,6 +203,31 @@ adminController.put(
 
       let updatedData = { ...req.body };
 
+      if (updatedData.email && updatedData.email !== adminData.email) {
+        const emailExists = await Admin.findOne({
+          email: updatedData.email,
+          _id: { $ne: id },
+        });
+        if (emailExists) {
+          return sendResponse(res, 400, "Failed", {
+            message: "Email already exists. Please use another email.",
+          });
+        }
+      }
+
+      if (updatedData.phone && updatedData.phone !== adminData.phone) {
+        const phoneExists = await Admin.findOne({
+          phone: updatedData.phone,
+          _id: { $ne: id },
+        });
+        if (phoneExists) {
+          return sendResponse(res, 400, "Failed", {
+            message:
+              "Phone number already exists. Please use another phone number.",
+          });
+        }
+      }
+
       if (updatedData.branch) {
         if (typeof updatedData.branch === "string") {
           try {
@@ -287,6 +331,12 @@ adminController.post("/login", async (req, res) => {
         statusCode: 422,
       });
     }
+    if (!user.status) {
+      return sendResponse(res, 422, "Failed", {
+        message: "Your account has been marked as inactive!",
+        statusCode: 422,
+      });
+    }
     let updatedAdmin = await Admin.findByIdAndUpdate(
       user._id,
       { deviceId },
@@ -342,6 +392,18 @@ adminController.post("/list", async (req, res) => {
         { lastName: { $regex: searchKey, $options: "i" } },
         { email: { $regex: searchKey, $options: "i" } },
       ];
+
+      // ✅ phone search even if phone is Number
+      if (/^\d+$/.test(searchKey)) {
+        query.$or.push({
+          $expr: {
+            $regexMatch: {
+              input: { $toString: "$phone" },
+              regex: searchKey,
+            },
+          },
+        });
+      }
     }
 
     // ✅ Sorting setup
@@ -380,7 +442,6 @@ adminController.post("/list", async (req, res) => {
     });
   }
 });
-
 
 adminController.get("/details/:id", async (req, res) => {
   try {
