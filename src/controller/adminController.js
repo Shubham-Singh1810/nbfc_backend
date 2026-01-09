@@ -510,4 +510,120 @@ adminController.put(
     }
   }
 );
+
+adminController.post(
+  "/forgot-password",
+  async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      const admin = await Admin.findOne({ email });
+      if (!admin) {
+        return sendResponse(res, 404, "Failed", {
+          message: "Admin not found",
+          statusCode: 404,
+        });
+      }
+
+      // 🔐 Generate encrypted token (5 min validity)
+      const resetToken = jwt.sign(
+        { adminId: admin._id },
+        process.env.RESET_PASSWORD_SECRET,
+        { expiresIn: "15m" }
+      );
+
+      // ⏰ Save token & expiry in DB
+      admin.resetPasswordToken = resetToken;
+      admin.resetPasswordExpire = Date.now() + 5 * 60 * 1000;
+      await admin.save();
+
+      // 🔗 Reset URL
+      const resetUrl = `${process.env.FRONTEND_URL}/update-password/${resetToken}`;
+
+      const html = `
+        <div style="font-family: Arial, sans-serif; line-height:1.5;">
+          <h3>Reset Your Password</h3>
+          <p>You requested to reset your admin password.</p>
+          <p><b>This link is valid for 15 minutes only.</b></p>
+          <a href="${resetUrl}" style="color:#0b5ed7;">Click here to update password</a>
+          <p>If you didn't request this, please ignore this email.</p>
+        </div>
+      `;
+
+      await sendMail(
+        admin.email,
+        "Reset Password – Rupee Loan (Valid for 15 minutes)",
+        html
+      );
+
+      sendResponse(res, 200, "Success", {
+        message: "Reset password link sent successfully on email!",
+        statusCode: 200,
+      });
+
+    } catch (error) {
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+        statusCode: 500,
+      });
+    }
+  }
+);
+
+adminController.post(
+  "/reset-password/:token",
+  async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { password } = req.body;
+
+      if (!password) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Password is required",
+          statusCode: 400,
+        });
+      }
+
+      // 🔍 Verify JWT token
+      const decoded = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
+
+      const admin = await Admin.findOne({
+        _id: decoded.adminId,
+        resetPasswordToken: token,
+        resetPasswordExpire: { $gt: Date.now() },
+      });
+
+      if (!admin) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Token is invalid or expired",
+          statusCode: 400,
+        });
+      }
+
+      // 🔐 Encrypt new password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // ✅ Update password & clear token
+      admin.password = hashedPassword;
+      admin.resetPasswordToken = undefined;
+      admin.resetPasswordExpire = undefined;
+
+      await admin.save();
+
+      sendResponse(res, 200, "Success", {
+        message: "Password updated successfully. Please login again.",
+        statusCode: 200,
+      });
+
+    } catch (error) {
+      sendResponse(res, 400, "Failed", {
+        message: "Reset link expired or invalid",
+        statusCode: 400,
+      });
+    }
+  }
+);
+
+
+
 module.exports = adminController;

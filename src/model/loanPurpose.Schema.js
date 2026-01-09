@@ -6,6 +6,7 @@ const loanPurposeSchema = mongoose.Schema({
   name: {
     type: String,
     required: true,
+    unique: true,
   },
    img: {
     type: String,

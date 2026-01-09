@@ -14,10 +14,13 @@ const adminSchema = mongoose.Schema({
   },
   email: {
     type: String,
+    sparse: true,
+    unique: true,
   },
   phone: {
     type: Number,
     required: true,
+    unique: true,
   },
   password: {
     type: String,
@@ -44,6 +47,12 @@ const adminSchema = mongoose.Schema({
     type: Boolean,
     default:true,
   },
+  resetPasswordToken:{
+    type:String
+  },
+  resetPasswordExpire: {
+    type:Date
+  }
 });
 
 adminSchema.plugin(timestamps);
