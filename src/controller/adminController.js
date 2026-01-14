@@ -2,6 +2,11 @@ const express = require("express");
 const { sendResponse } = require("../utils/common");
 require("dotenv").config();
 const Admin = require("../model/admin.Schema");
+const User = require("../model/user.Schema");
+const Faq = require("../model/faq.Schema");
+const LoanPurpose = require("../model/loanPurpose.Schema");
+const Branch = require("../model/branch.Schema");
+const Ticket = require("../model/ticket.Schema");
 const adminController = express.Router();
 require("dotenv").config();
 const cloudinary = require("../utils/cloudinary");
@@ -511,36 +516,34 @@ adminController.put(
   }
 );
 
-adminController.post(
-  "/forgot-password",
-  async (req, res) => {
-    try {
-      const { email } = req.body;
+adminController.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
 
-      const admin = await Admin.findOne({ email });
-      if (!admin) {
-        return sendResponse(res, 404, "Failed", {
-          message: "Admin not found",
-          statusCode: 404,
-        });
-      }
+    const admin = await Admin.findOne({ email });
+    if (!admin) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Admin not found",
+        statusCode: 404,
+      });
+    }
 
-      // 🔐 Generate encrypted token (5 min validity)
-      const resetToken = jwt.sign(
-        { adminId: admin._id },
-        process.env.RESET_PASSWORD_SECRET,
-        { expiresIn: "15m" }
-      );
+    // 🔐 Generate encrypted token (5 min validity)
+    const resetToken = jwt.sign(
+      { adminId: admin._id },
+      process.env.RESET_PASSWORD_SECRET,
+      { expiresIn: "15m" }
+    );
 
-      // ⏰ Save token & expiry in DB
-      admin.resetPasswordToken = resetToken;
-      admin.resetPasswordExpire = Date.now() + 5 * 60 * 1000;
-      await admin.save();
+    // ⏰ Save token & expiry in DB
+    admin.resetPasswordToken = resetToken;
+    admin.resetPasswordExpire = Date.now() + 5 * 60 * 1000;
+    await admin.save();
 
-      // 🔗 Reset URL
-      const resetUrl = `${process.env.FRONTEND_URL}/update-password/${resetToken}`;
+    // 🔗 Reset URL
+    const resetUrl = `${process.env.FRONTEND_URL}/update-password/${resetToken}`;
 
-      const html = `
+    const html = `
         <div style="font-family: Arial, sans-serif; line-height:1.5;">
           <h3>Reset Your Password</h3>
           <p>You requested to reset your admin password.</p>
@@ -550,80 +553,138 @@ adminController.post(
         </div>
       `;
 
-      await sendMail(
-        admin.email,
-        "Reset Password – Rupee Loan (Valid for 15 minutes)",
-        html
-      );
+    await sendMail(
+      admin.email,
+      "Reset Password – Rupee Loan (Valid for 15 minutes)",
+      html
+    );
 
-      sendResponse(res, 200, "Success", {
-        message: "Reset password link sent successfully on email!",
-        statusCode: 200,
-      });
-
-    } catch (error) {
-      sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error",
-        statusCode: 500,
-      });
-    }
+    sendResponse(res, 200, "Success", {
+      message: "Reset password link sent successfully on email!",
+      statusCode: 200,
+    });
+  } catch (error) {
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
   }
-);
+});
 
-adminController.post(
-  "/reset-password/:token",
-  async (req, res) => {
-    try {
-      const { token } = req.params;
-      const { password } = req.body;
+adminController.post("/reset-password/:token", async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
 
-      if (!password) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Password is required",
-          statusCode: 400,
-        });
-      }
-
-      // 🔍 Verify JWT token
-      const decoded = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
-
-      const admin = await Admin.findOne({
-        _id: decoded.adminId,
-        resetPasswordToken: token,
-        resetPasswordExpire: { $gt: Date.now() },
-      });
-
-      if (!admin) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Token is invalid or expired",
-          statusCode: 400,
-        });
-      }
-
-      // 🔐 Encrypt new password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // ✅ Update password & clear token
-      admin.password = hashedPassword;
-      admin.resetPasswordToken = undefined;
-      admin.resetPasswordExpire = undefined;
-
-      await admin.save();
-
-      sendResponse(res, 200, "Success", {
-        message: "Password updated successfully. Please login again.",
-        statusCode: 200,
-      });
-
-    } catch (error) {
-      sendResponse(res, 400, "Failed", {
-        message: "Reset link expired or invalid",
+    if (!password) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Password is required",
         statusCode: 400,
       });
     }
+
+    // 🔍 Verify JWT token
+    const decoded = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
+
+    const admin = await Admin.findOne({
+      _id: decoded.adminId,
+      resetPasswordToken: token,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!admin) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Token is invalid or expired",
+        statusCode: 400,
+      });
+    }
+
+    // 🔐 Encrypt new password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // ✅ Update password & clear token
+    admin.password = hashedPassword;
+    admin.resetPasswordToken = undefined;
+    admin.resetPasswordExpire = undefined;
+
+    await admin.save();
+
+    sendResponse(res, 200, "Success", {
+      message: "Password updated successfully. Please login again.",
+      statusCode: 200,
+    });
+  } catch (error) {
+    sendResponse(res, 400, "Failed", {
+      message: "Reset link expired or invalid",
+      statusCode: 400,
+    });
   }
-);
+});
 
+adminController.post("/global-search", async (req, res) => {
+  try {
+    const { searchKey } = req.body;
 
+    if (!searchKey) {
+      return sendResponse(res, 400, "Failed", {
+        message: "Search key is required",
+        statusCode: 400,
+      });
+    }
+
+    const regex = new RegExp(searchKey, "i"); // case-insensitive
+
+    const [users, staff, branches, loanPurposes, faqs, tickets] =
+      await Promise.all([
+        User.find({
+          $or: [{ firstName: regex }, { email: regex }, { lastName: regex }],
+        })
+          .select("_id firstName lastName profilePic email")
+          .limit(5),
+
+        Admin.find({
+          $or: [{ firstName: regex }, { email: regex }],
+        })
+          .select("_id firstName")
+          .limit(5),
+
+        Branch.find({
+          name: regex,
+        })
+          .select("_id name")
+          .limit(5),
+
+        LoanPurpose.find({
+          title: regex,
+        })
+          .select("_id name")
+          .limit(5),
+
+        Faq.find({
+          question: regex,
+        })
+          .select("_id question")
+          .limit(5),
+
+        Ticket.find({
+          $or: [{ subject: regex }],
+        })
+          .select("_id  subject")
+          .limit(5),
+      ]);
+
+    sendResponse(res, 200, "Success", {
+      message: "Search results",
+      data: { users, staff, branches, loanPurposes, faqs, tickets },
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Global Search Error:", error);
+    return sendResponse(res, 500, "Failed", {
+      message: "Something went wrong",
+      statusCode: 500,
+    });
+  }
+});
 
 module.exports = adminController;
