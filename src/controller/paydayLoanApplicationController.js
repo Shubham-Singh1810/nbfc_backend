@@ -87,27 +87,28 @@ paydayLoanApplicationController.post(
       const gst = parseFloat(paydayConfig?.gst) || 0;
       const interestRate = parseFloat(paydayConfig?.intrestRate) || 0;
 
-      const interestAmount = (loanAmount*interestRate*tenure)/100
-      const processingAmount = (loanAmount*processingFeeRate)/100
-      const gstAmount = (loanAmount*gst)/100
-      const payable = loanAmount+interestAmount+processingAmount+gstAmount
-      const disbursedAmount = loanAmount-processingAmount-gstAmount
+      const interestAmount = (loanAmount * interestRate * tenure) / 100;
+      const processingAmount = (loanAmount * processingFeeRate) / 100;
+      const gstAmount = (loanAmount * gst) / 100;
+      const payable =
+        loanAmount + interestAmount + processingAmount + gstAmount;
+      const disbursedAmount = loanAmount - processingAmount - gstAmount;
 
       updatedData = {
         ...updatedData,
         payable,
-        interestRate : paydayConfig?.intrestRate,
+        interestRate: paydayConfig?.intrestRate,
         interestAmount,
         disbursedAmount,
-        processingFee : paydayConfig?.processingFee,
+        processingFee: paydayConfig?.processingFee,
         processingAmount,
-        isGstApplicable : paydayConfig?.gstApplicable,
-        gstRate : paydayConfig?.gst || 0,
+        isGstApplicable: paydayConfig?.gstApplicable,
+        gstRate: paydayConfig?.gst || 0,
         gstAmount,
-        lateFee : paydayConfig?.lateFee,
-        isPrepaymentAllowed : paydayConfig?.prepaymentAllowed,
-        prepaymentFee : paydayConfig?.prepaymentFee,
-        penaltyGraceDays:paydayConfig?.penaltyGraceDays
+        lateFee: paydayConfig?.lateFee,
+        isPrepaymentAllowed: paydayConfig?.prepaymentAllowed,
+        prepaymentFee: paydayConfig?.prepaymentFee,
+        penaltyGraceDays: paydayConfig?.penaltyGraceDays,
       };
       const loanApplicationCreated = await PaydayLoanApplication.create(
         updatedData
@@ -329,6 +330,15 @@ paydayLoanApplicationController.get("/details/:id", async (req, res) => {
       .populate("createdBy", "firstName lastName profilePic phone email")
       .populate("loanPurposeId", "name");
     if (loanApplication) {
+      let todaysTotal = null;
+      if (loanApplication?.status == "disbursed") {
+        todaysTotal = 2000;
+        return sendResponse(res, 200, "Success", {
+          message: "Payday Loan application details fetched successfully",
+          data: { ...loanApplication.toObject(), todaysTotal },
+          statusCode: 200,
+        });
+      }
       return sendResponse(res, 200, "Success", {
         message: "Payday Loan application details fetched successfully",
         data: loanApplication,
@@ -417,7 +427,7 @@ paydayLoanApplicationController.post(
       const lastLoanApplication = await PaydayLoanApplication.findOne().sort({
         createdAt: -1,
       });
-      console.log(lastLoanApplication)
+      console.log(lastLoanApplication);
       if (lastLoanApplication?.code) {
         const lastNumber =
           parseInt(lastLoanApplication.code.replace("RPL", ""), 10) || 0;

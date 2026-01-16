@@ -26,7 +26,7 @@ const paydayLoanApplicationSchema = mongoose.Schema({
   status: {
     type: String,
     default: "pending",
-    enum: ["pending", "approved", "rejected", "disbursed", "overdue", "completed"],
+    enum: ["pending", "approved", "rejected", "disbursed", "overdue", "completed", "closed"],
   },
   code: {
     type: String,
@@ -187,7 +187,7 @@ const paydayLoanApplicationSchema = mongoose.Schema({
   isGstApplicable: {
     type: Boolean,
   },
-   gstRate: {
+  gstRate: {
     type: Number,
   }, 
   gstAmount: {
@@ -207,6 +207,12 @@ const paydayLoanApplicationSchema = mongoose.Schema({
   },
   disbursedAmount : {
     type: Number,
+  },
+  disbursedDate:{
+    type:String
+  },
+  dueDate:{
+    type:String
   },
 });
 
