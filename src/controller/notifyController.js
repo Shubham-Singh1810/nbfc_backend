@@ -81,7 +81,7 @@ notifyController.post("/list", async (req, res) => {
     if (isScheduled) {
       query.isScheduled = isScheduled;
     }
-    if (isDelivered) {
+    if (isDelivered===true || isDelivered===false) {
       query.isDelivered = isDelivered;
     }
     if (searchKey) {
