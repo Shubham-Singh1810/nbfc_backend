@@ -331,7 +331,7 @@ adminController.post("/login", async (req, res) => {
     const token = jwt.sign(
       { userId: user._id, phone: user.phone },
       process.env.JWT_KEY,
-      { expiresIn: "1m" },
+      { expiresIn: "24h" },
     );
 
     let updatedAdmin = await Admin.findByIdAndUpdate(
