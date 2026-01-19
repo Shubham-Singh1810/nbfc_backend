@@ -34,7 +34,11 @@ userController.post("/login-with-otp", async (req, res) => {
 
     // Find existing user
     let user = await User.findOne(query);
-
+   const token = jwt.sign(
+        { userId: user._id, phone: user.phone, email: user.email },
+        process.env.JWT_KEY,
+        { expiresIn: "1m" }, 
+      );
     if (!user) {
       let newCode;
       const lastUser = await User.findOne().sort({
@@ -55,11 +59,7 @@ userController.post("/login-with-otp", async (req, res) => {
         emailOtp: isEmail ? otp : undefined,
       });
 
-      const token = jwt.sign(
-        { userId: user._id, phone: user.phone, email: user.email },
-        process.env.JWT_KEY,
-        { expiresIn: "1m" }, 
-      );
+      
 
       user.token = token;
       const superAdmin = await Admin.findOne();
@@ -77,8 +77,9 @@ userController.post("/login-with-otp", async (req, res) => {
       user = await User.findByIdAndUpdate(
         user._id,
         isEmail
-          ? { emailOtp: otp, deviceId: req.body?.deviceId }
-          : { phoneOtp: otp, deviceId: req.body?.deviceId },
+          ? { emailOtp: otp, deviceId: req.body?.deviceId, token }
+          : { phoneOtp: otp, deviceId: req.body?.deviceId, token },
+          
         { new: true },
       ).select("-password -emailOtp -phoneOtp");
     }
@@ -111,7 +112,6 @@ userController.post("/login-with-otp", async (req, res) => {
           otpMessage,
         )}`,
       );
-      console.log(optResponse);
       if (optResponse?.status == "200") {
         return sendResponse(res, 200, "Success", {
           message: "OTP sent successfully on phone",
