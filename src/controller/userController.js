@@ -37,7 +37,7 @@ userController.post("/login-with-otp", async (req, res) => {
    const token = jwt.sign(
         { userId: user._id, phone: user.phone, email: user.email },
         process.env.JWT_KEY,
-        { expiresIn: "1m" }, 
+        { expiresIn: "24h" }, 
       );
     if (!user) {
       let newCode;
