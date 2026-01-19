@@ -14,7 +14,7 @@ const upload = require("../utils/multer");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { sendMail } = require("../utils/common");
-// ✅ Admin Create
+const auth = require("../middleware/auth");
 
 function generateAdminPassword(length = 8) {
   if (length < 8) {
@@ -50,6 +50,7 @@ function generateAdminPassword(length = 8) {
 
 adminController.post(
   "/create",
+  auth,
   upload.single("profilePic"),
   async (req, res) => {
     try {
@@ -125,14 +126,15 @@ adminController.post(
       // ✅ Generate JWT token
       const token = jwt.sign(
         { userId: AdminData._id, phone: AdminData.phone },
-        process.env.JWT_KEY
+        process.env.JWT_KEY,
+        { expiresIn: "24h" }, // Add this line
       );
 
       // ✅ Store token in DB
       const updatedAdmin = await Admin.findByIdAndUpdate(
         AdminData._id,
         { token },
-        { new: true }
+        { new: true },
       );
       const html = `
   <div style="font-family: Arial, sans-serif; line-height:1.5; color:#222;">
@@ -157,7 +159,7 @@ adminController.post(
       await sendMail(
         req.body.email,
         "Welcome to Rupee Loan — Your Admin Account Details",
-        html
+        html,
       );
       sendResponse(res, 200, "Success", {
         message: "Staff created successfully!",
@@ -171,29 +173,12 @@ adminController.post(
         statusCode: 500,
       });
     }
-  }
+  },
 );
 
-// adminController.put("/update", async (req, res) => {
-//   try {
-//     const AdminData = await Admin.findByIdAndUpdate(req?.body?._id, req.body, {
-//       new: true,
-//     });
-//     sendResponse(res, 200, "Success", {
-//       message: "Admin updated successfully!",
-//       data: AdminData,
-//       statusCode: 200,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     sendResponse(res, 500, "Failed", {
-//       message: error.message || "Internal server error",
-//       statusCode: 500,
-//     });
-//   }
-// });
 adminController.put(
   "/update",
+  auth,
   upload.single("profilePic"),
   async (req, res) => {
     try {
@@ -279,10 +264,10 @@ adminController.put(
         message: error.message || "Internal server error",
       });
     }
-  }
+  },
 );
 
-adminController.delete("/delete/:id", async (req, res) => {
+adminController.delete("/delete/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const admin = await Admin.findById(id);
@@ -342,13 +327,18 @@ adminController.post("/login", async (req, res) => {
         statusCode: 422,
       });
     }
+
+    const token = jwt.sign(
+      { userId: user._id, phone: user.phone },
+      process.env.JWT_KEY,
+      { expiresIn: "24h" },
+    );
+
     let updatedAdmin = await Admin.findByIdAndUpdate(
       user._id,
-      { deviceId },
-      { new: true }
-    ).populate({
-      path: "role",
-    });
+      { deviceId, token },
+      { new: true },
+    ).populate({ path: "role" });
 
     return sendResponse(res, 200, "Success", {
       message: "Admin logged in successfully",
@@ -364,7 +354,7 @@ adminController.post("/login", async (req, res) => {
   }
 });
 
-adminController.post("/list", async (req, res) => {
+adminController.post("/list", auth, async (req, res) => {
   try {
     const {
       searchKey = "",
@@ -448,7 +438,7 @@ adminController.post("/list", async (req, res) => {
   }
 });
 
-adminController.get("/details/:id", async (req, res) => {
+adminController.get("/details/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const adminDetails = await Admin.findOne({ _id: id })
@@ -471,50 +461,46 @@ adminController.get("/details/:id", async (req, res) => {
     });
   }
 });
-adminController.put(
-  "/update-password",
+adminController.put("/update-password", auth, async (req, res) => {
+  try {
+    const id = req.body._id;
+    const adminData = await Admin.findById(id);
 
-  async (req, res) => {
-    try {
-      const id = req.body._id;
-      const adminData = await Admin.findById(id);
-
-      if (!adminData) {
-        return sendResponse(res, 404, "Failed", {
-          message: "Admin not found",
-          statusCode: "404",
-        });
-      }
-      const isMatch = await bcrypt.compare(
-        req?.body?.oldPassword,
-        adminData?.password
-      );
-      console.log(adminData?.password);
-      if (!isMatch) {
-        return sendResponse(res, 404, "Failed", {
-          message: "Old password not matched",
-        });
-      }
-      const hashedPassword = await bcrypt.hash(req?.body?.newPassword, 10);
-      let updatedData = { password: hashedPassword };
-
-      const updatedAdmin = await Admin.findByIdAndUpdate(id, updatedData, {
-        new: true,
-      });
-
-      sendResponse(res, 200, "Success", {
-        message: "Admin password updated successfully!",
-        data: updatedAdmin,
-        statusCode: 200,
-      });
-    } catch (error) {
-      console.error(error);
-      sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error",
+    if (!adminData) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Admin not found",
+        statusCode: "404",
       });
     }
+    const isMatch = await bcrypt.compare(
+      req?.body?.oldPassword,
+      adminData?.password,
+    );
+    console.log(adminData?.password);
+    if (!isMatch) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Old password not matched",
+      });
+    }
+    const hashedPassword = await bcrypt.hash(req?.body?.newPassword, 10);
+    let updatedData = { password: hashedPassword };
+
+    const updatedAdmin = await Admin.findByIdAndUpdate(id, updatedData, {
+      new: true,
+    });
+
+    sendResponse(res, 200, "Success", {
+      message: "Admin password updated successfully!",
+      data: updatedAdmin,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
   }
-);
+});
 
 adminController.post("/forgot-password", async (req, res) => {
   try {
@@ -532,7 +518,7 @@ adminController.post("/forgot-password", async (req, res) => {
     const resetToken = jwt.sign(
       { adminId: admin._id },
       process.env.RESET_PASSWORD_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "15m" },
     );
 
     // ⏰ Save token & expiry in DB
@@ -556,7 +542,7 @@ adminController.post("/forgot-password", async (req, res) => {
     await sendMail(
       admin.email,
       "Reset Password – Rupee Loan (Valid for 15 minutes)",
-      html
+      html,
     );
 
     sendResponse(res, 200, "Success", {
@@ -621,7 +607,7 @@ adminController.post("/reset-password/:token", async (req, res) => {
   }
 });
 
-adminController.post("/global-search", async (req, res) => {
+adminController.post("/global-search", auth, async (req, res) => {
   try {
     const { searchKey } = req.body;
 

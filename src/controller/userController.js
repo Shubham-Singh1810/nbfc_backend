@@ -2,12 +2,7 @@ const express = require("express");
 const { sendResponse, generateOTP } = require("../utils/common");
 require("dotenv").config();
 const User = require("../model/user.Schema");
-const Vendor = require("../model/vender.Schema");
-const Fund = require("../model/adminFund.Schema");
 const Admin = require("../model/admin.Schema");
-const Product = require("../model/product.Schema");
-const Category = require("../model/category.Schema");
-const SubCategory = require("../model/subCategory.Schema");
 const userController = express.Router();
 const axios = require("axios");
 require("dotenv").config();
@@ -15,9 +10,7 @@ const Booking = require("../model/booking.Schema");
 const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
-const auth = require("../utils/auth");
-const Driver = require("../model/driver.Schema");
-const moment = require("moment");
+const auth = require("../middleware/auth");
 const { sendMail } = require("../utils/common");
 const bcrypt = require("bcryptjs");
 
@@ -48,8 +41,7 @@ userController.post("/login-with-otp", async (req, res) => {
         createdAt: -1,
       });
       if (lastUser?.code) {
-        const lastNumber =
-          parseInt(lastUser.code.replace("RPLU", ""), 10) || 0;
+        const lastNumber = parseInt(lastUser.code.replace("RPLU", ""), 10) || 0;
         newCode = "RPLU" + String(lastNumber + 1).padStart(3, "0");
       } else {
         newCode = "RPLU001";
@@ -64,9 +56,11 @@ userController.post("/login-with-otp", async (req, res) => {
       });
 
       // Generate JWT token for new user
+      // Generate JWT token for new user
       const token = jwt.sign(
         { userId: user._id, phone: user.phone, email: user.email },
-        process.env.JWT_KEY
+        process.env.JWT_KEY,
+        { expiresIn: "24h" }, // ✅ Add this
       );
 
       user.token = token;
@@ -75,10 +69,8 @@ userController.post("/login-with-otp", async (req, res) => {
       user = await User.findByIdAndUpdate(
         user._id,
         { token },
-        { new: true }
+        { new: true },
       ).select("-password -emailOtp -phoneOtp");
-
-  
 
       const io = req.io;
       io.emit("new-user-registered", user);
@@ -89,7 +81,7 @@ userController.post("/login-with-otp", async (req, res) => {
         isEmail
           ? { emailOtp: otp, deviceId: req.body?.deviceId }
           : { phoneOtp: otp, deviceId: req.body?.deviceId },
-        { new: true }
+        { new: true },
       ).select("-password -emailOtp -phoneOtp");
     }
 
@@ -98,7 +90,7 @@ userController.post("/login-with-otp", async (req, res) => {
       // Send OTP to Email
       await sendMail(
         phone,
-        `The OTP code is ${otp}. Do not share it with anyone.`
+        `The OTP code is ${otp}. Do not share it with anyone.`,
       );
 
       return sendResponse(res, 200, "Success", {
@@ -118,8 +110,8 @@ userController.post("/login-with-otp", async (req, res) => {
         }&mobile=${phone}&country_code=91&sid=${
           process.env.AUTHKEY_SENDER_ID
         }&company=Rupeeloan&otp=${otp}&message=${encodeURIComponent(
-          otpMessage
-        )}`
+          otpMessage,
+        )}`,
       );
       console.log(optResponse);
       if (optResponse?.status == "200") {
@@ -197,7 +189,8 @@ userController.post("/sign-up", async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { userId: newUser._id, phone: newUser.phone },
-      process.env.JWT_KEY
+      process.env.JWT_KEY,
+      { expiresIn: "24h" }, // ✅ Add this
     );
 
     // Store the token in the user object
@@ -205,7 +198,7 @@ userController.post("/sign-up", async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       newUser._id,
       { token },
-      { new: true }
+      { new: true },
     ).select("-password -emailOtp -phoneOtp");
 
     // Send OTP to phone
@@ -218,13 +211,13 @@ userController.post("/sign-up", async (req, res) => {
       }&mobile=${req.body.phone}&country_code=91&sid=${
         process.env.AUTHKEY_SENDER_ID
       }&company=Acediva&otp=${phoneOtp}&message=${encodeURIComponent(
-        otpMessage
-      )}`
+        otpMessage,
+      )}`,
     );
 
     const emailOtpResponse = await sendMail(
       req.body.email,
-      "The OTP verification code is " + emailOtp + " for email verification."
+      "The OTP verification code is " + emailOtp + " for email verification.",
     );
 
     if (phoneOtpResponse?.status == "200") {
@@ -286,14 +279,14 @@ userController.post("/otp-verification", async (req, res) => {
           statusCode: 404,
         });
       }
-      if (user?.profileStatus=="registered") {
-          updateData.profileStatus = "verified";
+      if (user?.profileStatus == "registered") {
+        updateData.profileStatus = "verified";
       }
 
       const updatedUser = await User.findByIdAndUpdate(
         user._id,
         { $set: updateData },
-        { new: true }
+        { new: true },
       ).select("-password -emailOtp -phoneOtp");
 
       return sendResponse(res, 200, "Success", {
@@ -345,7 +338,7 @@ userController.post("/password-login", async (req, res) => {
     let updatedUser = await User.findByIdAndUpdate(
       user._id,
       { deviceId },
-      { new: true }
+      { new: true },
     );
     return sendResponse(res, 200, "Success", {
       message: "User logged in successfully",
@@ -397,7 +390,7 @@ userController.post("/resend-otp", async (req, res) => {
       // Send OTP to email
       await sendMail(
         phone,
-        `The OTP code is ${otp}. Do not share it with anyone.`
+        `The OTP code is ${otp}. Do not share it with anyone.`,
       );
 
       return sendResponse(res, 200, "Success", {
@@ -414,7 +407,7 @@ userController.post("/resend-otp", async (req, res) => {
           process.env.AUTHKEY_API_KEY
         }&mobile=${phone}&country_code=91&sid=${
           process.env.AUTHKEY_SENDER_ID
-        }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`
+        }&company=Acediva&otp=${otp}&message=${encodeURIComponent(otpMessage)}`,
       );
 
       if (otpResponse?.status == "200") {
@@ -490,9 +483,11 @@ userController.post(
       });
 
       // Generate JWT token
+      // Generate JWT token
       const token = jwt.sign(
         { userId: newUser._id, phone: newUser.phone },
-        process.env.JWT_KEY
+        process.env.JWT_KEY,
+        { expiresIn: "24h" }, // ✅ Add this
       );
 
       // Store the token in the user object
@@ -500,7 +495,7 @@ userController.post(
       const updatedUser = await User.findByIdAndUpdate(
         newUser._id,
         { token },
-        { new: true }
+        { new: true },
       ).select("-password -emailOtp -phoneOtp");
       return sendResponse(res, 200, "Success", {
         message: "User Created Successfully",
@@ -513,14 +508,14 @@ userController.post(
         message: error.message || "Internal server error.",
       });
     }
-  }
+  },
 );
 
-userController.get("/details/:id", async (req, res) => {
+userController.get("/details/:id", auth, async (req, res) => {
   try {
     const id = req.params.id;
     const user = await User.findOne({ _id: id }).select(
-      "-password -emailOtp -phoneOtp"
+      "-password -emailOtp -phoneOtp",
     );
     if (user) {
       return sendResponse(res, 200, "Success", {
@@ -542,7 +537,7 @@ userController.get("/details/:id", async (req, res) => {
   }
 });
 
-userController.post("/list", async (req, res) => {
+userController.post("/list", auth, async (req, res) => {
   try {
     const {
       searchKey = "",
@@ -599,7 +594,7 @@ userController.post("/list", async (req, res) => {
   }
 });
 
-userController.get("/stats", async (req, res) => {
+userController.get("/stats", auth, async (req, res) => {
   try {
     // Current counts
     const totalCount = await User.countDocuments({});
@@ -686,45 +681,73 @@ userController.put(
   upload.single("profilePic"),
   async (req, res) => {
     try {
-      const id = req.body.id;
-      const userData = await User.findOne({ _id: id });
-      if (!userData) {
-        return sendResponse(res, 404, "Failed", {
-          message: "User not found",
+      const id = req.body.id; // Ya req.query.id jo bhi aap use kar rahe ho
+
+      if (!id) {
+        return sendResponse(res, 400, "Failed", {
+          message: "User ID is required",
         });
       }
 
+      // 1. Pehle check karein ki user exist karta hai ya nahi
+      const userData = await User.findById(id);
+      if (!userData) {
+        return sendResponse(res, 404, "Failed", { message: "User not found" });
+      }
+
+      // 2. ✅ Unique Phone aur Email Check (Apni ID ko chhod kar)
+      const existingUser = await User.findOne({
+        $or: [{ phone: req.body.phone }, { email: req.body.email }],
+        _id: { $ne: id }, // Iska matlab: "Is user ID ko check mat karo"
+      });
+
+      if (existingUser) {
+        if (existingUser.phone === req.body.phone) {
+          return sendResponse(res, 400, "Failed", {
+            message: "Phone Number is already taken by another user",
+            statusCode: 400,
+          });
+        }
+        if (existingUser.email === req.body.email) {
+          return sendResponse(res, 400, "Failed", {
+            message: "Email is already taken by another user",
+            statusCode: 400,
+          });
+        }
+      }
+
+      // 3. Data update ki taiyari
       let updatedData = { ...req.body };
 
       if (req.file) {
         const profilePic = await cloudinary.uploader.upload(req.file.path);
         updatedData.profilePic = profilePic.url;
       }
-      // if(userData?.profileStatus != "active"){
-      //   updatedData.profileStatus = "profileUpdated";
-      // }
+
+      // 4. Update process
       const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
         new: true,
       }).select("-password -emailOtp -phoneOtp");
 
+      // Socket notification
       const io = req.io;
-      io.emit("user-updated", updatedUser);
+      if (io) io.emit("user-updated", updatedUser);
 
-      sendResponse(res, 200, "Success", {
+      return sendResponse(res, 200, "Success", {
         message: "User updated successfully!",
         data: updatedUser,
         statusCode: 200,
       });
     } catch (error) {
-      console.error(error);
-      sendResponse(res, 500, "Failed", {
+      console.error("Update Error:", error);
+      return sendResponse(res, 500, "Failed", {
         message: error.message || "Internal server error",
       });
     }
-  }
+  },
 );
 
-userController.delete("/delete/:id", async (req, res) => {
+userController.delete("/delete/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findById(id);
