@@ -55,12 +55,10 @@ userController.post("/login-with-otp", async (req, res) => {
         emailOtp: isEmail ? otp : undefined,
       });
 
-      // Generate JWT token for new user
-      // Generate JWT token for new user
       const token = jwt.sign(
         { userId: user._id, phone: user.phone, email: user.email },
         process.env.JWT_KEY,
-        { expiresIn: "24h" }, // ✅ Add this
+        { expiresIn: "1m" }, 
       );
 
       user.token = token;

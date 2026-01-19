@@ -7,6 +7,7 @@ const auth = (req, res, next) => {
     if (!token) {
       return sendResponse(res, 401, "Failed", {
         message: "No token, authorization denied",
+        
       });
     }
     const decoded = jwt.verify(token, process.env.JWT_KEY);
