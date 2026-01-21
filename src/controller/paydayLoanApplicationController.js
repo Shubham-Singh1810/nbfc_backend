@@ -39,43 +39,43 @@ paydayLoanApplicationController.post(
       if (req.file || req.files) {
         if (req.files["adharFrontend"]) {
           const image = await cloudinary.uploader.upload(
-            req.files["adharFrontend"][0].path
+            req.files["adharFrontend"][0].path,
           );
           updatedData = { ...updatedData, adharFrontend: image.url };
         }
         if (req.files["adharBack"]) {
           const image = await cloudinary.uploader.upload(
-            req.files["adharBack"][0].path
+            req.files["adharBack"][0].path,
           );
           updatedData = { ...updatedData, adharBack: image.url };
         }
         if (req.files["pan"]) {
           const image = await cloudinary.uploader.upload(
-            req.files["pan"][0].path
+            req.files["pan"][0].path,
           );
           updatedData = { ...updatedData, pan: image.url };
         }
         if (req.files["residenceProof"]) {
           const image = await cloudinary.uploader.upload(
-            req.files["residenceProof"][0].path
+            req.files["residenceProof"][0].path,
           );
           updatedData = { ...updatedData, residenceProof: image.url };
         }
         if (req.files["bankVerificationMode"]) {
           const image = await cloudinary.uploader.upload(
-            req.files["bankVerificationMode"][0].path
+            req.files["bankVerificationMode"][0].path,
           );
           updatedData = { ...updatedData, bankVerificationMode: image.url };
         }
         if (req.files["eSign"]) {
           const image = await cloudinary.uploader.upload(
-            req.files["eSign"][0].path
+            req.files["eSign"][0].path,
           );
           updatedData = { ...updatedData, eSign: image.url };
         }
         if (req.files["selfie"]) {
           const image = await cloudinary.uploader.upload(
-            req.files["selfie"][0].path
+            req.files["selfie"][0].path,
           );
           updatedData = { ...updatedData, selfie: image.url };
         }
@@ -110,9 +110,8 @@ paydayLoanApplicationController.post(
         prepaymentFee: paydayConfig?.prepaymentFee,
         penaltyGraceDays: paydayConfig?.penaltyGraceDays,
       };
-      const loanApplicationCreated = await PaydayLoanApplication.create(
-        updatedData
-      );
+      const loanApplicationCreated =
+        await PaydayLoanApplication.create(updatedData);
       sendResponse(res, 200, "Success", {
         message: "Payday Loan Application created successfully!",
         statusCode: "200",
@@ -124,7 +123,7 @@ paydayLoanApplicationController.post(
         message: error.message || "Internal server error",
       });
     }
-  }
+  },
 );
 paydayLoanApplicationController.post("/list", async (req, res) => {
   try {
@@ -357,67 +356,67 @@ paydayLoanApplicationController.get("/details/:id", async (req, res) => {
     });
   }
 });
-paydayLoanApplicationController.put(
-  "/update",
-  upload.fields([
-    { name: "adharFrontend", maxCount: 1 },
-    { name: "adharBack", maxCount: 1 },
-    { name: "pan", maxCount: 1 },
-    { name: "residenceProof", maxCount: 1 },
-    { name: "bankVerificationMode", maxCount: 1 },
-    { name: "eSign", maxCount: 1 },
-    { name: "selfie", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    try {
-      const { _id } = req.body;
-      if (!_id) {
-        return sendResponse(res, 400, "Failed", {
-          message: "Loan Application ID (_id) is required",
-        });
-      }
-      let updatedData = { ...req.body };
-      const uploadAndSet = async (fieldName) => {
-        if (req.files && req.files[fieldName]) {
-          const image = await cloudinary.uploader.upload(
-            req.files[fieldName][0].path
-          );
-          updatedData[fieldName] = image.secure_url;
-        } else if (req.body[fieldName + "Prev"]) {
-          updatedData[fieldName] = req.body[fieldName + "Prev"];
-        }
-      };
-      await uploadAndSet("adharFrontend");
-      await uploadAndSet("adharBack");
-      await uploadAndSet("pan");
-      await uploadAndSet("residenceProof");
-      await uploadAndSet("bankVerificationMode");
-      await uploadAndSet("eSign");
-      await uploadAndSet("selfie");
-      const loanUpdated = await PaydayLoanApplication.findByIdAndUpdate(
-        _id,
-        updatedData,
-        { new: true }
-      );
-      if (!loanUpdated) {
-        return sendResponse(res, 404, "Failed", {
-          message: "Loan Application not found",
-          statusCode: 404,
-        });
-      }
-      sendResponse(res, 200, "Success", {
-        message: "Payday Loan Application updated successfully!",
-        data: loanUpdated,
-        statusCode: 200,
-      });
-    } catch (error) {
-      console.error("Payday Loan Application update error:", error);
-      sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error",
-      });
-    }
-  }
-);
+// paydayLoanApplicationController.put(
+//   "/update",
+//   upload.fields([
+//     { name: "adharFrontend", maxCount: 1 },
+//     { name: "adharBack", maxCount: 1 },
+//     { name: "pan", maxCount: 1 },
+//     { name: "residenceProof", maxCount: 1 },
+//     { name: "bankVerificationMode", maxCount: 1 },
+//     { name: "eSign", maxCount: 1 },
+//     { name: "selfie", maxCount: 1 },
+//   ]),
+//   async (req, res) => {
+//     try {
+//       const { _id } = req.body;
+//       if (!_id) {
+//         return sendResponse(res, 400, "Failed", {
+//           message: "Loan Application ID (_id) is required",
+//         });
+//       }
+//       let updatedData = { ...req.body };
+//       const uploadAndSet = async (fieldName) => {
+//         if (req.files && req.files[fieldName]) {
+//           const image = await cloudinary.uploader.upload(
+//             req.files[fieldName][0].path
+//           );
+//           updatedData[fieldName] = image.secure_url;
+//         } else if (req.body[fieldName + "Prev"]) {
+//           updatedData[fieldName] = req.body[fieldName + "Prev"];
+//         }
+//       };
+//       await uploadAndSet("adharFrontend");
+//       await uploadAndSet("adharBack");
+//       await uploadAndSet("pan");
+//       await uploadAndSet("residenceProof");
+//       await uploadAndSet("bankVerificationMode");
+//       await uploadAndSet("eSign");
+//       await uploadAndSet("selfie");
+//       const loanUpdated = await PaydayLoanApplication.findByIdAndUpdate(
+//         _id,
+//         updatedData,
+//         { new: true }
+//       );
+//       if (!loanUpdated) {
+//         return sendResponse(res, 404, "Failed", {
+//           message: "Loan Application not found",
+//           statusCode: 404,
+//         });
+//       }
+//       sendResponse(res, 200, "Success", {
+//         message: "Payday Loan Application updated successfully!",
+//         data: loanUpdated,
+//         statusCode: 200,
+//       });
+//     } catch (error) {
+//       console.error("Payday Loan Application update error:", error);
+//       sendResponse(res, 500, "Failed", {
+//         message: error.message || "Internal server error",
+//       });
+//     }
+//   }
+// );
 paydayLoanApplicationController.post(
   "/apply",
   pdApplicationValidation,
@@ -437,9 +436,8 @@ paydayLoanApplicationController.post(
       }
       let updatedData = { ...req.body, code: newCode };
 
-      const loanApplicationCreated = await PaydayLoanApplication.create(
-        updatedData
-      );
+      const loanApplicationCreated =
+        await PaydayLoanApplication.create(updatedData);
       sendResponse(res, 200, "Success", {
         message: "Payday Loan Application created successfully!",
         statusCode: "200",
@@ -451,14 +449,14 @@ paydayLoanApplicationController.post(
         message: error.message || "Internal server error",
       });
     }
-  }
+  },
 );
 paydayLoanApplicationController.get("/in-progress/:id", async (req, res) => {
   try {
     const id = req.params.id;
     const loanApplication = await PaydayLoanApplication.findOne({
       userId: id,
-      status: { $in: ["pending", "approved", "rejected", "overDue"]}
+      status: { $in: ["pending", "approved", "rejected", "overDue"] },
     })
       .populate("userId", "firstName lastName email phone profilePic")
       .populate("branchId", "name contactPerson address state city pincode")
@@ -485,4 +483,126 @@ paydayLoanApplicationController.get("/in-progress/:id", async (req, res) => {
     });
   }
 });
+
+paydayLoanApplicationController.put(
+  "/update",
+  upload.fields([
+    { name: "adharFrontend", maxCount: 1 },
+    { name: "adharBack", maxCount: 1 },
+    { name: "pan", maxCount: 1 },
+    { name: "residenceProof", maxCount: 1 },
+    { name: "bankVerificationMode", maxCount: 1 },
+    { name: "eSign", maxCount: 1 },
+    { name: "selfie", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const { _id, processingStatus, loanAmount, tenure } = req.body;
+      if (!_id) {
+        return sendResponse(res, 400, "Failed", {
+          message: "Loan Application ID (_id) is required",
+        });
+      }
+      let updatedData = { ...req.body };
+      if (processingStatus === "loanOffer") {
+        const paydayConfig = await PaydayLoanTypeSchema.findOne({});
+        if (paydayConfig) {
+          let loanApplicationDetails = await PaydayLoanApplication.findOne({
+            _id,
+          });
+          const mIncome = parseInt(loanApplicationDetails?.monthlyIncome) || 0;
+          const mExpense =
+            parseInt(loanApplicationDetails?.monthlyExpense) || 0;
+
+          // Eligibility Check
+          const saving = mIncome - mExpense;
+          const maxLoanAllowed =
+            (saving * (parseInt(paydayConfig.incomeToLoanPercentage) || 0)) /
+            100;
+
+          if (maxLoanAllowed > lAmount) {
+            return sendResponse(res, 404, "Failed", {
+              message: "Your max loan amount is " + maxLoanAllowed,
+              statusCode: 404,
+            });
+          }
+          const lAmount = parseInt(loanAmount) || 0;
+          const lTenure = parseInt(tenure) || 0;
+          const processingFeeRate =
+            parseFloat(paydayConfig?.processingFee) || 0;
+          const gst = parseFloat(paydayConfig?.gst) || 0;
+          const interestRate = parseFloat(paydayConfig?.intrestRate) || 0;
+
+          const interestAmount = (lAmount * interestRate * lTenure) / 100;
+          const processingAmount = (lAmount * processingFeeRate) / 100;
+          const gstAmount = (lAmount * gst) / 100;
+
+          const payable =
+            lAmount + interestAmount + processingAmount + gstAmount;
+          const disbursedAmount = lAmount - processingAmount - gstAmount;
+
+          updatedData = {
+            ...updatedData,
+            payable,
+            interestRate: paydayConfig?.intrestRate,
+            interestAmount,
+            disbursedAmount,
+            processingFee: paydayConfig?.processingFee,
+            processingAmount,
+            isGstApplicable: paydayConfig?.gstApplicable,
+            gstRate: paydayConfig?.gst || 0,
+            gstAmount,
+            lateFee: paydayConfig?.lateFee,
+            isPrepaymentAllowed: paydayConfig?.prepaymentAllowed,
+            prepaymentFee: paydayConfig?.prepaymentFee,
+            penaltyGraceDays: paydayConfig?.penaltyGraceDays,
+          };
+        }
+      }
+
+      const uploadAndSet = async (fieldName) => {
+        if (req.files && req.files[fieldName]) {
+          const image = await cloudinary.uploader.upload(
+            req.files[fieldName][0].path,
+          );
+          updatedData[fieldName] = image.secure_url;
+        } else if (req.body[fieldName + "Prev"]) {
+          updatedData[fieldName] = req.body[fieldName + "Prev"];
+        }
+      };
+
+      await uploadAndSet("adharFrontend");
+      await uploadAndSet("adharBack");
+      await uploadAndSet("pan");
+      await uploadAndSet("residenceProof");
+      await uploadAndSet("bankVerificationMode");
+      await uploadAndSet("eSign");
+      await uploadAndSet("selfie");
+
+      const loanUpdated = await PaydayLoanApplication.findByIdAndUpdate(
+        _id,
+        updatedData,
+        { new: true },
+      );
+
+      if (!loanUpdated) {
+        return sendResponse(res, 404, "Failed", {
+          message: "Loan Application not found",
+          statusCode: 404,
+        });
+      }
+
+      sendResponse(res, 200, "Success", {
+        message: "Payday Loan Application updated successfully!",
+        data: loanUpdated,
+        statusCode: 200,
+      });
+    } catch (error) {
+      console.error("Payday Loan Application update error:", error);
+      sendResponse(res, 500, "Failed", {
+        message: error.message || "Internal server error",
+      });
+    }
+  },
+);
 module.exports = paydayLoanApplicationController;
