@@ -519,14 +519,14 @@ paydayLoanApplicationController.put(
           const maxLoanAllowed =
             (saving * (parseInt(paydayConfig.incomeToLoanPercentage) || 0)) /
             100;
-
+          const lAmount = parseInt(loanAmount) || 0;
           if (maxLoanAllowed > lAmount) {
             return sendResponse(res, 404, "Failed", {
               message: "Your max loan amount is " + maxLoanAllowed,
               statusCode: 404,
             });
           }
-          const lAmount = parseInt(loanAmount) || 0;
+          
           const lTenure = parseInt(tenure) || 0;
           const processingFeeRate =
             parseFloat(paydayConfig?.processingFee) || 0;
