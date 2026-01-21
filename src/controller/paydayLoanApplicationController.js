@@ -458,7 +458,7 @@ paydayLoanApplicationController.get("/in-progress/:id", async (req, res) => {
     const id = req.params.id;
     const loanApplication = await PaydayLoanApplication.findOne({
       userId: id,
-      status: "pending",
+      status: { $in: ["pending", "approved", "rejected", "overDue"]}
     })
       .populate("userId", "firstName lastName email phone profilePic")
       .populate("branchId", "name contactPerson address state city pincode")
