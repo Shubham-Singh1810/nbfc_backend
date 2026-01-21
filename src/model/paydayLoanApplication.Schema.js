@@ -57,6 +57,9 @@ const paydayLoanApplicationSchema = mongoose.Schema({
   fullName: {
     type: String,
   },
+  panNumber: {
+    type: String,
+  },
   email: {
     type: String,
   },
