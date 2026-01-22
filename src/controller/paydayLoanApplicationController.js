@@ -10,6 +10,7 @@ const auth = require("../utils/auth");
 const { generateEmi } = require("../utils/emiCalculator");
 const pdApplicationValidation = require("../middleware/loanApplicationValidation");
 const PaydayLoanTypeSchema = require("../model/paydayLoanType.Schema");
+const moment = require("moment");
 
 paydayLoanApplicationController.post(
   "/create",
@@ -331,10 +332,23 @@ paydayLoanApplicationController.get("/details/:id", async (req, res) => {
     if (loanApplication) {
       let todaysTotal = null;
       if (loanApplication?.status == "disbursed") {
-        todaysTotal = 2000;
+        const disbursed = moment(loanApplication.disbursedDate).startOf("day");
+        const today = moment().startOf("day");
+        let todaysTenure = today.diff(disbursed, "days");
+        if (todaysTenure <= 0) todaysTenure = 1;
+        let todaysInterest = (loanApplication?.loanAmount * loanApplication?.interestRate * todaysTenure)/100
+        let todaysTotal =
+          loanApplication.payable -
+          loanApplication.interestAmount +
+          todaysInterest;
+
         return sendResponse(res, 200, "Success", {
           message: "Payday Loan application details fetched successfully",
-          data: { ...loanApplication.toObject(), todaysTotal },
+          data: {
+            ...loanApplication.toObject(),
+            todaysTotal: parseFloat(todaysTotal.toFixed(2)), // Decimal handle karne ke liye
+            daysElapsed: todaysTenure,
+          },
           statusCode: 200,
         });
       }
@@ -520,13 +534,13 @@ paydayLoanApplicationController.put(
             (saving * (parseInt(paydayConfig.incomeToLoanPercentage) || 0)) /
             100;
           const lAmount = parseInt(loanAmount) || 0;
-          if (lAmount>maxLoanAllowed) {
+          if (lAmount > maxLoanAllowed) {
             return sendResponse(res, 404, "Failed", {
               message: "Your max loan amount is " + maxLoanAllowed,
               statusCode: 404,
             });
           }
-          
+
           const lTenure = parseInt(tenure) || 0;
           const processingFeeRate =
             parseFloat(paydayConfig?.processingFee) || 0;
